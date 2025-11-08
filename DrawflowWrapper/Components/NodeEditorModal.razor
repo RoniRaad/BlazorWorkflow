@@ -1,0 +1,482 @@
+﻿@using System.Reflection
+<!-- Node editor modal -->
+<div class="modal fade node-editor-modal"
+     id="nodeEditorModal"
+     tabindex="-1"
+     aria-labelledby="nodeEditorLabel"
+     aria-modal="true"
+     role="dialog">
+    <div class="modal-dialog node-editor-dialog">
+        <div class="modal-content node-editor-content">
+            <div class="modal-header node-editor-header">
+                <div>
+                    <h5 class="modal-title" id="nodeEditorLabel">Edit node</h5>
+                    <p class="node-editor-subtitle">Payload based mapping</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body node-editor-body">
+                <div class="node-editor-grid">
+                    <!-- INPUT PANEL -->
+                    <section class="node-editor-panel node-editor-panel-input">
+                        <header class="panel-header">
+                            <span class="pill pill-input">Input</span>
+                            <h6>Incoming payload</h6>
+                            <p class="panel-caption">Preview the payload that arrives at this node.</p>
+                        </header>
+                        <div class="panel-body">
+                            <div class="payload-preview" data-role="payload-preview">
+                                @IncomingPayloadJson
+                            </div>
+
+                            <div class="panel-section">
+                                <div class="panel-section-header">
+                                    <span>Fields</span>
+                                    <button type="button"
+                                            class="btn btn-xs btn-outline-secondary"
+                                            data-role="refresh-payload">
+                                        Refresh
+                                    </button>
+                                </div>
+                                <div class="payload-field-list" data-role="payload-field-list">
+                                    <!-- Example chip, clone these in JS -->
+                                    <button type="button"
+                                            class="payload-field-chip"
+                                            data-role="payload-field"
+                                            data-path="user.name">
+                                        user.name
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- PROCESSING PANEL -->
+                    <section class="node-editor-panel node-editor-panel-processing">
+                        <header class="panel-header">
+                            <span class="pill pill-processing">Processing</span>
+                            <h6>Function mapping</h6>
+                            <p class="panel-caption">Map payload fields into your function and back out again.</p>
+                        </header>
+
+                        <div class="panel-body panel-body-scroll">
+                            <!-- Function input map -->
+                            <div class="panel-section" data-role="function-input-map">
+                                <div class="panel-section-header">
+                                    <span>Function input map</span>
+                                    <button type="button"
+                                            class="btn btn-xs btn-outline-secondary"
+                                            data-role="add-input-mapping">
+                                        Add mapping
+                                    </button>
+                                </div>
+
+                                <div class="mapping-list" data-role="input-mapping-list">
+                                    <!-- Template row; duplicate dynamically -->
+                                    <div class="mapping-row" data-role="input-mapping-row">
+                                        <div class="mapping-col">
+                                            <label>Payload path</label>
+                                            <input type="text"
+                                                   class="form-control form-control-sm"
+                                                   placeholder="e.g. user.name"
+                                                   data-role="payload-path" />
+                                        </div>
+                                        <div class="mapping-arrow">→</div>
+                                        <div class="mapping-col">
+                                            <label>Parameter</label>
+                                            <select class="form-select form-select-sm" data-role="parameter-name">
+                                                <option value="">Select parameter…</option>
+                                                @foreach (var param in BackingMethod?.GetParameters() ?? [])
+                                                {
+                                                    <option value="@param.Name">@param.Name</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <button type="button"
+                                                class="btn btn-icon btn-xs"
+                                                title="Remove"
+                                                data-role="remove-mapping">
+                                            ✕
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="panel-divider" />
+
+                            <!-- Function output map -->
+                            <div class="panel-section" data-role="function-output-map">
+                                <div class="panel-section-header">
+                                    <span>Function output map</span>
+                                    <button type="button"
+                                            class="btn btn-xs btn-outline-secondary"
+                                            data-role="add-output-mapping">
+                                        Add mapping
+                                    </button>
+                                </div>
+
+                                <div class="mapping-list" data-role="output-mapping-list">
+                                    <!-- Template row; duplicate dynamically -->
+                                    <div class="mapping-row" data-role="output-mapping-row">
+                                        <div class="mapping-col">
+                                            <label>Function output</label>
+                                            <select class="form-select form-select-sm" data-role="function-output">
+                                                <option value="">Select output…</option>
+                                                @foreach (var property in GetReturnProperties())
+                                                {
+                                                    <option value="@property.Name">@property.Name</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="mapping-arrow">→</div>
+                                        <div class="mapping-col">
+                                            <label>Payload path</label>
+                                            <input type="text"
+                                                   class="form-control form-control-sm"
+                                                   placeholder="e.g. result.value"
+                                                   data-role="target-payload-path" />
+                                        </div>
+                                        <button type="button"
+                                                class="btn btn-icon btn-xs"
+                                                title="Remove"
+                                                data-role="remove-mapping">
+                                            ✕
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- OUTPUT PANEL -->
+                    <section class="node-editor-panel node-editor-panel-output">
+                        <header class="panel-header">
+                            <span class="pill pill-output">Output</span>
+                            <h6>Resulting payload</h6>
+                            <p class="panel-caption">See what leaves this node after mappings.</p>
+                        </header>
+                        <div class="panel-body">
+                            <div class="payload-preview payload-preview--output"
+                                 data-role="output-preview">
+                                @OutputPayloadJson
+                            </div>
+
+                            <div class="panel-section">
+                                <div class="panel-section-header">
+                                    <span>Flags</span>
+                                </div>
+
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           id="replacePayload"
+                                           data-role="replace-payload" />
+                                    <label class="form-check-label" for="replacePayload">
+                                        Replace payload instead of merge
+                                    </label>
+                                </div>
+
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           id="debugNode"
+                                           data-role="debug-node" />
+                                    <label class="form-check-label" for="debugNode">
+                                        Capture debug snapshot
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div class="modal-footer node-editor-footer">
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">
+                    Cancel
+                </button>
+                <button type="button"
+                        class="btn btn-primary"
+                        data-role="save-node">
+                    Save mappings
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .node-editor-dialog {
+        max-width: 1120px;
+        width: 100%;
+        margin: 0 auto;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+    }
+
+    .node-editor-content {
+        background: radial-gradient(circle at top, #111827, #020617 55%, #020617 100%);
+        color: #e5e7eb;
+        border-radius: 1.25rem;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.85);
+        height: 80vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .node-editor-header {
+        border-bottom: 1px solid rgba(31, 41, 55, 0.9);
+        padding: 0.85rem 1.25rem;
+        align-items: flex-start;
+    }
+
+    .node-editor-header .modal-title {
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+
+    .node-editor-subtitle {
+        margin: 0;
+        font-size: 0.8rem;
+        color: #9ca3af;
+    }
+
+    .node-editor-body {
+        padding: 1rem 1.25rem 0.75rem;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    .node-editor-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(0, 0.9fr);
+        gap: 0.9rem;
+        height: 100%;
+    }
+
+    .node-editor-panel {
+        background: rgba(15, 23, 42, 0.9);
+        border-radius: 0.9rem;
+        border: 1px solid rgba(55, 65, 81, 0.9);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .panel-header {
+        padding: 0.75rem 0.9rem 0.5rem;
+        border-bottom: 1px solid rgba(31, 41, 55, 0.9);
+    }
+
+    .panel-header h6 {
+        margin: 0.25rem 0 0;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .panel-caption {
+        margin: 0.15rem 0 0;
+        font-size: 0.75rem;
+        color: #9ca3af;
+    }
+
+    .panel-body {
+        padding: 0.75rem 0.9rem 0.9rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        overflow: hidden;
+    }
+
+    .panel-body-scroll {
+        overflow: hidden;
+    }
+
+    .panel-section {
+        background: rgba(15, 23, 42, 0.9);
+        border-radius: 0.65rem;
+        padding: 0.55rem 0.65rem 0.65rem;
+        border: 1px solid rgba(31, 41, 55, 0.9);
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+    }
+
+    .panel-section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #e5e7eb;
+    }
+
+    .panel-divider {
+        margin: 0.65rem 0;
+        border-color: rgba(31, 41, 55, 0.9);
+    }
+
+    .pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.15rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .pill-input {
+        background: rgba(22, 163, 74, 0.15);
+        color: #bbf7d0;
+        border: 1px solid rgba(22, 163, 74, 0.7);
+    }
+
+    .pill-processing {
+        background: rgba(59, 130, 246, 0.18);
+        color: #bfdbfe;
+        border: 1px solid rgba(59, 130, 246, 0.75);
+    }
+
+    .pill-output {
+        background: rgba(245, 158, 11, 0.18);
+        color: #fed7aa;
+        border: 1px solid rgba(245, 158, 11, 0.75);
+    }
+
+    .payload-preview {
+        flex: 1;
+        border-radius: 0.6rem;
+        border: 1px solid rgba(31, 41, 55, 0.9);
+        background: radial-gradient(circle at top, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 1));
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 0.75rem;
+        padding: 0.6rem 0.65rem;
+        color: #e5e7eb;
+        overflow: auto;
+        white-space: pre;
+    }
+
+    .payload-preview--output {
+        min-height: 120px;
+    }
+
+    .payload-field-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        max-height: 120px;
+        overflow: auto;
+    }
+
+    .payload-field-chip {
+        border-radius: 999px;
+        border: 1px solid rgba(55, 65, 81, 0.9);
+        background: rgba(15, 23, 42, 0.9);
+        font-size: 0.7rem;
+        padding: 0.15rem 0.55rem;
+        color: #e5e7eb;
+        cursor: pointer;
+    }
+
+    .payload-field-chip:hover {
+        border-color: rgba(96, 165, 250, 0.9);
+    }
+
+    .mapping-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        max-height: 180px;
+        overflow: auto;
+    }
+
+    .mapping-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) auto minmax(0, 1.1fr) auto;
+        gap: 0.35rem;
+        align-items: end;
+    }
+
+    .mapping-col label {
+        font-size: 0.7rem;
+        color: #9ca3af;
+        margin-bottom: 0.15rem;
+    }
+
+    .mapping-arrow {
+        font-size: 0.9rem;
+        color: #9ca3af;
+        text-align: center;
+        padding-bottom: 0.2rem;
+    }
+
+    .btn-xs {
+        --bs-btn-padding-y: 0.15rem;
+        --bs-btn-padding-x: 0.45rem;
+        --bs-btn-font-size: 0.7rem;
+        border-radius: 999px;
+    }
+
+    .btn-icon {
+        border-radius: 999px;
+        border: 1px solid rgba(55, 65, 81, 0.9);
+        background: rgba(15, 23, 42, 1);
+        width: 1.5rem;
+        height: 1.5rem;
+        padding: 0;
+        font-size: 0.75rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #9ca3af;
+    }
+
+    .btn-icon:hover {
+        border-color: rgba(248, 113, 113, 0.9);
+        color: #fecaca;
+    }
+
+    .node-editor-footer {
+        border-top: 1px solid rgba(31, 41, 55, 0.9);
+        padding: 0.7rem 1.25rem;
+    }
+
+    .node-editor-footer .btn {
+        font-size: 0.85rem;
+    }
+
+    @@media (max-width: 992px) {
+        .node-editor-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .node-editor-content {
+            height: 90vh;
+        }
+    }
+</style>
+
+@code {
+    [Parameter]
+    public required MethodInfo? BackingMethod { get; set; }
+
+    [Parameter]
+    public string? IncomingPayloadJson { get; set; }
+
+    [Parameter]
+    public string? OutputPayloadJson { get; set; }
+
+    public PropertyInfo[] GetReturnProperties()
+    {
+        return BackingMethod?.ReturnType?.GetProperties(BindingFlags.Instance | BindingFlags.Public) ?? [];
+    }
+}

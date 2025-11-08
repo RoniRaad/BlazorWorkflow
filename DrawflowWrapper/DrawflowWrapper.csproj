@@ -11,4 +11,7 @@
   <ItemGroup>
     <PackageReference Include="NJsonSchema" Version="11.5.1" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Attributes\" />
+  </ItemGroup>
 </Project>
