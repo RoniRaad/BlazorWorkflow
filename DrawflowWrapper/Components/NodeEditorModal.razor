@@ -1,4 +1,6 @@
 ﻿@using System.Reflection
+@using DrawflowWrapper.Models.NodeV2
+
 <!-- Node editor modal -->
 <div class="modal fade node-editor-modal"
      id="nodeEditorModal"
@@ -87,7 +89,7 @@
                                             <label>Parameter</label>
                                             <select class="form-select form-select-sm" data-role="parameter-name">
                                                 <option value="">Select parameter…</option>
-                                                @foreach (var param in BackingMethod?.GetParameters() ?? [])
+                                                @foreach (var param in BackingNode?.BackingMethod?.GetParameters() ?? [])
                                                 {
                                                     <option value="@param.Name">@param.Name</option>
                                                 }
@@ -118,32 +120,35 @@
 
                                 <div class="mapping-list" data-role="output-mapping-list">
                                     <!-- Template row; duplicate dynamically -->
-                                    <div class="mapping-row" data-role="output-mapping-row">
-                                        <div class="mapping-col">
-                                            <label>Function output</label>
-                                            <select class="form-select form-select-sm" data-role="function-output">
-                                                <option value="">Select output…</option>
-                                                @foreach (var property in GetReturnProperties())
-                                                {
-                                                    <option value="@property.Name">@property.Name</option>
-                                                }
-                                            </select>
+                                    @foreach (var outputMapping in ViewModel.MethodOutputToNodeOutputMap)
+                                    {
+                                        <div class="mapping-row" data-role="output-mapping-row">
+                                            <div class="mapping-col">
+                                                <label>Function output</label>
+                                                <select class="form-select form-select-sm" data-role="function-output">
+                                                    <option value="">Select output…</option>
+                                                    @foreach (var property in GetReturnProperties())
+                                                    {
+                                                        <option value="@property.Name">@property.Name</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="mapping-arrow">→</div>
+                                            <div class="mapping-col">
+                                                <label>Payload path</label>
+                                                <input @bind="@outputMapping.Value" type="text"
+                                                       class="form-control form-control-sm"
+                                                       placeholder="e.g. result.value"
+                                                       data-role="target-payload-path" />
+                                            </div>
+                                            <button type="button"
+                                                    class="btn btn-icon btn-xs"
+                                                    title="Remove"
+                                                    data-role="remove-mapping">
+                                                ✕
+                                            </button>
                                         </div>
-                                        <div class="mapping-arrow">→</div>
-                                        <div class="mapping-col">
-                                            <label>Payload path</label>
-                                            <input type="text"
-                                                   class="form-control form-control-sm"
-                                                   placeholder="e.g. result.value"
-                                                   data-role="target-payload-path" />
-                                        </div>
-                                        <button type="button"
-                                                class="btn btn-icon btn-xs"
-                                                title="Remove"
-                                                data-role="remove-mapping">
-                                            ✕
-                                        </button>
-                                    </div>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -467,7 +472,7 @@
 
 @code {
     [Parameter]
-    public required MethodInfo? BackingMethod { get; set; }
+    public required Node? BackingNode { get; set; }
 
     [Parameter]
     public string? IncomingPayloadJson { get; set; }
@@ -475,8 +480,16 @@
     [Parameter]
     public string? OutputPayloadJson { get; set; }
 
+    public NodeEditorModalViewModel ViewModel { get; set; }
+
     public PropertyInfo[] GetReturnProperties()
     {
-        return BackingMethod?.ReturnType?.GetProperties(BindingFlags.Instance | BindingFlags.Public) ?? [];
+        return BackingNode?.BackingMethod?.ReturnType?.GetProperties(BindingFlags.Instance | BindingFlags.Public) ?? [];
+    }
+
+    public class NodeEditorModalViewModel 
+    {
+        public Dictionary<string, string> NodeInputToMethodInputMap { get; set; } = [];
+        public Dictionary<string, string> MethodOutputToNodeOutputMap { get; set; } = [];
     }
 }

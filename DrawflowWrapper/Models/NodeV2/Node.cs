@@ -9,14 +9,14 @@ namespace DrawflowWrapper.Models.NodeV2
     {
         private readonly SemaphoreSlim _executionSemaphore = new(1);
         public required MethodInfo BackingMethod { get; set; }
+        public string Id { get; set; } = Guid.NewGuid().ToString();
         public List<Node> InputNodes { get; set; } = [];
         public List<Node> OutputNodes { get; set; } = [];
         public Dictionary<string, string> NodeInputToMethodInputMap { get; set; } = [];
         public Dictionary<string, string> MethodOutputToNodeOutputMap { get; set; } = [];
-        public NodeContext NodeContext { get; set; } = new();
         public JsonObject? Result { get; set; }
 
-        public async Task<JsonObject> GetResult()
+        public async Task<JsonObject> GetResult(Node caller)
         {
             if (Result != null)
                 return Result;
@@ -25,7 +25,7 @@ namespace DrawflowWrapper.Models.NodeV2
 
             if (InputNodes.Count == 1)
             {
-                inputPayload = await InputNodes[0].GetResult().ConfigureAwait(false);
+                inputPayload = await InputNodes[0].GetResult(this).ConfigureAwait(false);
             }
             else if (InputNodes.Count > 1)
             {
@@ -58,7 +58,12 @@ namespace DrawflowWrapper.Models.NodeV2
 
                     if (parameter.ParameterType == typeof(NodeContext))
                     {
-                        orderedMethodParameters[i] = NodeContext;
+                        orderedMethodParameters[i] = new NodeContext()
+                        {
+                            InputNode = InputNodes[0], // TODO should be per node
+                            OuputNode = caller,
+                            Context = []
+                        };
                         continue;
                     }
 

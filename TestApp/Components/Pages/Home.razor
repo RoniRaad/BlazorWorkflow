@@ -3,6 +3,7 @@
 @using DrawflowWrapper.Drawflow.BaseNodes
 @using DrawflowWrapper.Helpers
 @using DrawflowWrapper.Models
+@using DrawflowWrapper.Models.NodeV2
 
 <h1>Drawflow Blazor Wrapper Demo</h1>
 
@@ -11,7 +12,7 @@
     Launch demo modal
 </button>
 
-<NodeEditorModal BackingMethod="@(typeof(BaseNodeCollection).GetMethods().First(x => x.Name == "If"))"></NodeEditorModal>
+<NodeEditorModal BackingNode="@(GetNode())"></NodeEditorModal>
 
 <div style="display:flex;;flex-direction: row;">
     <div style="display:flex;margin-bottom:5px;flex-direction: column;margin-right: 8px;width: 350px;">
@@ -26,10 +27,10 @@
         </div>
     </div>
     <Drawflow @ref="_base"
-              Id="df-demo"
-              Style="height:600px;"
-              Options="@options"
-              OnEvent="HandleEvent" />
+    Id="df-demo"
+    Style="height:600px;"
+    Options="@options"
+    OnEvent="HandleEvent" />
 </div>
 
 @if (!string.IsNullOrWhiteSpace(_exportJson))
@@ -42,6 +43,18 @@
     private DrawflowBase? _base;
     private string? _exportJson;
     private List<FunctionNode> _functionNodes = [];
+
+    private Node GetNode()
+    {
+        var node = new Node()
+            {
+                BackingMethod = typeof(BaseNodeCollection).GetMethods().First(x => x.Name == "If"),
+                InputNodes = [],
+                OutputNodes = []
+            };
+
+        return node;
+    }
 
     private async Task HandleEvent(DrawflowEventArgs e)
     {
