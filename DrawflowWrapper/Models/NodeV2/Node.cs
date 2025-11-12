@@ -23,9 +23,10 @@ namespace DrawflowWrapper.Models.NodeV2
             => ExecutePortInternal?.Invoke(portName) ?? Task.CompletedTask;
     }
 
-    public class Node
+    public class Node : IDisposable
     {
         private readonly SemaphoreSlim _executionSemaphore = new(1);
+        private bool _disposed;
 
         [JsonConverter(typeof(MethodInfoJsonConverter))]
         public required MethodInfo BackingMethod { get; set; }
@@ -114,14 +115,14 @@ namespace DrawflowWrapper.Models.NodeV2
 
         public async Task ExecuteNode(Node? caller = null)
         {
-            await GetResult(caller ?? this).ConfigureAwait(false);
+            await GetResult(caller ?? this);
 
             // Non-port-driven nodes keep the old linear fan-out behavior
             if (!IsPortDriven)
             {
                 foreach (var outputNode in OutputNodes)
                 {
-                    await outputNode.ExecuteNode(this).ConfigureAwait(false);
+                    await outputNode.ExecuteNode(this);
                 }
             }
         }
@@ -140,7 +141,7 @@ namespace DrawflowWrapper.Models.NodeV2
             {
                 foreach (var inputNode in InputNodes)
                 {
-                    var res = await inputNode.GetResult(this).ConfigureAwait(false);
+                    var res = await inputNode.GetResult(this);
                     upstreamMerged.Merge(res);
                 }
             }
@@ -150,7 +151,7 @@ namespace DrawflowWrapper.Models.NodeV2
 
             Input = formattedJsonObjectResult;
 
-            await _executionSemaphore.WaitAsync().ConfigureAwait(false);
+            await _executionSemaphore.WaitAsync();
 
             try
             {
@@ -158,7 +159,7 @@ namespace DrawflowWrapper.Models.NodeV2
                     return Result;
 
                 var filledMethodParameters = GetMethodParametersFromInputResult(formattedJsonObjectResult);
-                Result = await InvokeBackingMethod(filledMethodParameters).ConfigureAwait(false);
+                Result = await InvokeBackingMethod(filledMethodParameters);
 
                 if (MergeOutputWithInput)
                 {
@@ -166,7 +167,7 @@ namespace DrawflowWrapper.Models.NodeV2
                 }
 
                 // Now that Result is set, it's safe to execute any queued port triggers
-                await FlushPendingPortsAsync().ConfigureAwait(false);
+                await FlushPendingPortsAsync();
 
                 return Result;
             }
@@ -193,15 +194,15 @@ namespace DrawflowWrapper.Models.NodeV2
 
             // If we don't have a Result yet, we're still executing this node.
             // Queue the port and run it after Result is ready to avoid deadlock.
-            if (Result == null)
+            // Lock to prevent race condition between Result check and queue add
+            lock (_pendingPortsLock)
             {
-                lock (_pendingPortsLock)
+                if (Result == null)
                 {
                     _pendingPortTriggers.Add(portName);
+                    // fire-and-forget semantics while node is running
+                    return Task.CompletedTask;
                 }
-
-                // fire-and-forget semantics while node is running
-                return Task.CompletedTask;
             }
 
             // Node already finished: execute immediately
@@ -222,7 +223,7 @@ namespace DrawflowWrapper.Models.NodeV2
 
             foreach (var port in ports)
             {
-                await ExecutePortNowAsync(port).ConfigureAwait(false);
+                await ExecutePortNowAsync(port);
             }
         }
 
@@ -235,7 +236,7 @@ namespace DrawflowWrapper.Models.NodeV2
             {
                 foreach (var output in OutputNodes)
                 {
-                    await output.ExecuteNode(this).ConfigureAwait(false);
+                    await output.ExecuteNode(this);
                 }
 
                 return;
@@ -249,12 +250,18 @@ namespace DrawflowWrapper.Models.NodeV2
 
             foreach (var target in targets)
             {
-                await target.ExecuteNode(this).ConfigureAwait(false);
+                await target.ExecuteNode(this);
             }
         }
 
         private async Task<JsonObject> InvokeBackingMethod(object[] filledMethodParameters)
         {
+            if (BackingMethod == null)
+                throw new InvalidOperationException("BackingMethod is null");
+
+            if (BackingMethod.DeclaringType == null)
+                throw new InvalidOperationException($"BackingMethod {BackingMethod.Name} has no DeclaringType");
+
             var returnType = BackingMethod.ReturnType;
             var methodInvocationResponse = BackingMethod.Invoke(null, filledMethodParameters);
 
@@ -265,14 +272,14 @@ namespace DrawflowWrapper.Models.NodeV2
             }
             if (returnType == typeof(Task))
             {
-                await ((Task)methodInvocationResponse!).ConfigureAwait(false);
+                await ((Task)methodInvocationResponse!);
                 methodInvocationResponse = null;
             }
             else if (returnType.IsGenericType
                      && returnType.GetGenericTypeDefinition() == typeof(Task<>))
             {
                 var task = (Task)methodInvocationResponse!;
-                await task.ConfigureAwait(false);
+                await task;
 
                 var resultProperty = task.GetType().GetProperty("Result");
                 methodInvocationResponse = resultProperty?.GetValue(task);
@@ -380,16 +387,42 @@ namespace DrawflowWrapper.Models.NodeV2
         private JsonNode? ParseLiteral(string input)
         {
             var json = input;
-            if (!input.TrimStart().StartsWith("{") &&
-                !input.TrimStart().StartsWith("[") &&
-                !input.TrimStart().StartsWith("\"") &&
-                !char.IsDigit(input.TrimStart()[0]) &&
-                !"tfn".Contains(char.ToLowerInvariant(input.TrimStart()[0])))
+            var trimmed = input.TrimStart();
+
+            if (trimmed.Length > 0 &&
+                !trimmed.StartsWith("{") &&
+                !trimmed.StartsWith("[") &&
+                !trimmed.StartsWith("\"") &&
+                !char.IsDigit(trimmed[0]) &&
+                !"tfn".Contains(char.ToLowerInvariant(trimmed[0])))
             {
                 json = JsonSerializer.Serialize(input);
             }
 
             return JsonSerializer.Deserialize<JsonNode>(json);
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+                return;
+
+            if (disposing)
+            {
+                _executionSemaphore?.Dispose();
+
+                // Clear event handlers to prevent memory leaks
+                OnStartExecuting = null;
+                OnStopExecuting = null;
+            }
+
+            _disposed = true;
         }
     }
 

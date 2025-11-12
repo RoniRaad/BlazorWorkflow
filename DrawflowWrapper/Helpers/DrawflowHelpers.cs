@@ -103,7 +103,7 @@ namespace DrawflowWrapper.Helpers
 
             await dfBase.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", dfBase.Id, nodeId, new List<List<string>>(), node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" } ));
 
-            return nodeId.Value;
+            return nodeId ?? throw new InvalidOperationException("Failed to create node: AddNodeAsync returned null");
         }
 
         public static async Task SetNodeStatus(this DrawflowBase dfBase, string nodeId, NodeStatus nodeStatus)

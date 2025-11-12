@@ -22,9 +22,13 @@ namespace DrawflowWrapper.Helpers
             Type[] paramTypes = parameterTypeNames
                 .Select(tn => Type.GetType(tn))
                 .Where(tn => tn != null)
-                .ToArray();
+                .ToArray()!;
 
-            return type.GetMethod(methodName, paramTypes);
+            var method = type.GetMethod(methodName, paramTypes);
+            if (method == null)
+                throw new InvalidOperationException($"Method '{methodName}' not found on type '{typeName}'");
+
+            return method;
         }
 
         public static string ToSerializableString(MethodInfo method)

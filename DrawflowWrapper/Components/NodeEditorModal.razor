@@ -11,21 +11,33 @@
 @using static Microsoft.AspNetCore.Components.Web.RenderMode
 @using Microsoft.AspNetCore.Components.Web.Virtualization
 
+<!-- Modal Backdrop -->
+<div class="modal-backdrop fade show" @onclick="HandleBackdropClick"></div>
+
 <!-- Node editor modal -->
 <div style="display:block;" class="modal fade show node-editor-modal"
      id="nodeEditorModal"
      tabindex="-1"
      aria-labelledby="nodeEditorLabel"
      aria-modal="true"
-     role="dialog">
+     role="dialog"
+     @onkeydown="HandleKeyDown">
     <div class="modal-dialog node-editor-dialog">
         <div class="modal-content node-editor-content">
             <div class="modal-header node-editor-header">
                 <div>
-                    <h5 class="modal-title" id="nodeEditorLabel">Edit node</h5>
+                    <h5 class="modal-title" id="nodeEditorLabel">Edit node: @(BackingNode?.BackingMethod?.Name ?? "Unknown")</h5>
                     <p class="node-editor-subtitle">Payload based mapping</p>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button"
+                        class="btn-close"
+                        @onclick="HandleClose"
+                        aria-label="Close modal">
+                </button>
+            </div>
+            <!-- Screen reader status announcements -->
+            <div class="sr-only" aria-live="polite" aria-atomic="true">
+                @statusMessage
             </div>
 
             <div class="modal-body node-editor-body">
@@ -104,12 +116,17 @@
                                                 <InputText @bind-Value="inputMapping.From" type="text"
                                                        class="form-control form-control-sm"
                                                        placeholder="e.g. input.name"
+                                                       aria-label="Payload path for input mapping"
+                                                       required
                                                        data-role="payload-path" />
                                             </div>
                                             <div class="mapping-arrow">→</div>
                                             <div class="mapping-col">
                                                 <label>Parameter</label>
-                                                <InputSelect @bind-Value="inputMapping.To" class="form-select form-select-sm" data-role="parameter-name">
+                                                <InputSelect @bind-Value="inputMapping.To"
+                                                             class="form-select form-select-sm"
+                                                             aria-label="Target parameter for input mapping"
+                                                             data-role="parameter-name">
                                                     <option value="">Select parameter…</option>
                                                     @if (BackingNode?.BackingMethod?.GetParameters().Count() == 1)
                                                     {
@@ -122,11 +139,13 @@
                                                     }
                                                 </InputSelect>
                                             </div>
-                                            <button onclick="@(() => RemoveNodeInputToMethodInputMap(inputMapping))" type="button"
+                                            <button onclick="@(() => RemoveNodeInputToMethodInputMap(inputMapping))"
+                                                    type="button"
                                                     class="btn btn-icon btn-xs"
-                                                    title="Remove"
+                                                    aria-label="Remove input mapping"
+                                                    title="Remove this input mapping"
                                                     data-role="remove-mapping">
-                                                ✕
+                                                <span aria-hidden="true">✕</span>
                                             </button>
                                         </div>
                                     }
@@ -161,7 +180,10 @@
                                             <div class="mapping-row" data-role="output-mapping-row">
                                                 <div class="mapping-col">
                                                     <label>Function output</label>
-                                                    <InputSelect @bind-Value="outputMapping.From" class="form-select form-select-sm" data-role="function-output">
+                                                    <InputSelect @bind-Value="outputMapping.From"
+                                                                 class="form-select form-select-sm"
+                                                                 aria-label="Function output field"
+                                                                 data-role="function-output">
                                                         <option value="">Select output…</option>
 
                                                         @if (propInfos.Count() > 0)
@@ -184,13 +206,17 @@
                                                     <InputText @bind-Value="outputMapping.To" type="text"
                                                                class="form-control form-control-sm"
                                                                placeholder="e.g. name"
+                                                               aria-label="Target payload path for output mapping"
+                                                               required
                                                                data-role="target-payload-path" />
                                                 </div>
-                                                <button onclick="@(() => RemoveMethodOutputToNodeOutputMap(outputMapping))" type="button"
+                                                <button onclick="@(() => RemoveMethodOutputToNodeOutputMap(outputMapping))"
+                                                        type="button"
                                                         class="btn btn-icon btn-xs"
-                                                        title="Remove"
+                                                        aria-label="Remove output mapping"
+                                                        title="Remove this output mapping"
                                                         data-role="remove-mapping">
-                                                    ✕
+                                                    <span aria-hidden="true">✕</span>
                                                 </button>
                                             </div>
                                         }
@@ -244,15 +270,24 @@
             </div>
 
             <div class="modal-footer node-editor-footer">
-                <button onclick="@(() => CloseRequested.InvokeAsync())" type="button"
+                <button onclick="@HandleClose"
+                        type="button"
                         class="btn btn-outline-secondary"
-                        data-bs-dismiss="modal">
+                        disabled="@isSaving"
+                        aria-label="Cancel and close modal">
                     Cancel
                 </button>
-                <button onclick="@(() => SaveMappings())" type="button"
-                        class="btn btn-primary"
+                <button onclick="@SaveMappings"
+                        type="button"
+                        class="btn btn-primary @(saveSuccess ? "save-success" : "")"
+                        disabled="@isSaving"
+                        aria-label="Save node mappings"
                         data-role="save-node">
-                    Save mappings
+                    @if (isSaving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    }
+                    @(isSaving ? "Saving..." : "Save mappings")
                 </button>
             </div>
         </div>
@@ -276,6 +311,9 @@
     public JsonNode? OutputPayloadJson { get; set; }
 
     public NodeEditorModalViewModel ViewModel { get; set; } = new();
+    private bool isSaving = false;
+    private bool saveSuccess = false;
+    private string statusMessage = "";
 
     protected override void OnParametersSet()
     {
@@ -283,7 +321,7 @@
         ViewModel.MethodOutputToNodeOutputMap = BackingNode.MethodOutputToNodeOutputMap;
         ViewModel.NodeInputToMethodInputMap = BackingNode.NodeInputToMethodInputMap;
         OutputPayloadJson = BackingNode?.Result;
-        IncomingPayloadJson =BackingNode?.Input;
+        IncomingPayloadJson = BackingNode?.Input;
     }
 
     public List<(string? Type, string? Name)>? GetReturnProperties()
@@ -291,11 +329,56 @@
         return TypeHelpers.GetReturnProperties(BackingNode.BackingMethod);
     }
 
-    private void SaveMappings()
+    private async Task HandleKeyDown(KeyboardEventArgs e)
     {
-        BackingNode.MethodOutputToNodeOutputMap = ViewModel.MethodOutputToNodeOutputMap;
-        BackingNode.NodeInputToMethodInputMap = ViewModel.NodeInputToMethodInputMap;
-        SaveRequested.InvokeAsync();
+        if (e.Key == "Escape" && !isSaving)
+        {
+            await HandleClose();
+        }
+    }
+
+    private async Task HandleClose()
+    {
+        if (isSaving) return;
+        await CloseRequested.InvokeAsync();
+    }
+
+    private async Task HandleBackdropClick()
+    {
+        await HandleClose();
+    }
+
+    private async Task SaveMappings()
+    {
+        if (isSaving) return;
+
+        isSaving = true;
+        statusMessage = "Saving node mappings...";
+        StateHasChanged();
+
+        try
+        {
+            BackingNode.MethodOutputToNodeOutputMap = ViewModel.MethodOutputToNodeOutputMap;
+            BackingNode.NodeInputToMethodInputMap = ViewModel.NodeInputToMethodInputMap;
+            await SaveRequested.InvokeAsync();
+
+            saveSuccess = true;
+            statusMessage = "Node mappings saved successfully!";
+            StateHasChanged();
+
+            // Reset success animation after a delay
+            await Task.Delay(300);
+            saveSuccess = false;
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Error saving mappings: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
     }
 
     private void RemoveMethodOutputToNodeOutputMap(PathMapEntry viewModel)

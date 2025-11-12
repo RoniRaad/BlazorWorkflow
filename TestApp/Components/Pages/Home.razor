@@ -7,44 +7,89 @@
 @using System.Text.Json
 @using static DrawflowWrapper.Helpers.DrawflowHelpers
 
-<h1>Drawflow Blazor Wrapper Demo</h1>
+<PageTitle>Workflow Designer - DrawFlow</PageTitle>
+
+<div class="page-header">
+    <div>
+        <h1>Workflow Designer</h1>
+        <p class="page-description">Create and execute visual node-based workflows with drag-and-drop simplicity</p>
+    </div>
+    <div class="page-stats">
+        <div class="stat-item">
+            <span class="stat-value">@_nodes.Count</span>
+            <span class="stat-label">Available Nodes</span>
+        </div>
+    </div>
+</div>
 
 @if (showModal && editNode is not null)
 {
     <NodeEditorModal SaveRequested=SaveChanges CloseRequested="@(() => showModal = false)" BackingNode="@(editNode)"></NodeEditorModal>
 }
 
-<div style="display:flex;;flex-direction: row;">
-    <div style="display:flex;margin-bottom:5px;flex-direction: column;margin-right: 8px;width: 350px;">
-        <div style="display:flex;justify-content: space-between;margin-bottom:8px">
-            <button class="btn btn-sm btn-primary" @onclick="ImportTest">ImportTest</button>
-            <button class="btn btn-sm btn-primary" @onclick="Export">Export</button>
-            <button class="btn btn-sm btn-primary" @onclick="Clear">Clear</button>
-            <button class="btn btn-sm btn-primary" @onclick="Run">Run</button>
+<div class="drawflow-container">
+    <div class="sidebar-panel">
+        <div class="control-buttons">
+            <button class="btn btn-sm btn-primary" @onclick="ImportTest" aria-label="Import test data">ImportTest</button>
+            <button class="btn btn-sm btn-primary" @onclick="Export" aria-label="Export workflow">Export</button>
+            <button class="btn btn-sm btn-primary" @onclick="Clear" aria-label="Clear workflow">Clear</button>
+            <button class="btn btn-sm btn-primary" @onclick="Run" aria-label="Run workflow">Run</button>
         </div>
-        <div style="display: flex;gap: 5px;overflow:auto;flex-direction: column;height:80vh" class="controls">
-            @foreach (var nodeGroup in _nodes.GroupBy(x => x.Section))
-            {
-                <div class="accordion" id="accordion-@nodeGroup.FirstOrDefault()?.Section.GetHashCode()">
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="heading-@nodeGroup.FirstOrDefault()?.Section.GetHashCode()">
-                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@nodeGroup.FirstOrDefault()?.Section.GetHashCode()" aria-expanded="true" aria-controls="collapse-@nodeGroup.FirstOrDefault()?.Section.GetHashCode()">
-                                @nodeGroup.FirstOrDefault()?.Section
-                            </button>
-                        </h2>
-                        <div id="collapse-@nodeGroup.FirstOrDefault()?.Section.GetHashCode()" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordion-@nodeGroup.FirstOrDefault()?.Section.GetHashCode()">
-                            <div class="accordion-body" style="display: flex;flex-wrap: wrap;gap: 5px;">
-                                @foreach (var node in nodeGroup)
-                                {
-                                    <button class="btn btn-sm btn-primary" @onclick="@(() => CreateNode(node))">@node.BackingMethod.Name</button>
-                                }
-                            </div>
-                        </div>
+        <div class="node-browser">
+            <div class="node-search">
+                <input type="text"
+                       class="form-control"
+                       placeholder="Search nodes..."
+                       @bind="searchQuery"
+                       @bind:event="oninput"
+                       aria-label="Search nodes" />
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+            </div>
+
+            <div class="category-filters">
+                <button class="category-pill @(selectedCategory == null ? "active" : "")"
+                        @onclick="@(() => selectedCategory = null)"
+                        aria-label="Show all categories">
+                    All
+                </button>
+                @foreach (var category in Categories)
+                {
+                    <button class="category-pill @(selectedCategory == category ? "active" : "")"
+                            @onclick="@(() => selectedCategory = category)"
+                            aria-label="Filter by @category">
+                        @category
+                    </button>
+                }
+            </div>
+
+            <div class="node-list">
+                @if (FilteredNodes.Any())
+                {
+                    @foreach (var node in FilteredNodes)
+                    {
+                        <button class="node-item"
+                                @onclick="@(() => CreateNode(node))"
+                                aria-label="Create @node.BackingMethod.Name node">
+                            <span class="node-name">@node.BackingMethod.Name</span>
+                            <span class="node-category">@node.Section</span>
+                        </button>
+                    }
+                }
+                else
+                {
+                    <div class="no-results">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 8v4"></path>
+                            <path d="M12 16h.01"></path>
+                        </svg>
+                        <p>No nodes found</p>
                     </div>
-                </div>
-            }
-
-
+                }
+            </div>
         </div>
     </div>
     <Drawflow @ref="_base"
@@ -57,7 +102,7 @@
 
 @if (!string.IsNullOrWhiteSpace(_exportJson))
 {
-    <pre style="white-space:pre-wrap;border:1px solid #ddd;padding:8px;border-radius:8px;max-height:240px;overflow:auto;">@_exportJson</pre>
+    <pre class="export-preview">@_exportJson</pre>
 }
 
 @code {
@@ -67,6 +112,36 @@
     private List<Node> _nodes = [];
     private bool showModal = false;
     private Node? editNode = null;
+
+    private string searchQuery = string.Empty;
+    private string? selectedCategory = null;
+
+    private IEnumerable<string> Categories => _nodes
+        .Select(n => n.Section)
+        .Distinct()
+        .OrderBy(s => s);
+
+    private IEnumerable<Node> FilteredNodes
+    {
+        get
+        {
+            var filtered = _nodes.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                filtered = filtered.Where(n =>
+                    n.BackingMethod.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    n.Section.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (selectedCategory != null)
+            {
+                filtered = filtered.Where(n => n.Section == selectedCategory);
+            }
+
+            return filtered.OrderBy(n => n.Section).ThenBy(n => n.BackingMethod.Name);
+        }
+    }
 
     private async Task ImportTest()
     {
