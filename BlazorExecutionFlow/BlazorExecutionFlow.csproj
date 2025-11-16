@@ -6,11 +6,11 @@
     <RazorLangVersion>8.0</RazorLangVersion>
 
     <!-- NuGet Package Metadata -->
-    <PackageId>BlazorFlow</PackageId>
+    <PackageId>BlazorExecutionFlow</PackageId>
     <Version>1.0.0</Version>
     <Authors>Roni</Authors>
-    <Company>BlazorFlow</Company>
-    <Product>BlazorFlow</Product>
+    <Company>BlazorExecutionFlow</Company>
+    <Product>BlazorExecutionFlow</Product>
     <Description>A visual node-based workflow designer for Blazor applications. Create executable workflows with a visual node editor, supports conditional branching, loops, and complex data transformations.</Description>
     <PackageTags>blazor;workflow;node-editor;visual-programming;low-code;drawflow;nodes;automation</PackageTags>
     <PackageProjectUrl>https://github.com/RoniRaad/BlazorFlow</PackageProjectUrl>
