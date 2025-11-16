@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RazorLangVersion>8.0</RazorLangVersion>
+
+    <!-- NuGet Package Metadata -->
+    <PackageId>BlazorFlow</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Roni</Authors>
+    <Company>BlazorFlow</Company>
+    <Product>BlazorFlow</Product>
+    <Description>A visual node-based workflow designer for Blazor applications. Create executable workflows with a visual node editor, supports conditional branching, loops, and complex data transformations.</Description>
+    <PackageTags>blazor;workflow;node-editor;visual-programming;low-code;drawflow;nodes;automation</PackageTags>
+    <PackageProjectUrl>https://github.com/RoniRaad/BlazorFlow</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/RoniRaad/BlazorFlow</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+    <!-- Make sure static web assets are included -->
+    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+    <StaticWebAssetBasePath>_content/BlazorFlow</StaticWebAssetBasePath>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NJsonSchema" Version="11.5.1" />
+    <PackageReference Include="Scriban" Version="6.5.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Attributes\" />
+    <Folder Include="Models\Nodes\" />
+  </ItemGroup>
+
+  <!-- Include README in package -->
+</Project>
