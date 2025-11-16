@@ -17,7 +17,6 @@
     <RepositoryUrl>https://github.com/RoniRaad/BlazorFlow</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -37,6 +36,4 @@
     <Folder Include="Attributes\" />
     <Folder Include="Models\Nodes\" />
   </ItemGroup>
-
-  <!-- Include README in package -->
 </Project>
