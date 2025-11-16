@@ -16,7 +16,7 @@ on:
 
 env:
   DOTNET_VERSION: '8.0.x'
-  PROJECT_PATH: 'BlazorFlow/BlazorFlow.csproj'
+  PROJECT_PATH: 'BlazorExecutionFlow/BlazorExecutionFlow.csproj'
   PACKAGE_OUTPUT_DIR: 'packages'
 
 jobs:
