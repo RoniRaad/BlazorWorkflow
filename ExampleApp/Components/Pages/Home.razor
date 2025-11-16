@@ -1,11 +1,11 @@
 ﻿@page "/"
-@using BlazorFlow.Components
-@using BlazorFlow.Drawflow.BaseNodes
-@using BlazorFlow.Helpers
-@using BlazorFlow.Models
-@using BlazorFlow.Models.NodeV2
+@using BlazorExecutionFlow.Components
+@using BlazorExecutionFlow.Drawflow.BaseNodes
+@using BlazorExecutionFlow.Helpers
+@using BlazorExecutionFlow.Models
+@using BlazorExecutionFlow.Models.NodeV2
 @using System.Text.Json
-@using static BlazorFlow.Helpers.DrawflowHelpers
+@using static BlazorExecutionFlow.Helpers.DrawflowHelpers
 
 <PageTitle>Workflow Designer - DrawFlow</PageTitle>
 
@@ -16,7 +16,7 @@
     </div>
 </div>
 
-<BlazorFlowGraph Id="blazorflow-demo"
+<BlazorExecutionFlowGraph Id="BlazorExecutionFlow-demo"
           Style="height:600px;"
           Options="@options" />
 
