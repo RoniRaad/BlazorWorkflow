@@ -1,0 +1,412 @@
+﻿@namespace BlazorFlow.Components
+@using BlazorFlow.Drawflow.BaseNodes 
+@using System.Net.Http
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.JSInterop
+@using BlazorFlow.Helpers
+@using BlazorFlow.Models
+@using BlazorFlow.Models.NodeV2
+@using System.Text.Json
+@using static BlazorFlow.Helpers.DrawflowHelpers
+@inherits BlazorFlowGraphBase
+
+@if (showModal && editNode is not null)
+{
+    <NodeEditorModal SaveRequested=SaveChanges
+                     CloseRequested="@(() => showModal = false)"
+                     ExecuteInputRequested="ExecuteInputNodes"
+                     BackingNode="@(editNode)"></NodeEditorModal>
+}
+
+<div class="drawflow-container">
+    <div class="sidebar-panel">
+        <div class="control-buttons">
+            <button class="btn btn-sm btn-primary" @onclick="Run" aria-label="Run workflow">Run</button>
+            <button class="btn btn-sm btn-success" @onclick="ExportCSharp" aria-label="Export to C# JSON">Export C#</button>
+            <button class="btn btn-sm btn-primary" @onclick="() => showImportModal = true" aria-label="Import from C# JSON">Import C#</button>
+            <button class="btn btn-sm btn-primary" @onclick="Clear" aria-label="Clear workflow">Clear</button>
+        </div>
+        <div class="node-browser">
+            <div class="node-search">
+                <input type="text"
+                       class="form-control"
+                       placeholder="Search nodes..."
+                       @bind="searchQuery"
+                       @bind:event="oninput"
+                       aria-label="Search nodes" />
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+            </div>
+
+            <div class="category-filters">
+                <button class="category-pill @(selectedCategory == null ? "active" : "")"
+                        @onclick="@(() => selectedCategory = null)"
+                        aria-label="Show all categories">
+                    All
+                </button>
+                @foreach (var category in Categories)
+                {
+                    <button class="category-pill @(selectedCategory == category ? "active" : "")"
+                            @onclick="@(() => selectedCategory = category)"
+                            aria-label="Filter by @category">
+                        @category
+                    </button>
+                }
+            </div>
+
+            <div class="node-list">
+                @if (FilteredNodes.Any())
+                {
+                    @foreach (var node in FilteredNodes)
+                    {
+                        <button class="node-item"
+                                @onclick="@(() => CreateNode(node))"
+                                aria-label="Create @node.BackingMethod.Name node">
+                            <span class="node-name">@node.BackingMethod.Name</span>
+                            <span class="node-category">@node.Section</span>
+                        </button>
+                    }
+                }
+                else
+                {
+                    <div class="no-results">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 8v4"></path>
+                            <path d="M12 16h.01"></path>
+                        </svg>
+                        <p>No nodes found</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    
+    <div id="@ElementId" class="drawflow-host" style="@(Style ?? "height:500px;")"></div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(_exportJson))
+{
+    <div class="export-modal-backdrop" @onclick="() => _exportJson = null">
+        <div class="export-modal" @onclick:stopPropagation="true">
+            <div class="export-modal-header">
+                <h3>C# Flow Export</h3>
+                <button class="btn-close" @onclick="() => _exportJson = null">×</button>
+            </div>
+            <div class="export-modal-body">
+                <button class="btn btn-sm btn-primary mb-2" @onclick="CopyToClipboard">Copy to Clipboard</button>
+                <textarea class="export-textarea" readonly>@_exportJson</textarea>
+            </div>
+        </div>
+    </div>
+}
+
+@if (showImportModal)
+{
+    <div class="export-modal-backdrop" @onclick="() => showImportModal = false">
+        <div class="export-modal" @onclick:stopPropagation="true">
+            <div class="export-modal-header">
+                <h3>Import C# Flow</h3>
+                <button class="btn-close" @onclick="() => showImportModal = false">×</button>
+            </div>
+            <div class="export-modal-body">
+                <textarea class="export-textarea" @bind="_importJson" placeholder="Paste C# Flow JSON here..."></textarea>
+                <div class="mt-2">
+                    <button class="btn btn-sm btn-primary" @onclick="ImportCSharp">Import</button>
+                    <button class="btn btn-sm btn-secondary" @onclick="() => showImportModal = false">Cancel</button>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_importError))
+                {
+                    <div class="alert alert-danger mt-2">@_importError</div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+
+@code {
+    private Dictionary<string, object> options = new Dictionary<string, object>() { ["reroute"] = true };
+    private BlazorFlowGraphBase? _base;
+    private string? _exportJson;
+    private string? _importJson;
+    private string? _importError;
+    private List<Node> _nodes = [];
+    private bool showModal = false;
+    private bool showImportModal = false;
+    private Node? editNode = null;
+    private DotNetObjectReference<BlazorFlowGraph>? _dotNetRef;
+
+    [Parameter] public EventCallback<string> OnNodeDoubleClicked { get; set; }
+
+    private string searchQuery = string.Empty;
+    private string? selectedCategory = null;
+
+    private IEnumerable<string> Categories => _nodes
+        .Select(n => n.Section)
+        .Distinct()
+        .OrderBy(s => s);
+
+    private IEnumerable<Node> FilteredNodes
+    {
+        get
+        {
+            var filtered = _nodes.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                filtered = filtered.Where(n =>
+                    n.BackingMethod.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    n.Section.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (selectedCategory != null)
+            {
+                filtered = filtered.Where(n => n.Section == selectedCategory);
+            }
+
+            return filtered.OrderBy(n => n.Section).ThenBy(n => n.BackingMethod.Name);
+        }
+    }
+
+    private async Task SaveChanges()
+    {
+        var currentUiNode = Graph.Nodes.First(x => x.Key == editNode.DrawflowNodeId);
+        editNode.PosX = currentUiNode.Value.PosX;
+        editNode.PosY = currentUiNode.Value.PosY;
+        Graph.Nodes[editNode.DrawflowNodeId] = editNode;
+        var json = DrawflowExporter.ExportToDrawflowJson(Graph.Nodes.Select(x => x.Value));
+        await _base.CallAsync("import", json);
+
+        await _base.JS.InvokeVoidAsync("nextFrame");
+
+        foreach (var node in Graph.Nodes)
+        {
+            if (node.Value.DeclaredOutputPorts.Count > 0)
+            {
+                await _base.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", _base.Id, node.Value.DrawflowNodeId, new List<List<string>>(), node.Value.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
+            }
+
+            // Set node width based on title
+            await _base.JS.InvokeVoidAsync("DrawflowBlazor.setNodeWidthFromTitle", _base.Id, node.Value.DrawflowNodeId);
+        }
+    }
+
+    private async Task ExecuteInputNodes()
+    {
+        if (editNode is null) return;
+
+        // Clear results from all nodes to ensure fresh execution
+        foreach (var node in Graph.Nodes)
+        {
+            node.Value.Result = null;
+            node.Value.HasError = false;
+            node.Value.ErrorMessage = null;
+            node.Value.OnStartExecuting += (x, y) => { _ = SetStatusAsync(node.Value.DrawflowNodeId, true); };
+            node.Value.OnStopExecuting += (x, y) => { _ = SetStatusAsync(node.Value.DrawflowNodeId, false); };
+            node.Value.OnError += HandleNodeError;
+        }
+
+        // Find all start nodes in the graph
+        var startNodes = Graph.Nodes.Where(x => x.Value.BackingMethod.Name == "Start");
+
+        // Execute all start nodes, which will cascade through the graph
+        var tasks = new List<Task>();
+        foreach (var startNode in startNodes)
+        {
+            tasks.Add(startNode.Value.ExecuteNode());
+        }
+
+        await Task.WhenAll(tasks);
+
+        // The editNode.Input should now be populated with fresh data from upstream nodes
+    }
+
+    async Task SetStatusAsync(string nodeId, bool isRunning, bool hasError = false, string? errorMessage = null, int? outputPos = null, object? value = null)
+    {
+        var status = new NodeStatus
+        {
+            IsRunning = isRunning,
+            HasError = hasError,
+            ErrorMessage = errorMessage
+        };
+        if (outputPos is not null)
+        {
+            status.OutputPortResults[outputPos.Value] = value!;
+        }
+        await _base.SetNodeStatus(nodeId, status);
+    }
+
+    void HandleNodeError(object? sender, NodeErrorEventArgs e)
+    {
+        _ = SetStatusAsync(e.Node.DrawflowNodeId, false, true, e.Message);
+        Console.WriteLine($"Node Error: {e.Message}");
+        // Error is stored in the node, execution continues
+    }
+
+    private async Task Run()
+    {
+        foreach (var node in Graph.Nodes)
+        {
+            node.Value.Result = null;
+            node.Value.HasError = false;
+            node.Value.ErrorMessage = null;
+            node.Value.OnStartExecuting += (x, y) => { _ = SetStatusAsync(node.Value.DrawflowNodeId, true); };
+            node.Value.OnStopExecuting += (x, y) => { _ = SetStatusAsync(node.Value.DrawflowNodeId, false); };
+            node.Value.OnError += HandleNodeError;
+        }
+
+        var startNodes = Graph.Nodes.Where(x => x.Value.BackingMethod.Name == nameof(BaseNodeCollection.OnManuallyRun));
+        var tasks = new List<Task>();
+        foreach (var startNode in startNodes)
+        {
+            tasks.Add(startNode.Value.ExecuteNode());
+        }
+
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task CreateNode(Node node)
+    {
+        var returnProps = TypeHelpers.GetReturnProperties(node.BackingMethod);
+
+        if (returnProps is null)
+        {
+            node.DrawflowNodeId = (await _base.CreateNodeV2(node, "ƒ")).ToString();
+            Graph.Nodes[node.DrawflowNodeId] = node;
+            return;
+        }
+
+        // "β" "♾️"
+
+        node.MethodOutputToNodeOutputMap = returnProps.Select(x => new PathMapEntry() { From = x.Name, To = $"{char.ToLower(x.Name[0])}{x.Name[1..]}" }).ToList();
+        node.NodeInputToMethodInputMap = node.BackingMethod.GetParameters().Select(x => new PathMapEntry() { From = "", To = $"{char.ToLower(x.Name[0])}{x.Name[1..]}" }).ToList();
+        node.DrawflowNodeId = (await _base.CreateNodeV2(node, "ƒ")).ToString();
+        Graph.Nodes[node.DrawflowNodeId] = node;
+    }
+
+    private async Task HandleEvent(DrawflowEventArgs e)
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task DoubleClickedNode(string nodeId)
+    {
+        var node = Graph.Nodes.FirstOrDefault(x => x.Key == nodeId.ToString());
+        editNode = node.Value;
+        showModal = true;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected override void OnInitialized()
+    {
+        _nodes = DrawflowHelpers.GetNodesObjectsV2();
+        _base = this;
+        base.OnInitialized();
+    }
+
+    private async Task Export()
+    {
+        if (_base is null) return;
+        var exported = await _base.CallAsync<object>("export");
+        _exportJson = System.Text.Json.JsonSerializer.Serialize(exported, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+    }
+
+    private async Task ExportCSharp()
+    {
+        if (_base is null) return;
+        var nodes = Graph.Nodes.Select(x => x.Value).ToList();
+        _exportJson = FlowSerializer.SerializeFlow(nodes);
+    }
+
+    private async Task ImportCSharp()
+    {
+        if (_base is null || string.IsNullOrWhiteSpace(_importJson)) return;
+
+        try
+        {
+            _importError = null;
+            var nodes = FlowSerializer.DeserializeFlow(_importJson);
+
+            // Clear existing graph
+            await _base.CallAsync<object>("clear");
+
+            // Import nodes to drawflow
+            var json = DrawflowExporter.ExportToDrawflowJson(nodes);
+            await _base.CallAsync("import", json);
+            await _base.JS.InvokeVoidAsync("nextFrame");
+
+            // Re-apply port labels for nodes with multiple outputs
+            foreach (var node in nodes)
+            {
+                if (node.DeclaredOutputPorts.Count > 0)
+                {
+                    await _base.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", _base.Id, node.DrawflowNodeId, new List<List<string>>(), node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
+                }
+
+                // Set node width based on title
+                await _base.JS.InvokeVoidAsync("DrawflowBlazor.setNodeWidthFromTitle", _base.Id, node.DrawflowNodeId);
+            }
+
+            showImportModal = false;
+            _importJson = null;
+        }
+        catch (Exception ex)
+        {
+            _importError = $"Import failed: {ex.Message}";
+        }
+    }
+
+    private async Task CopyToClipboard()
+    {
+        if (_base is null || string.IsNullOrWhiteSpace(_exportJson)) return;
+        await _base.JS.InvokeVoidAsync("navigator.clipboard.writeText", _exportJson);
+    }
+
+    private async Task Clear()
+    {
+        if (_base is null) return;
+        await _base.CallAsync<object>("clear");
+        _exportJson = null;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        _ = base.OnAfterRenderAsync(firstRender);
+
+        if (!firstRender) return;
+
+        _dotNetRef = DotNetObjectReference.Create(this);
+
+        await JS.InvokeVoidAsync(
+            "window.DrawflowBlazor.setNodeDoubleClickCallback",
+            ElementId,
+            _dotNetRef
+        );
+    }
+
+    [JSInvokable]
+    public async Task OnNodeDoubleClickFromJs(string nodeId)
+    {
+        if (OnNodeDoubleClicked.HasDelegate)
+        {
+            await OnNodeDoubleClicked.InvokeAsync(nodeId);
+        }
+
+        await DoubleClickedNode(nodeId);
+    }
+
+
+    public void Dispose()
+    {
+        _dotNetRef?.Dispose();
+    }
+}

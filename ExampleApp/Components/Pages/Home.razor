@@ -1,0 +1,26 @@
+﻿@page "/"
+@using BlazorFlow.Components
+@using BlazorFlow.Drawflow.BaseNodes
+@using BlazorFlow.Helpers
+@using BlazorFlow.Models
+@using BlazorFlow.Models.NodeV2
+@using System.Text.Json
+@using static BlazorFlow.Helpers.DrawflowHelpers
+
+<PageTitle>Workflow Designer - DrawFlow</PageTitle>
+
+<div class="page-header">
+    <div>
+        <h1>Workflow Designer</h1>
+        <p class="page-description">Create and execute visual node-based workflows with drag-and-drop simplicity</p>
+    </div>
+</div>
+
+<BlazorFlowGraph Id="blazorflow-demo"
+          Style="height:600px;"
+          Options="@options" />
+
+@code {
+    private Dictionary<string, object> options = new Dictionary<string, object>() { ["reroute"] = true };
+    private List<Node> _nodes = [];
+}
