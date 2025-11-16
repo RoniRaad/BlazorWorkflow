@@ -24,70 +24,73 @@
 }
 
 <div class="drawflow-container">
-    <div class="sidebar-panel">
-        <div class="control-buttons">
-            <button class="btn btn-sm btn-primary" @onclick="Run" aria-label="Run workflow">Run</button>
-            <button class="btn btn-sm btn-success" @onclick="ExportCSharp" aria-label="Export to C# JSON">Export C#</button>
-            <button class="btn btn-sm btn-primary" @onclick="() => showImportModal = true" aria-label="Import from C# JSON">Import C#</button>
-            <button class="btn btn-sm btn-primary" @onclick="Clear" aria-label="Clear workflow">Clear</button>
-        </div>
-        <div class="node-browser">
-            <div class="node-search">
-                <input type="text"
-                       class="form-control"
-                       placeholder="Search nodes..."
-                       @bind="searchQuery"
-                       @bind:event="oninput"
-                       aria-label="Search nodes" />
-                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <path d="m21 21-4.35-4.35"></path>
-                </svg>
+    @if (IncludeControlPanel)
+    {
+        <div class="sidebar-panel">
+            <div class="control-buttons">
+                <button class="btn btn-sm btn-primary" @onclick="Run" aria-label="Run workflow">Run</button>
+                <button class="btn btn-sm btn-success" @onclick="ExportCSharp" aria-label="Export to C# JSON">Export C#</button>
+                <button class="btn btn-sm btn-primary" @onclick="() => showImportModal = true" aria-label="Import from C# JSON">Import C#</button>
+                <button class="btn btn-sm btn-primary" @onclick="Clear" aria-label="Clear workflow">Clear</button>
             </div>
+            <div class="node-browser">
+                <div class="node-search">
+                    <input type="text"
+                           class="form-control"
+                           placeholder="Search nodes..."
+                           @bind="searchQuery"
+                           @bind:event="oninput"
+                           aria-label="Search nodes" />
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </div>
 
-            <div class="category-filters">
-                <button class="category-pill @(selectedCategory == null ? "active" : "")"
-                        @onclick="@(() => selectedCategory = null)"
-                        aria-label="Show all categories">
-                    All
-                </button>
-                @foreach (var category in Categories)
-                {
-                    <button class="category-pill @(selectedCategory == category ? "active" : "")"
-                            @onclick="@(() => selectedCategory = category)"
-                            aria-label="Filter by @category">
-                        @category
+                <div class="category-filters">
+                    <button class="category-pill @(selectedCategory == null ? "active" : "")"
+                            @onclick="@(() => selectedCategory = null)"
+                            aria-label="Show all categories">
+                        All
                     </button>
-                }
-            </div>
-
-            <div class="node-list">
-                @if (FilteredNodes.Any())
-                {
-                    @foreach (var node in FilteredNodes)
+                    @foreach (var category in Categories)
                     {
-                        <button class="node-item"
-                                @onclick="@(() => CreateNode(node))"
-                                aria-label="Create @node.BackingMethod.Name node">
-                            <span class="node-name">@node.BackingMethod.Name</span>
-                            <span class="node-category">@node.Section</span>
+                        <button class="category-pill @(selectedCategory == category ? "active" : "")"
+                                @onclick="@(() => selectedCategory = category)"
+                                aria-label="Filter by @category">
+                            @category
                         </button>
                     }
-                }
-                else
-                {
-                    <div class="no-results">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <path d="M12 8v4"></path>
-                            <path d="M12 16h.01"></path>
-                        </svg>
-                        <p>No nodes found</p>
-                    </div>
-                }
+                </div>
+
+                <div class="node-list">
+                    @if (FilteredNodes.Any())
+                    {
+                        @foreach (var node in FilteredNodes)
+                        {
+                            <button class="node-item"
+                                    @onclick="@(() => CreateNode(node))"
+                                    aria-label="Create @node.BackingMethod.Name node">
+                                <span class="node-name">@node.BackingMethod.Name</span>
+                                <span class="node-category">@node.Section</span>
+                            </button>
+                        }
+                    }
+                    else
+                    {
+                        <div class="no-results">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 8v4"></path>
+                                <path d="M12 16h.01"></path>
+                            </svg>
+                            <p>No nodes found</p>
+                        </div>
+                    }
+                </div>
             </div>
         </div>
-    </div>
+    }
     
     <div id="@ElementId" class="drawflow-host" style="@(Style ?? "height:500px;")"></div>
 </div>
@@ -133,6 +136,9 @@
 
 
 @code {
+    [Parameter] public EventCallback<string> OnNodeDoubleClicked { get; set; }
+    [Parameter] public bool IncludeControlPanel { get; set; } = true;
+
     private Dictionary<string, object> options = new Dictionary<string, object>() { ["reroute"] = true };
     private BlazorExecutionFlowGraphBase? _base;
     private string? _exportJson;
@@ -143,8 +149,6 @@
     private bool showImportModal = false;
     private Node? editNode = null;
     private DotNetObjectReference<BlazorExecutionFlowGraph>? _dotNetRef;
-
-    [Parameter] public EventCallback<string> OnNodeDoubleClicked { get; set; }
 
     private string searchQuery = string.Empty;
     private string? selectedCategory = null;
