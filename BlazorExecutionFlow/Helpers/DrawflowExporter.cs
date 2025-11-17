@@ -95,31 +95,15 @@ namespace BlazorExecutionFlow.Helpers
                 module.data[nodeKey] = dto;
             }
 
-            // Helper: get or create an input port id on a destination node (input_1, input_2, ...)
+            // Helper: get or create an input port id on a destination node
+            // All connections to a node go to the same input port (input_1)
             static string EnsureDestInputPort(DrawflowNodeDto destDto)
             {
-                // First connection can reuse "input_1"; then "input_2", "input_3", ...
-                if (destDto.inputs.Count == 0)
+                if (!destDto.inputs.ContainsKey("input_1"))
                 {
                     destDto.inputs["input_1"] = new DrawflowPortDto();
-                    return "input_1";
                 }
-
-                // If "input_1" exists with no connections, reuse it
-                if (destDto.inputs.TryGetValue("input_1", out var firstInput) &&
-                    firstInput.connections.Count == 0)
-                {
-                    return "input_1";
-                }
-
-                // Otherwise, allocate a new input_N
-                var idx = destDto.inputs.Count + 1;
-                var key = $"input_{idx}";
-                if (!destDto.inputs.ContainsKey(key))
-                {
-                    destDto.inputs[key] = new DrawflowPortDto();
-                }
-                return key;
+                return "input_1";
             }
 
             // Second pass: wire up connections, preserving ports
