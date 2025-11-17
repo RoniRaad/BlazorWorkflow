@@ -277,7 +277,7 @@
             node.Value.OnError += HandleNodeError;
         }
 
-        var startNodes = Graph.Nodes.Where(x => x.Value.BackingMethod.Name == nameof(BaseNodeCollection.OnManuallyRun));
+        var startNodes = Graph.Nodes.Where(x => x.Value.BackingMethod.Name == nameof(BaseNodeCollection.Start));
         var tasks = new List<Task>();
         foreach (var startNode in startNodes)
         {
@@ -297,8 +297,6 @@
             Graph.Nodes[node.DrawflowNodeId] = node;
             return;
         }
-
-        // "β" "♾️"
 
         node.MethodOutputToNodeOutputMap = returnProps.Select(x => new PathMapEntry() { From = x.Name, To = $"{char.ToLower(x.Name[0])}{x.Name[1..]}" }).ToList();
         node.NodeInputToMethodInputMap = node.BackingMethod.GetParameters().Select(x => new PathMapEntry() { From = "", To = $"{char.ToLower(x.Name[0])}{x.Name[1..]}" }).ToList();

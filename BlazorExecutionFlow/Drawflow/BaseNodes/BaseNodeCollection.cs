@@ -17,7 +17,7 @@ namespace BlazorExecutionFlow.Drawflow.BaseNodes
         // ---------- Events / Triggers ----------
 
         [BlazorFlowNodeMethod(Models.NodeType.Event, "Events")]
-        public static void OnManuallyRun() { }
+        public static void Start() { }
 
 
         // ---------- Arithmetic (int) ----------
