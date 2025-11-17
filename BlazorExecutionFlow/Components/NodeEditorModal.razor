@@ -18,12 +18,12 @@
 
 <!-- Node editor modal -->
 <div style="display:block;" class="modal fade show node-editor-modal"
-     id="nodeEditorModal"
-     tabindex="-1"
-     aria-labelledby="nodeEditorLabel"
-     aria-modal="true"
-     role="dialog"
-     @onkeydown="HandleKeyDown">
+id="nodeEditorModal"
+tabindex="-1"
+aria-labelledby="nodeEditorLabel"
+aria-modal="true"
+role="dialog"
+@onkeydown="HandleKeyDown">
     <div class="modal-dialog node-editor-dialog">
         <div class="modal-content node-editor-content">
             <div class="modal-header node-editor-header">
@@ -32,14 +32,24 @@
                     <p class="node-editor-subtitle">Payload based mapping</p>
                 </div>
                 <button type="button"
-                        class="btn-close"
-                        @onclick="HandleClose"
-                        aria-label="Close modal">
+                class="btn btn-xs btn-outline-secondary"
+                @onclick="ExecuteInput"
+                disabled="@isExecuting"
+                data-role="execute-input"
+                style="padding-top: 1px;padding-bottom: 1.5px;position: absolute;right: 42px;">
+                    @if (isExecuting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    }
+                    Execute Flow
                 </button>
-            </div>
-            <!-- Screen reader status announcements -->
-            <div class="sr-only" aria-live="polite" aria-atomic="true">
-                @statusMessage
+                <button type="button"
+                style="color:white"
+                class="btn-close"
+                @onclick="HandleClose"
+                aria-label="Close modal">
+                    X
+                </button>
             </div>
 
             <!-- Error Alert -->
@@ -71,28 +81,26 @@
                     <section class="node-editor-panel node-editor-panel-input">
                         <header class="panel-header">
                             <span class="pill pill-input">Input</span>
+
                             <h6>Incoming payload</h6>
                             <p class="panel-caption">Preview the payload that arrives at this node.</p>
                         </header>
                         <div class="panel-body">
                             <div class="payload-preview" data-role="payload-preview">
-                                @(JsonSerializer.Serialize(IncomingPayloadJson, new JsonSerializerOptions() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping, WriteIndented = true }))
+                                @{
+                                    var inputString = JsonSerializer.Serialize(IncomingPayloadJson, new JsonSerializerOptions() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping, WriteIndented = true });
+                                    if (inputString == "null")
+                                    {
+                                        inputString = "...";
+                                    }
+                                }
+                                @(inputString)
                             </div>
 
                             <div class="panel-section">
                                 <div class="panel-section-header">
                                     <span>Fields</span>
-                                    <button type="button"
-                                            class="btn btn-xs btn-outline-secondary"
-                                            @onclick="ExecuteInput"
-                                            disabled="@isExecuting"
-                                            data-role="execute-input">
-                                        @if (isExecuting)
-                                        {
-                                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                                        }
-                                        Execute Input
-                                    </button>
+                     
                                 </div>
                                 <div class="payload-field-list" data-role="payload-field-list">
                                     <!-- Example chip, clone these in JS -->
@@ -289,7 +297,14 @@
                         <div class="panel-body">
                             <div class="payload-preview payload-preview--output"
                                  data-role="output-preview">
-                                @(JsonSerializer.Serialize(OutputPayloadJson, new JsonSerializerOptions() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping, WriteIndented = true }))
+                                @{
+                                    var outputString = JsonSerializer.Serialize(OutputPayloadJson, new JsonSerializerOptions() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping, WriteIndented = true });
+                                    if (outputString == "null")
+                                    {
+                                        outputString = "...";
+                                    }
+                                }
+                                @(outputString)
                             </div>
 
                             <hr class="panel-divider mt-3" />
@@ -331,7 +346,7 @@
                                            id="replacePayload"
                                            data-role="replace-payload" />
                                     <label class="form-check-label" for="replacePayload">
-                                        Replace payload instead of merge
+                                        Merge Input into Output
                                     </label>
                                 </div>
 
@@ -398,7 +413,6 @@
     private bool isSaving = false;
     private bool saveSuccess = false;
     private bool isExecuting = false;
-    private string statusMessage = "";
     private string? _draggedFieldPath = null;
 
     protected override void OnParametersSet()
@@ -457,7 +471,7 @@
                 continue;
 
             // Check if parameter has DrawflowInputField attribute (means it should be a literal)
-            var hasInputFieldAttr = param.GetCustomAttribute<BlazorExecutionFlow.Drawflow.Attributes.DrawflowInputFieldAttribute>() != null;
+            var hasInputFieldAttr = param.GetCustomAttribute<BlazorExecutionFlow.Drawflow.Attributes.BlazorFlowInputFieldAttribute>() != null;
 
             string defaultValue;
             if (hasInputFieldAttr)
@@ -551,7 +565,6 @@
         if (isExecuting) return;
 
         isExecuting = true;
-        statusMessage = "Executing input nodes...";
         StateHasChanged();
 
         try
@@ -562,15 +575,12 @@
             IncomingPayloadJson = BackingNode?.Input;
             OutputPayloadJson = BackingNode?.Result;
 
-            statusMessage = "Input nodes executed successfully!";
             StateHasChanged();
 
             await Task.Delay(1000);
-            statusMessage = "";
         }
         catch (Exception ex)
         {
-            statusMessage = $"Error executing input nodes: {ex.Message}";
         }
         finally
         {
@@ -584,7 +594,6 @@
         if (isSaving) return;
 
         isSaving = true;
-        statusMessage = "Saving node mappings...";
         StateHasChanged();
 
         try
@@ -599,7 +608,6 @@
             await SaveRequested.InvokeAsync();
 
             saveSuccess = true;
-            statusMessage = "Node mappings saved successfully!";
             StateHasChanged();
 
             // Reset success animation after a delay
@@ -608,7 +616,6 @@
         }
         catch (Exception ex)
         {
-            statusMessage = $"Error saving mappings: {ex.Message}";
         }
         finally
         {
@@ -642,7 +649,7 @@
         if (unmappedParam != null)
         {
             // Add mapping with smart default
-            var hasInputFieldAttr = unmappedParam.GetCustomAttribute<BlazorExecutionFlow.Drawflow.Attributes.DrawflowInputFieldAttribute>() != null;
+            var hasInputFieldAttr = unmappedParam.GetCustomAttribute<BlazorExecutionFlow.Drawflow.Attributes.BlazorFlowInputFieldAttribute>() != null;
             var defaultValue = hasInputFieldAttr
                 ? GeneratePlaceholderLiteral(unmappedParam.ParameterType, unmappedParam.Name)
                 : $"{{{{input.{unmappedParam.Name}}}}}";

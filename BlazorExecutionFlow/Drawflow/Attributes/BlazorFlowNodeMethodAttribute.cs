@@ -3,12 +3,12 @@
 namespace BlazorExecutionFlow.Drawflow.Attributes
 {
     [AttributeUsage(AttributeTargets.Method, Inherited = false)]
-    public class DrawflowNodeMethodAttribute : Attribute
+    public class BlazorFlowNodeMethodAttribute : Attribute
     {
         public readonly NodeType NodeType;
         public string Section { get; set; }
 
-        public DrawflowNodeMethodAttribute(NodeType nodeType, string section)
+        public BlazorFlowNodeMethodAttribute(NodeType nodeType, string section)
         {
             NodeType = nodeType;
             Section = section;

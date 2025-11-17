@@ -1,4 +1,5 @@
 ﻿@namespace BlazorExecutionFlow.Components
+@using BlazorExecutionFlow.Drawflow.Attributes
 @using BlazorExecutionFlow.Drawflow.BaseNodes 
 @using System.Net.Http
 @using System.Net.Http.Json
@@ -18,9 +19,9 @@
 @if (showModal && editNode is not null)
 {
     <NodeEditorModal SaveRequested=SaveChanges
-                     CloseRequested="@(() => showModal = false)"
-                     ExecuteInputRequested="ExecuteInputNodes"
-                     BackingNode="@(editNode)"></NodeEditorModal>
+    CloseRequested="@(() => showModal = false)"
+    ExecuteInputRequested="ExecuteInputNodes"
+    BackingNode="@(editNode)"></NodeEditorModal>
 }
 
 <div class="drawflow-container">
@@ -36,11 +37,11 @@
             <div class="node-browser">
                 <div class="node-search">
                     <input type="text"
-                           class="form-control"
-                           placeholder="Search nodes..."
-                           @bind="searchQuery"
-                           @bind:event="oninput"
-                           aria-label="Search nodes" />
+                    class="form-control"
+                    placeholder="Search nodes..."
+                    @bind="searchQuery"
+                    @bind:event="oninput"
+                    aria-label="Search nodes" />
                     <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8"></circle>
                         <path d="m21 21-4.35-4.35"></path>
@@ -49,15 +50,15 @@
 
                 <div class="category-filters">
                     <button class="category-pill @(selectedCategory == null ? "active" : "")"
-                            @onclick="@(() => selectedCategory = null)"
-                            aria-label="Show all categories">
+                    @onclick="@(() => selectedCategory = null)"
+                    aria-label="Show all categories">
                         All
                     </button>
                     @foreach (var category in Categories)
                     {
                         <button class="category-pill @(selectedCategory == category ? "active" : "")"
-                                @onclick="@(() => selectedCategory = category)"
-                                aria-label="Filter by @category">
+                        @onclick="@(() => selectedCategory = category)"
+                        aria-label="Filter by @category">
                             @category
                         </button>
                     }
@@ -69,8 +70,8 @@
                         @foreach (var node in FilteredNodes)
                         {
                             <button class="node-item"
-                                    @onclick="@(() => CreateNode(node))"
-                                    aria-label="Create @node.BackingMethod.Name node">
+                            @onclick="@(() => CreateNode(node))"
+                            aria-label="Create @node.BackingMethod.Name node">
                                 <span class="node-name">@node.BackingMethod.Name</span>
                                 <span class="node-category">@node.Section</span>
                             </button>
@@ -91,7 +92,7 @@
             </div>
         </div>
     }
-    
+
     <div id="@ElementId" class="drawflow-host" style="@(Style ?? "height:500px;")"></div>
 </div>
 
@@ -219,7 +220,16 @@
         }
 
         // Find all start nodes in the graph
-        var startNodes = Graph.Nodes.Where(x => x.Value.BackingMethod.Name == "Start");
+        var startNodes = Graph.Nodes.Where(x => 
+        {
+            var attributes = x.Value.BackingMethod.GetCustomAttributes(typeof(BlazorFlowNodeMethodAttribute), false);
+            if (attributes.Length > 0 && ((BlazorFlowNodeMethodAttribute)attributes.First()).NodeType == NodeType.Event)
+            {
+                return true;
+            }
+
+            return false;
+        });
 
         // Execute all start nodes, which will cascade through the graph
         var tasks = new List<Task>();

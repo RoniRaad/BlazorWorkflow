@@ -25,7 +25,7 @@ namespace BlazorExecutionFlow.Helpers
             Type type = typeof(BaseNodeCollection);
 
             var methodsWithAttr = type.GetMethods(BindingFlags.Public | BindingFlags.Static)
-                .Where(m => m.GetCustomAttributes(typeof(DrawflowNodeMethodAttribute), false).Length > 0);
+                .Where(m => m.GetCustomAttributes(typeof(BlazorFlowNodeMethodAttribute), false).Length > 0);
 
             foreach (var method in methodsWithAttr)
             {
@@ -36,14 +36,14 @@ namespace BlazorExecutionFlow.Helpers
                 List<DfPorts> dfOutputPorts = [];
                 List<DfPorts> dfInputPorts = [];
 
-                var functionAttribute = method.GetCustomAttribute(typeof(DrawflowNodeMethodAttribute)) as DrawflowNodeMethodAttribute;
+                var functionAttribute = method.GetCustomAttribute(typeof(BlazorFlowNodeMethodAttribute)) as BlazorFlowNodeMethodAttribute;
                 section = functionAttribute?.Section ?? section;
                 nodeType = functionAttribute?.NodeType ?? nodeType;
 
                 var paramsFromPorts = parameters.Where(x => !x.CustomAttributes.Any()
-                    || x.CustomAttributes.All(attr => attr.AttributeType != typeof(DrawflowInputFieldAttribute)));
+                    || x.CustomAttributes.All(attr => attr.AttributeType != typeof(BlazorFlowInputFieldAttribute)));
 
-                var paramsFromInputFields = parameters.Where(x => x.CustomAttributes.Any(attr => attr.AttributeType == typeof(DrawflowInputFieldAttribute)));
+                var paramsFromInputFields = parameters.Where(x => x.CustomAttributes.Any(attr => attr.AttributeType == typeof(BlazorFlowInputFieldAttribute)));
 
                 // NEW: read port metadata
                 var flowPortsAttr = method.GetCustomAttribute<NodeFlowPortsAttribute>();
