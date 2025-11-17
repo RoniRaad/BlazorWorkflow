@@ -5,6 +5,23 @@ namespace BlazorExecutionFlow.Helpers
     /// <summary>
     /// Static registry for IServiceProvider that nodes can access during execution.
     /// Configure this at startup using ConfigureServiceProvider().
+    ///
+    /// Usage:
+    /// <code>
+    /// // In Program.cs or Startup.cs
+    /// var app = builder.Build();
+    /// NodeServiceProvider.ConfigureServiceProvider(app.Services);
+    ///
+    /// // In your node methods
+    /// [BlazorFlowNodeMethod(NodeType.Function, "API")]
+    /// public static async Task&lt;string&gt; MyNode(string input, IServiceProvider serviceProvider)
+    /// {
+    ///     var httpClient = serviceProvider.GetRequiredService&lt;HttpClient&gt;();
+    ///     // ... use services
+    /// }
+    /// </code>
+    ///
+    /// See also: <see cref="NodeRegistry"/> for registering custom node types.
     /// </summary>
     public static class NodeServiceProvider
     {

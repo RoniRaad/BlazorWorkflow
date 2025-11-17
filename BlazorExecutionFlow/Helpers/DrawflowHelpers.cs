@@ -22,43 +22,48 @@ namespace BlazorExecutionFlow.Helpers
         public static List<Node> GetNodesObjectsV2()
         {
             var nodes = new List<Node>();
-            Type type = typeof(BaseNodeCollection);
 
-            var methodsWithAttr = type.GetMethods(BindingFlags.Public | BindingFlags.Static)
-                .Where(m => m.GetCustomAttributes(typeof(BlazorFlowNodeMethodAttribute), false).Length > 0);
+            // Get all registered types from the NodeRegistry
+            var registeredTypes = NodeRegistry.GetRegisteredTypes();
 
-            foreach (var method in methodsWithAttr)
+            foreach (var type in registeredTypes)
             {
-                var nodeType = NodeType.Function;
-                var section = "Default";
-                var parameters = method.GetParameters();
-                var output = method.ReturnParameter;
-                List<DfPorts> dfOutputPorts = [];
-                List<DfPorts> dfInputPorts = [];
+                var methodsWithAttr = type.GetMethods(BindingFlags.Public | BindingFlags.Static)
+                    .Where(m => m.GetCustomAttributes(typeof(BlazorFlowNodeMethodAttribute), false).Length > 0);
 
-                var functionAttribute = method.GetCustomAttribute(typeof(BlazorFlowNodeMethodAttribute)) as BlazorFlowNodeMethodAttribute;
-                section = functionAttribute?.Section ?? section;
-                nodeType = functionAttribute?.NodeType ?? nodeType;
-
-                var paramsFromPorts = parameters.Where(x => !x.CustomAttributes.Any()
-                    || x.CustomAttributes.All(attr => attr.AttributeType != typeof(BlazorFlowInputFieldAttribute)));
-
-                var paramsFromInputFields = parameters.Where(x => x.CustomAttributes.Any(attr => attr.AttributeType == typeof(BlazorFlowInputFieldAttribute)));
-
-                // NEW: read port metadata
-                var flowPortsAttr = method.GetCustomAttribute<NodeFlowPortsAttribute>();
-                var declaredPorts = flowPortsAttr?.Ports?.ToList() ?? new List<string>();
-
-                var node = new Node
+                foreach (var method in methodsWithAttr)
                 {
-                    Section = section,
-                    BackingMethod = method,
-                    DeclaredOutputPorts = declaredPorts
-                };
+                    var nodeType = NodeType.Function;
+                    var section = "Default";
+                    var parameters = method.GetParameters();
+                    var output = method.ReturnParameter;
+                    List<DfPorts> dfOutputPorts = [];
+                    List<DfPorts> dfInputPorts = [];
 
-                var serializedMethod = MethodInfoHelpers.ToSerializableString(method);
+                    var functionAttribute = method.GetCustomAttribute(typeof(BlazorFlowNodeMethodAttribute)) as BlazorFlowNodeMethodAttribute;
+                    section = functionAttribute?.Section ?? section;
+                    nodeType = functionAttribute?.NodeType ?? nodeType;
 
-                nodes.Add(node);
+                    var paramsFromPorts = parameters.Where(x => !x.CustomAttributes.Any()
+                        || x.CustomAttributes.All(attr => attr.AttributeType != typeof(BlazorFlowInputFieldAttribute)));
+
+                    var paramsFromInputFields = parameters.Where(x => x.CustomAttributes.Any(attr => attr.AttributeType == typeof(BlazorFlowInputFieldAttribute)));
+
+                    // NEW: read port metadata
+                    var flowPortsAttr = method.GetCustomAttribute<NodeFlowPortsAttribute>();
+                    var declaredPorts = flowPortsAttr?.Ports?.ToList() ?? new List<string>();
+
+                    var node = new Node
+                    {
+                        Section = section,
+                        BackingMethod = method,
+                        DeclaredOutputPorts = declaredPorts
+                    };
+
+                    var serializedMethod = MethodInfoHelpers.ToSerializableString(method);
+
+                    nodes.Add(node);
+                }
             }
 
             return nodes;
