@@ -426,6 +426,12 @@ namespace BlazorExecutionFlow.Models.NodeV2
                     continue;
                 }
 
+                if (parameter.ParameterType == typeof(IServiceProvider))
+                {
+                    orderedMethodParameters[i] = Helpers.NodeServiceProvider.Instance;
+                    continue;
+                }
+
                 methodParameterNameToValueMap.TryGetValue(parameter.Name!, out var value);
 
                 if (value is null)

@@ -643,6 +643,7 @@ role="dialog"
         // Find the first unmapped parameter
         var unmappedParam = parameters.FirstOrDefault(p =>
             p.ParameterType != typeof(NodeContext) &&
+            p.ParameterType != typeof(IServiceProvider) &&
             !mappedParams.Contains(p.Name ?? string.Empty));
 
         if (unmappedParam != null)
@@ -707,7 +708,9 @@ role="dialog"
     private bool CanAddInputMapping()
     {
         var parameters = BackingNode?.BackingMethod?.GetParameters() ?? Array.Empty<ParameterInfo>();
-        var availableParams = parameters.Where(p => p.ParameterType != typeof(NodeContext)).ToList();
+        var availableParams = parameters.Where(p =>
+            p.ParameterType != typeof(NodeContext) &&
+            p.ParameterType != typeof(IServiceProvider)).ToList();
         var mappedParams = new HashSet<string>(ViewModel.NodeInputToMethodInputMap.Select(m => m.To).Where(t => !string.IsNullOrEmpty(t)));
 
         // Can add if there are unmapped parameters
@@ -717,7 +720,9 @@ role="dialog"
     private IEnumerable<ParameterInfo> GetAvailableInputParameters(PathMapEntry currentMapping)
     {
         var parameters = BackingNode?.BackingMethod?.GetParameters() ?? Array.Empty<ParameterInfo>();
-        var availableParams = parameters.Where(p => p.ParameterType != typeof(NodeContext)).ToList();
+        var availableParams = parameters.Where(p =>
+            p.ParameterType != typeof(NodeContext) &&
+            p.ParameterType != typeof(IServiceProvider)).ToList();
 
         // Get all mapped parameter names except the current one
         var mappedParams = new HashSet<string>(
