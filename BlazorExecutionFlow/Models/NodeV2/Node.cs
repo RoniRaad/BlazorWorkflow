@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -490,12 +491,166 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 }
                 else
                 {
+                    // Fix arrays/objects rendered by Scriban without proper JSON quoting
+                    // e.g., [a,b,c] should be ["a","b","c"]
+                    result = EnsureValidJson(result);
+
                     var parsedResult = ParseLiteral(result);
                     orderedMethodParameters[i] = parsedResult.CoerceToType(parameter.ParameterType);
                 }
             }
 
             return orderedMethodParameters!;
+        }
+
+        private string EnsureValidJson(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return input;
+
+            var trimmed = input.Trim();
+
+            // Check if it looks like an array or object
+            if (!trimmed.StartsWith("[") && !trimmed.StartsWith("{"))
+                return input;
+
+            // Try to parse as-is - if it's already valid JSON, return it
+            try
+            {
+                JsonSerializer.Deserialize<JsonNode>(trimmed);
+                return input; // Already valid JSON
+            }
+            catch
+            {
+                // Not valid JSON, try to fix it
+            }
+
+            // Fix arrays with unquoted string elements: [a,b,c] -> ["a","b","c"]
+            if (trimmed.StartsWith("[") && trimmed.EndsWith("]"))
+            {
+                try
+                {
+                    return FixArrayQuoting(trimmed);
+                }
+                catch
+                {
+                    // If we can't fix it, return original
+                    return input;
+                }
+            }
+
+            return input;
+        }
+
+        private string FixArrayQuoting(string arrayString)
+        {
+            // Remove brackets
+            var content = arrayString.Substring(1, arrayString.Length - 2).Trim();
+
+            if (string.IsNullOrEmpty(content))
+                return "[]";
+
+            // Split by comma, but respect nested structures
+            var elements = SplitArrayElements(content);
+
+            // Process each element
+            var fixedElements = elements.Select(element =>
+            {
+                var trimmedElement = element.Trim();
+
+                // Already quoted string
+                if (trimmedElement.StartsWith("\"") && trimmedElement.EndsWith("\""))
+                    return trimmedElement;
+
+                // Nested array or object
+                if (trimmedElement.StartsWith("[") || trimmedElement.StartsWith("{"))
+                    return EnsureValidJson(trimmedElement);
+
+                // Boolean literals
+                if (trimmedElement == "true" || trimmedElement == "false")
+                    return trimmedElement;
+
+                // Null literal
+                if (trimmedElement == "null")
+                    return trimmedElement;
+
+                // Number (int or decimal)
+                if (double.TryParse(trimmedElement, out _))
+                    return trimmedElement;
+
+                // Otherwise, treat as unquoted string and quote it
+                return JsonSerializer.Serialize(trimmedElement);
+            });
+
+            return $"[{string.Join(",", fixedElements)}]";
+        }
+
+        private List<string> SplitArrayElements(string content)
+        {
+            var elements = new List<string>();
+            var currentElement = new StringBuilder();
+            var depth = 0;
+            var inString = false;
+            var escapeNext = false;
+
+            foreach (var ch in content)
+            {
+                if (escapeNext)
+                {
+                    currentElement.Append(ch);
+                    escapeNext = false;
+                    continue;
+                }
+
+                if (ch == '\\')
+                {
+                    currentElement.Append(ch);
+                    escapeNext = true;
+                    continue;
+                }
+
+                if (ch == '"')
+                {
+                    inString = !inString;
+                    currentElement.Append(ch);
+                    continue;
+                }
+
+                if (!inString)
+                {
+                    if (ch == '[' || ch == '{')
+                    {
+                        depth++;
+                        currentElement.Append(ch);
+                        continue;
+                    }
+
+                    if (ch == ']' || ch == '}')
+                    {
+                        depth--;
+                        currentElement.Append(ch);
+                        continue;
+                    }
+
+                    if (ch == ',' && depth == 0)
+                    {
+                        // End of current element
+                        elements.Add(currentElement.ToString());
+                        currentElement.Clear();
+                        continue;
+                    }
+                }
+
+                currentElement.Append(ch);
+            }
+
+            // Add the last element
+            if (currentElement.Length > 0)
+            {
+                elements.Add(currentElement.ToString());
+            }
+
+            return elements;
         }
 
         private JsonNode? ParseLiteral(string input)
