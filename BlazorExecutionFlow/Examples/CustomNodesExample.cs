@@ -1,4 +1,4 @@
-using BlazorExecutionFlow.Drawflow.Attributes;
+using BlazorExecutionFlow.Flow.Attributes;
 using BlazorExecutionFlow.Models;
 using BlazorExecutionFlow.Models.NodeV2;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 using BlazorExecutionFlow.Components;
-using BlazorExecutionFlow.Drawflow.Attributes;
-using BlazorExecutionFlow.Drawflow.BaseNodes;
+using BlazorExecutionFlow.Flow.Attributes;
+using BlazorExecutionFlow.Flow.BaseNodes;
 using BlazorExecutionFlow.Models;
 using BlazorExecutionFlow.Models.NodeV2;
 using Microsoft.JSInterop;

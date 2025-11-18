@@ -1,6 +1,6 @@
 ﻿using BlazorExecutionFlow.Models;
 
-namespace BlazorExecutionFlow.Drawflow.Attributes
+namespace BlazorExecutionFlow.Flow.Attributes
 {
     [AttributeUsage(AttributeTargets.Method, Inherited = false)]
     public class BlazorFlowNodeMethodAttribute : Attribute

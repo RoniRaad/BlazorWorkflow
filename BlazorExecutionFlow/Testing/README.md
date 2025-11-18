@@ -14,7 +14,7 @@ The `NodeGraphBuilder` provides an easy way to:
 
 ```csharp
 using BlazorExecutionFlow.Testing;
-using BlazorExecutionFlow.Drawflow.BaseNodes;
+using BlazorExecutionFlow.Flow.BaseNodes;
 
 // Create a graph
 var graph = new NodeGraphBuilder();

@@ -1,15 +1,15 @@
 ﻿using System.Text.Json;
 using BlazorExecutionFlow.Models.DTOs;
 
-namespace BlazorExecutionFlow.Drawflow;
+namespace BlazorExecutionFlow.Flow;
 
-public sealed partial class DrawflowEditor
+public sealed partial class DrawflowEditorInterop
 {
     // Non-generic delegates we store:
     private readonly Func<string, object?[], ValueTask<object?>> _callObject;
     private readonly Func<string, object?[], ValueTask> _callVoid;
 
-    public DrawflowEditor(
+    public DrawflowEditorInterop(
         Func<string, object?[], ValueTask> callVoid,
         Func<string, object?[], ValueTask<object?>> callObject)
     {

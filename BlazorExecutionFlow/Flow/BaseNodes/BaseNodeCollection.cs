@@ -6,11 +6,11 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
-using BlazorExecutionFlow.Drawflow.Attributes;
+using BlazorExecutionFlow.Flow.Attributes;
 using BlazorExecutionFlow.Helpers;
 using BlazorExecutionFlow.Models.NodeV2;
 
-namespace BlazorExecutionFlow.Drawflow.BaseNodes
+namespace BlazorExecutionFlow.Flow.BaseNodes
 {
     public static class BaseNodeCollection
     {

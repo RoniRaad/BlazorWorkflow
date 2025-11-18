@@ -470,7 +470,7 @@ role="dialog"
                 continue;
 
             // Check if parameter has DrawflowInputField attribute (means it should be a literal)
-            var hasInputFieldAttr = param.GetCustomAttribute<BlazorExecutionFlow.Drawflow.Attributes.BlazorFlowInputFieldAttribute>() != null;
+            var hasInputFieldAttr = param.GetCustomAttribute<BlazorExecutionFlow.Flow.Attributes.BlazorFlowInputFieldAttribute>() != null;
 
             string defaultValue;
             if (hasInputFieldAttr)
@@ -649,7 +649,7 @@ role="dialog"
         if (unmappedParam != null)
         {
             // Add mapping with smart default
-            var hasInputFieldAttr = unmappedParam.GetCustomAttribute<BlazorExecutionFlow.Drawflow.Attributes.BlazorFlowInputFieldAttribute>() != null;
+            var hasInputFieldAttr = unmappedParam.GetCustomAttribute<BlazorExecutionFlow.Flow.Attributes.BlazorFlowInputFieldAttribute>() != null;
             var defaultValue = hasInputFieldAttr
                 ? GeneratePlaceholderLiteral(unmappedParam.ParameterType, unmappedParam.Name)
                 : $"{{{{input.{unmappedParam.Name}}}}}";

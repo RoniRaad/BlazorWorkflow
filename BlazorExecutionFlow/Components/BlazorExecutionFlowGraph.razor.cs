@@ -59,7 +59,7 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
             }
 
             // Create the wrapper:
-            Editor = new BlazorExecutionFlow.Drawflow.DrawflowEditor(
+            Editor = new BlazorExecutionFlow.Flow.DrawflowEditorInterop(
                 callVoid: (m, a) => CallVoidAsync(m, a),
                 callObject: (m, a) => JS.InvokeAsync<object?>("DrawflowBlazor.call", ElementId, m, a));
 
@@ -342,7 +342,7 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
     public async Task<object?> CallAsync(string methodName, params object[] args)
         => await JS.InvokeAsync<object?>("DrawflowBlazor.call", ElementId, methodName, args);
 
-    public BlazorExecutionFlow.Drawflow.DrawflowEditor? Editor { get; set; }
+    public BlazorExecutionFlow.Flow.DrawflowEditorInterop? Editor { get; set; }
     ValueTask CallVoidAsync(string method, params object?[] args)
     => JS.InvokeVoidAsync("DrawflowBlazor.call", ElementId, method, args);
 

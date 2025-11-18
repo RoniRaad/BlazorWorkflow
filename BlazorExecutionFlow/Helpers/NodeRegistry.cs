@@ -1,6 +1,6 @@
 using System.Reflection;
-using BlazorExecutionFlow.Drawflow.Attributes;
-using BlazorExecutionFlow.Drawflow.BaseNodes;
+using BlazorExecutionFlow.Flow.Attributes;
+using BlazorExecutionFlow.Flow.BaseNodes;
 
 namespace BlazorExecutionFlow.Helpers
 {

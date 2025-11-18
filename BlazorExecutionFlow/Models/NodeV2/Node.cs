@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Threading;
-using BlazorExecutionFlow.Drawflow.Attributes;
+using BlazorExecutionFlow.Flow.Attributes;
 using BlazorExecutionFlow.Helpers;
 using Scriban;
 using Scriban.Runtime;

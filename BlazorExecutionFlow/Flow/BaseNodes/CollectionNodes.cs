@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
-using BlazorExecutionFlow.Drawflow.Attributes;
+using BlazorExecutionFlow.Flow.Attributes;
 using BlazorExecutionFlow.Models;
 using BlazorExecutionFlow.Models.NodeV2;
 
-namespace BlazorExecutionFlow.Drawflow.BaseNodes
+namespace BlazorExecutionFlow.Flow.BaseNodes
 {
     /// <summary>
     /// Collection processing nodes for working with arrays and lists.

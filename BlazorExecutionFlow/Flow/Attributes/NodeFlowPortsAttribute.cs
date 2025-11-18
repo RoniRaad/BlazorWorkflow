@@ -1,4 +1,4 @@
-﻿namespace BlazorExecutionFlow.Drawflow.Attributes
+﻿namespace BlazorExecutionFlow.Flow.Attributes
 {
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
     public sealed class NodeFlowPortsAttribute : Attribute
