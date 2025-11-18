@@ -162,22 +162,39 @@ namespace BlazorExecutionFlow.Helpers
         /// <summary>
         /// Unwraps a JsonValue to its underlying CLR type (bool, int, string, etc.)
         /// instead of returning a JsonElement.
+        /// Handles both JsonValue<JsonElement> and JsonValue<T> for primitives.
         /// </summary>
         private static object? UnwrapJsonValue(JsonValue value)
         {
-            var element = value.GetValue<JsonElement>();
+            // First try to get the value as object - this works for both JsonElement and direct primitives
+            var rawValue = value.GetValue<object>();
 
-            return element.ValueKind switch
+            // If it's already a primitive CLR type, return it directly
+            if (rawValue is bool || rawValue is int || rawValue is long ||
+                rawValue is double || rawValue is float || rawValue is decimal ||
+                rawValue is string || rawValue == null)
             {
-                JsonValueKind.True => true,
-                JsonValueKind.False => false,
-                JsonValueKind.Number when element.TryGetInt32(out var intVal) => intVal,
-                JsonValueKind.Number when element.TryGetInt64(out var longVal) => longVal,
-                JsonValueKind.Number when element.TryGetDouble(out var doubleVal) => doubleVal,
-                JsonValueKind.String => element.GetString(),
-                JsonValueKind.Null => null,
-                _ => element  // Fallback to JsonElement for unknown types
-            };
+                return rawValue;
+            }
+
+            // If it's a JsonElement, unwrap it to the appropriate CLR type
+            if (rawValue is JsonElement element)
+            {
+                return element.ValueKind switch
+                {
+                    JsonValueKind.True => true,
+                    JsonValueKind.False => false,
+                    JsonValueKind.Number when element.TryGetInt32(out var intVal) => intVal,
+                    JsonValueKind.Number when element.TryGetInt64(out var longVal) => longVal,
+                    JsonValueKind.Number when element.TryGetDouble(out var doubleVal) => doubleVal,
+                    JsonValueKind.String => element.GetString(),
+                    JsonValueKind.Null => null,
+                    _ => element  // Fallback to JsonElement for complex types
+                };
+            }
+
+            // For other types, return the raw value
+            return rawValue;
         }
     }
 }

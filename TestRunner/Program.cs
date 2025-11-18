@@ -6,7 +6,25 @@ Console.WriteLine();
 
 try
 {
-    // Run serialization test first
+    // Run comprehensive JSON type handling tests
+    JsonTypeHandlingTest.Run();
+
+    Console.WriteLine(new string('-', 80));
+    Console.WriteLine();
+
+    // Run comprehensive workflow serialization tests
+    WorkflowSerializationTest.Run();
+
+    Console.WriteLine(new string('-', 80));
+    Console.WriteLine();
+
+    // Run iteration output test
+    IterationOutputTest.Run();
+
+    Console.WriteLine(new string('-', 80));
+    Console.WriteLine();
+
+    // Run serialization test
     SerializationTest.Run();
 
     Console.WriteLine(new string('-', 80));
