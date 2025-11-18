@@ -146,7 +146,7 @@ namespace BlazorExecutionFlow.Helpers
             return node switch
             {
                 null => null,
-                JsonValue value => value.GetValue<object?>(),
+                JsonValue value => UnwrapJsonValue(value),
 
                 JsonObject obj => obj.ToDictionary(
                     kvp => kvp.Key,
@@ -156,6 +156,27 @@ namespace BlazorExecutionFlow.Helpers
                 JsonArray arr => arr.Select(ToPlainObject).ToList(),
 
                 _ => null
+            };
+        }
+
+        /// <summary>
+        /// Unwraps a JsonValue to its underlying CLR type (bool, int, string, etc.)
+        /// instead of returning a JsonElement.
+        /// </summary>
+        private static object? UnwrapJsonValue(JsonValue value)
+        {
+            var element = value.GetValue<JsonElement>();
+
+            return element.ValueKind switch
+            {
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
+                JsonValueKind.Number when element.TryGetInt32(out var intVal) => intVal,
+                JsonValueKind.Number when element.TryGetInt64(out var longVal) => longVal,
+                JsonValueKind.Number when element.TryGetDouble(out var doubleVal) => doubleVal,
+                JsonValueKind.String => element.GetString(),
+                JsonValueKind.Null => null,
+                _ => element  // Fallback to JsonElement for unknown types
             };
         }
     }

@@ -37,26 +37,26 @@ namespace BlazorExecutionFlow.Drawflow.BaseNodes
                 };
             }
 
+            // OPTIMIZATION: Cache downstream nodes once instead of recursively finding them each iteration
+            var downstreamNodes = context.CurrentNode.GetDownstreamNodes("item");
+
+            // Pre-allocate output object to reduce GC pressure
+            var outputData = new JsonObject();
+            var iterationOutput = new JsonObject { ["output"] = outputData };
+
             for (int i = 0; i < collection.Count; i++)
             {
                 var item = collection[i];
 
-                // Clear downstream node results before each iteration
-                // This allows the "item" port subgraph to re-execute
-                context.CurrentNode.ClearDownstreamResults("item");
+                // Fast clear using cached node list (O(n) instead of O(n * iterations))
+                Node.ClearNodes(downstreamNodes);
 
-                // Update the current node's result with the current item
-                var iterationOutput = new JsonObject
-                {
-                    ["output"] = new JsonObject
-                    {
-                        ["currentItem"] = JsonSerializer.SerializeToNode(item),
-                        ["currentIndex"] = i,
-                        ["totalCount"] = collection.Count,
-                        ["isFirst"] = i == 0,
-                        ["isLast"] = i == collection.Count - 1
-                    }
-                };
+                // Update the output data (reuse object)
+                outputData["currentItem"] = JsonSerializer.SerializeToNode(item);
+                outputData["currentIndex"] = i;
+                outputData["totalCount"] = collection.Count;
+                outputData["isFirst"] = i == 0;
+                outputData["isLast"] = i == collection.Count - 1;
 
                 // Temporarily override the current node's result
                 var originalResult = context.CurrentNode.Result;
@@ -68,7 +68,6 @@ namespace BlazorExecutionFlow.Drawflow.BaseNodes
                     await context.ExecutePortAsync("item");
 
                     // Collect results from the executed subgraph if needed
-                    // (Implementation depends on how you want to aggregate results)
                     results.Add(JsonSerializer.SerializeToNode(new
                     {
                         index = i,
@@ -115,37 +114,32 @@ namespace BlazorExecutionFlow.Drawflow.BaseNodes
                 };
             }
 
+            // OPTIMIZATION: Cache downstream nodes once
+            var downstreamNodes = context.CurrentNode.GetDownstreamNodes("item");
+            var outputData = new JsonObject();
+            var iterationOutput = new JsonObject { ["output"] = outputData };
+
             for (int i = 0; i < collection.Count; i++)
             {
                 var item = collection[i];
 
-                // Clear downstream node results before each iteration
-                // This allows the "item" port subgraph to re-execute
-                context.CurrentNode.ClearDownstreamResults("item");
+                // Fast clear using cached node list
+                Node.ClearNodes(downstreamNodes);
 
-                // Update the current node's result with the current item
-                var iterationOutput = new JsonObject
-                {
-                    ["output"] = new JsonObject
-                    {
-                        ["currentItem"] = item,
-                        ["currentIndex"] = i,
-                        ["totalCount"] = collection.Count,
-                        ["isFirst"] = i == 0,
-                        ["isLast"] = i == collection.Count - 1
-                    }
-                };
+                // Update the output data (reuse object)
+                outputData["currentItem"] = item;
+                outputData["currentIndex"] = i;
+                outputData["totalCount"] = collection.Count;
+                outputData["isFirst"] = i == 0;
+                outputData["isLast"] = i == collection.Count - 1;
 
-                // Temporarily override the current node's result
                 var originalResult = context.CurrentNode.Result;
                 context.CurrentNode.Result = iterationOutput;
 
                 try
                 {
-                    // Execute the "item" port with the current item
                     await context.ExecutePortAsync("item");
 
-                    // Collect results from the executed subgraph if needed
                     results.Add(JsonSerializer.SerializeToNode(new
                     {
                         index = i,
@@ -155,12 +149,10 @@ namespace BlazorExecutionFlow.Drawflow.BaseNodes
                 }
                 finally
                 {
-                    // Restore original result
                     context.CurrentNode.Result = originalResult;
                 }
             }
 
-            // Execute the "done" port with all results
             await context.ExecutePortAsync("done");
 
             return new ForEachResult
@@ -184,20 +176,19 @@ namespace BlazorExecutionFlow.Drawflow.BaseNodes
             int iterations = 0;
             bool shouldContinue = initialCondition;
 
+            // OPTIMIZATION: Cache downstream nodes once
+            var downstreamNodes = context.CurrentNode.GetDownstreamNodes("loop");
+            var outputData = new JsonObject();
+            var iterationOutput = new JsonObject { ["output"] = outputData };
+
             while (shouldContinue && iterations < maxIterations)
             {
-                // Clear downstream results
-                context.CurrentNode.ClearDownstreamResults("loop");
+                // Fast clear using cached node list
+                Node.ClearNodes(downstreamNodes);
 
-                // Update iteration info
-                var iterationOutput = new JsonObject
-                {
-                    ["output"] = new JsonObject
-                    {
-                        ["iteration"] = iterations,
-                        ["maxIterations"] = maxIterations
-                    }
-                };
+                // Update iteration info (reuse object)
+                outputData["iteration"] = iterations;
+                outputData["maxIterations"] = maxIterations;
 
                 var originalResult = context.CurrentNode.Result;
                 context.CurrentNode.Result = iterationOutput;
@@ -206,13 +197,8 @@ namespace BlazorExecutionFlow.Drawflow.BaseNodes
                 {
                     await context.ExecutePortAsync("loop");
 
-                    // In a real scenario, you'd need a way to check the condition
-                    // from the downstream execution result
-                    // For now, this is a simple counter-based loop
                     iterations++;
-
                     // TODO: Add mechanism to check condition from downstream nodes
-                    // For now, loop runs maxIterations times
                 }
                 finally
                 {
@@ -242,22 +228,21 @@ namespace BlazorExecutionFlow.Drawflow.BaseNodes
             if (times < 0)
                 throw new System.ArgumentException("Times must be non-negative", nameof(times));
 
+            // OPTIMIZATION: Cache downstream nodes once
+            var downstreamNodes = context.CurrentNode.GetDownstreamNodes("body");
+            var outputData = new JsonObject();
+            var iterationOutput = new JsonObject { ["output"] = outputData };
+
             for (int i = 0; i < times; i++)
             {
-                // Clear downstream results
-                context.CurrentNode.ClearDownstreamResults("body");
+                // Fast clear using cached node list
+                Node.ClearNodes(downstreamNodes);
 
-                // Update iteration info
-                var iterationOutput = new JsonObject
-                {
-                    ["output"] = new JsonObject
-                    {
-                        ["counter"] = i,
-                        ["total"] = times,
-                        ["isFirst"] = i == 0,
-                        ["isLast"] = i == times - 1
-                    }
-                };
+                // Update iteration info (reuse object)
+                outputData["counter"] = i;
+                outputData["total"] = times;
+                outputData["isFirst"] = i == 0;
+                outputData["isLast"] = i == times - 1;
 
                 var originalResult = context.CurrentNode.Result;
                 context.CurrentNode.Result = iterationOutput;
@@ -299,20 +284,21 @@ namespace BlazorExecutionFlow.Drawflow.BaseNodes
                 return new MapResult { TransformedItems = results };
             }
 
+            // OPTIMIZATION: Cache downstream nodes once
+            var downstreamNodes = context.CurrentNode.GetDownstreamNodes("transform");
+            var outputData = new JsonObject();
+            var iterationOutput = new JsonObject { ["output"] = outputData };
+
             for (int i = 0; i < collection.Count; i++)
             {
                 var item = collection[i];
 
-                context.CurrentNode.ClearDownstreamResults("transform");
+                // Fast clear using cached node list
+                Node.ClearNodes(downstreamNodes);
 
-                var iterationOutput = new JsonObject
-                {
-                    ["output"] = new JsonObject
-                    {
-                        ["item"] = item,
-                        ["index"] = i
-                    }
-                };
+                // Update output data (reuse object)
+                outputData["item"] = item;
+                outputData["index"] = i;
 
                 var originalResult = context.CurrentNode.Result;
                 context.CurrentNode.Result = iterationOutput;
@@ -321,7 +307,6 @@ namespace BlazorExecutionFlow.Drawflow.BaseNodes
                 {
                     await context.ExecutePortAsync("transform");
 
-                    // Collect the transformed result
                     results.Add(JsonSerializer.SerializeToNode(item));
                 }
                 finally
@@ -354,20 +339,21 @@ namespace BlazorExecutionFlow.Drawflow.BaseNodes
                 return new MapResult { TransformedItems = results };
             }
 
+            // OPTIMIZATION: Cache downstream nodes once
+            var downstreamNodes = context.CurrentNode.GetDownstreamNodes("transform");
+            var outputData = new JsonObject();
+            var iterationOutput = new JsonObject { ["output"] = outputData };
+
             for (int i = 0; i < collection.Count; i++)
             {
                 var item = collection[i];
 
-                context.CurrentNode.ClearDownstreamResults("transform");
+                // Fast clear using cached node list
+                Node.ClearNodes(downstreamNodes);
 
-                var iterationOutput = new JsonObject
-                {
-                    ["output"] = new JsonObject
-                    {
-                        ["item"] = JsonSerializer.SerializeToNode(item),
-                        ["index"] = i
-                    }
-                };
+                // Update output data (reuse object)
+                outputData["item"] = JsonSerializer.SerializeToNode(item);
+                outputData["index"] = i;
 
                 var originalResult = context.CurrentNode.Result;
                 context.CurrentNode.Result = iterationOutput;
@@ -376,8 +362,6 @@ namespace BlazorExecutionFlow.Drawflow.BaseNodes
                 {
                     await context.ExecutePortAsync("transform");
 
-                    // Collect the transformed result
-                    // In practice, you'd capture the output from downstream nodes
                     results.Add(JsonSerializer.SerializeToNode(item));
                 }
                 finally
@@ -414,25 +398,24 @@ namespace BlazorExecutionFlow.Drawflow.BaseNodes
                 };
             }
 
+            // OPTIMIZATION: Cache downstream nodes once
+            var downstreamNodes = context.CurrentNode.GetDownstreamNodes("item");
+            var outputData = new JsonObject();
+            var iterationOutput = new JsonObject { ["output"] = outputData };
+
             for (int i = 0; i < collection.Count; i++)
             {
                 var item = collection[i];
 
-                // Clear downstream node results before each iteration
-                context.CurrentNode.ClearDownstreamResults("item");
+                // Fast clear using cached node list
+                Node.ClearNodes(downstreamNodes);
 
-                // Update the current node's result with the current item
-                var iterationOutput = new JsonObject
-                {
-                    ["output"] = new JsonObject
-                    {
-                        ["currentItem"] = item,
-                        ["currentIndex"] = i,
-                        ["totalCount"] = collection.Count,
-                        ["isFirst"] = i == 0,
-                        ["isLast"] = i == collection.Count - 1
-                    }
-                };
+                // Update output data (reuse object)
+                outputData["currentItem"] = item;
+                outputData["currentIndex"] = i;
+                outputData["totalCount"] = collection.Count;
+                outputData["isFirst"] = i == 0;
+                outputData["isLast"] = i == collection.Count - 1;
 
                 var originalResult = context.CurrentNode.Result;
                 context.CurrentNode.Result = iterationOutput;
@@ -482,20 +465,21 @@ namespace BlazorExecutionFlow.Drawflow.BaseNodes
                 return new MapResult { TransformedItems = results };
             }
 
+            // OPTIMIZATION: Cache downstream nodes once
+            var downstreamNodes = context.CurrentNode.GetDownstreamNodes("transform");
+            var outputData = new JsonObject();
+            var iterationOutput = new JsonObject { ["output"] = outputData };
+
             for (int i = 0; i < collection.Count; i++)
             {
                 var item = collection[i];
 
-                context.CurrentNode.ClearDownstreamResults("transform");
+                // Fast clear using cached node list
+                Node.ClearNodes(downstreamNodes);
 
-                var iterationOutput = new JsonObject
-                {
-                    ["output"] = new JsonObject
-                    {
-                        ["item"] = item,
-                        ["index"] = i
-                    }
-                };
+                // Update output data (reuse object)
+                outputData["item"] = item;
+                outputData["index"] = i;
 
                 var originalResult = context.CurrentNode.Result;
                 context.CurrentNode.Result = iterationOutput;
@@ -504,7 +488,6 @@ namespace BlazorExecutionFlow.Drawflow.BaseNodes
                 {
                     await context.ExecutePortAsync("transform");
 
-                    // Collect the transformed result
                     results.Add(item);
                 }
                 finally

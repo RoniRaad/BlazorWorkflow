@@ -156,6 +156,59 @@ namespace BlazorExecutionFlow.Models.NodeV2
             }
         }
 
+        /// <summary>
+        /// Gets all downstream nodes reachable from a specific port (or all ports).
+        /// Caches the result for performance in iteration scenarios.
+        /// </summary>
+        public List<Node> GetDownstreamNodes(string? portName = null)
+        {
+            var result = new List<Node>();
+            var visited = new HashSet<Node>();
+            var queue = new Queue<Node>();
+
+            var targets = portName == null
+                ? OutputNodes
+                : (OutputPorts.TryGetValue(portName, out var list) ? list : new List<Node>());
+
+            foreach (var target in targets)
+            {
+                if (!visited.Contains(target))
+                {
+                    queue.Enqueue(target);
+                    visited.Add(target);
+                }
+            }
+
+            while (queue.Count > 0)
+            {
+                var node = queue.Dequeue();
+                result.Add(node);
+
+                foreach (var child in node.OutputNodes)
+                {
+                    if (!visited.Contains(child))
+                    {
+                        queue.Enqueue(child);
+                        visited.Add(child);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Fast clear of specific nodes without recursion.
+        /// Use this when you've already identified which nodes to clear.
+        /// </summary>
+        public static void ClearNodes(List<Node> nodes)
+        {
+            foreach (var node in nodes)
+            {
+                node.ClearResult();
+            }
+        }
+
         public async Task ExecuteNode(Node? caller = null)
         {
             await GetResult(caller ?? this);
