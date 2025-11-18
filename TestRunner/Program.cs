@@ -6,7 +6,13 @@ Console.WriteLine();
 
 try
 {
-    // Run boolean handling test first
+    // Run serialization test first
+    SerializationTest.Run();
+
+    Console.WriteLine(new string('-', 80));
+    Console.WriteLine();
+
+    // Run boolean handling test
     await BooleanTest.Run();
 
     Console.WriteLine(new string('-', 80));

@@ -14,7 +14,7 @@ namespace BlazorExecutionFlow.Helpers
             string methodName = parts[1];
             string[] parameterTypeNames = string.IsNullOrEmpty(parts[2])
                 ? new string[0]
-                : parts[2].Split(',');
+                : ParseParameterTypes(parts[2]);
 
             // Try to get the type with the full assembly-qualified name first
             Type? type = Type.GetType(typeName);
@@ -82,6 +82,59 @@ namespace BlazorExecutionFlow.Helpers
             }
 
             return method;
+        }
+
+        /// <summary>
+        /// Parses parameter type names from a comma-separated string, accounting for commas
+        /// within assembly qualified names (which contain brackets and nested commas).
+        /// </summary>
+        private static string[] ParseParameterTypes(string parameterTypesString)
+        {
+            if (string.IsNullOrEmpty(parameterTypesString))
+                return Array.Empty<string>();
+
+            var result = new List<string>();
+            var currentParam = new System.Text.StringBuilder();
+            int bracketDepth = 0;
+
+            for (int i = 0; i < parameterTypesString.Length; i++)
+            {
+                char c = parameterTypesString[i];
+
+                if (c == '[')
+                {
+                    bracketDepth++;
+                    currentParam.Append(c);
+                }
+                else if (c == ']')
+                {
+                    bracketDepth--;
+                    currentParam.Append(c);
+                }
+                else if (c == ',' && bracketDepth == 0)
+                {
+                    // This comma is a parameter separator, not part of an assembly qualified name
+                    var param = currentParam.ToString().Trim();
+                    if (!string.IsNullOrEmpty(param))
+                    {
+                        result.Add(param);
+                    }
+                    currentParam.Clear();
+                }
+                else
+                {
+                    currentParam.Append(c);
+                }
+            }
+
+            // Add the last parameter
+            var lastParam = currentParam.ToString().Trim();
+            if (!string.IsNullOrEmpty(lastParam))
+            {
+                result.Add(lastParam);
+            }
+
+            return result.ToArray();
         }
 
         /// <summary>
