@@ -18,6 +18,18 @@ try
     Console.WriteLine(new string('-', 80));
     Console.WriteLine();
 
+    // Run common workflow integration tests
+    await CommonWorkflowTests.Run();
+
+    Console.WriteLine(new string('-', 80));
+    Console.WriteLine();
+
+    // Run advanced workflow integration tests
+    await AdvancedWorkflowTests.Run();
+
+    Console.WriteLine(new string('-', 80));
+    Console.WriteLine();
+
     // Run iteration output test
     IterationOutputTest.Run();
 

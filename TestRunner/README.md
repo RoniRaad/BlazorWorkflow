@@ -92,7 +92,61 @@ This test suite provides comprehensive coverage to catch serialization, type con
 
 ---
 
-### 6. NodeTests.cs
+### 6. CommonWorkflowTests.cs
+**Purpose**: Integration tests for common real-world workflow patterns
+
+**Test Coverage** (10 tests):
+1. **Simple Data Transformation** - Input → Transform → Output pipelines
+2. **Conditional Branching** - If node with comparison operations
+3. **Iteration with Transformation** - ForEach → Transform → Collect patterns
+4. **Filtering and Mapping** - Filter → Map → Collect workflows
+5. **Nested Iterations** - ForEach inside ForEach (matrix operations)
+6. **String Manipulation** - Concatenation, templates, string building
+7. **Math Operations** - Add, Multiply, Divide with type preservation
+8. **Data Aggregation** - Sum, Count, Average operations
+9. **Complex Conditionals** - Multiple AND/OR conditions
+10. **Variable Storage and Retrieval** - Set/Get workflow variables
+
+**What It Catches**:
+- Type conversion failures in common operations
+- Template rendering issues
+- Data flow problems between nodes
+- Type preservation through transformations
+- Variable storage/retrieval issues
+
+---
+
+### 7. AdvancedWorkflowTests.cs
+**Purpose**: Advanced integration tests for complex workflow scenarios
+
+**Test Coverage** (15 tests):
+1. **Data Validation Pipeline** - Validate → Transform → Store with error handling
+2. **Null Handling and Defaults** - Missing/null value handling with fallbacks
+3. **List Search and Find** - Find specific items based on criteria
+4. **JSON Object Construction** - Building complex nested JSON structures
+5. **Data Merging and Joining** - Combining multiple data sources (SQL-like joins)
+6. **Accumulator Pattern** - Running totals, max/min, aggregation
+7. **Multi-Output Branching** - Route items to different paths based on category
+8. **String Parsing and Extraction** - Parse emails, extract domains, etc.
+9. **Range Operations** - Between/outside range checks, categorization
+10. **Conditional Accumulation** - Accumulate only if conditions met
+11. **Batch Processing** - Process items in groups/batches
+12. **Error Recovery** - Fallback values on parsing errors
+13. **Deep Nested Data Access** - Access deeply nested JSON structures
+14. **Dynamic Property Access** - Property names from variables
+15. **Array Transformations** - Map, Filter, Reduce patterns
+
+**What It Catches**:
+- Complex data flow issues
+- Edge cases in data processing
+- Type coercion in advanced scenarios
+- Nested structure handling
+- Error handling and recovery patterns
+- Batch processing logic errors
+
+---
+
+### 8. NodeTests.cs
 **Purpose**: Performance testing and optimization validation
 
 **Test Coverage**:
@@ -119,10 +173,14 @@ dotnet run
 
 All tests should pass with output like:
 ```
-✓ All JSON type handling tests PASSED
-✓ All workflow serialization tests PASSED
+✓ All JSON type handling tests PASSED (7/7)
+✓ All workflow serialization tests PASSED (6/6)
+✓ All common workflow tests PASSED (10/10)
+✓ All advanced workflow tests PASSED (15/15)
 ✓ All tests completed!
 ```
+
+**Total Test Coverage: 48+ integration and unit tests**
 
 ## Issues Prevented by These Tests
 
