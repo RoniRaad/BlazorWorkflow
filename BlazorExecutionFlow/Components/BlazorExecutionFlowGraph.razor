@@ -202,6 +202,9 @@
             // Set node width based on title
             await _base.JS.InvokeVoidAsync("DrawflowBlazor.setNodeWidthFromTitle", _base.Id, node.Value.DrawflowNodeId);
         }
+
+        // Update connection positions after import to prevent glitches
+        await _base.JS.InvokeVoidAsync("DrawflowBlazor.updateConnectionNodes", _base.Id);
     }
 
     private async Task ExecuteInputNodes()
@@ -413,6 +416,9 @@
                 // Set node width based on title
                 await _base.JS.InvokeVoidAsync("DrawflowBlazor.setNodeWidthFromTitle", _base.Id, node.DrawflowNodeId);
             }
+
+            // Update connection positions after import to prevent glitches
+            await _base.JS.InvokeVoidAsync("DrawflowBlazor.updateConnectionNodes", _base.Id);
 
             showImportModal = false;
             _importJson = null;

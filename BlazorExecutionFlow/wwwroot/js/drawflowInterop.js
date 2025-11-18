@@ -332,7 +332,6 @@ window.DrawflowBlazor = (function () {
                 }
             }
         }
-
     }
 
     function setNodeDoubleClickCallback(elementId, callbackReference) {
@@ -358,7 +357,34 @@ window.DrawflowBlazor = (function () {
         });
     }
 
-    return { create, destroy, on, off, call, get, set, labelPorts, setNodeStatus, setNodeDoubleClickCallback, setNodeWidthFromTitle };
+    function updateConnectionNodes(elementId, nodeId = null) {
+        const s = ensureInstance(elementId);
+        if (!s || !s.editor) return;
+
+        try {
+            if (nodeId) {
+                // Update connections for a specific node
+                s.editor.updateConnectionNodes('node-' + nodeId);
+            } else {
+                // Update all connections
+                const drawflowData = s.editor.export();
+                if (drawflowData && drawflowData.drawflow && drawflowData.drawflow.Home) {
+                    const nodes = drawflowData.drawflow.Home.data;
+                    Object.keys(nodes).forEach(id => {
+                        try {
+                            s.editor.updateConnectionNodes('node-' + id);
+                        } catch (e) {
+                            // Silently ignore errors for individual nodes
+                        }
+                    });
+                }
+            }
+        } catch (e) {
+            console.warn('Error updating connection nodes:', e);
+        }
+    }
+
+    return { create, destroy, on, off, call, get, set, labelPorts, setNodeStatus, setNodeDoubleClickCallback, setNodeWidthFromTitle, updateConnectionNodes };
 })();
 
 window.nextFrame = () => {

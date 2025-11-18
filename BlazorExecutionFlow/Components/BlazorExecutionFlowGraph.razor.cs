@@ -80,6 +80,9 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
                 }
             }
 
+            // Update connection positions after initial import to prevent glitches
+            await JS.InvokeVoidAsync("DrawflowBlazor.updateConnectionNodes", Id);
+
             // Subscribe to Drawflow events to keep Graph in sync
             await OnAsync("nodeCreated");
             await OnAsync("nodeMoved");
