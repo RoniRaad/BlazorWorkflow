@@ -4,8 +4,9 @@
 
 Node status animations (pulsing, error states) and port labels weren't working in apps using the BlazorExecutionFlow library, even with all CSS/JS files properly referenced.
 
-## Root Cause
+## Root Causes
 
+### Issue 1: Event Handlers Not Attached During Initialization
 The event handlers that trigger status updates (`OnStartExecuting`, `OnStopExecuting`, `OnError`) were only being attached when the user clicked the **Run** button in the UI component.
 
 If nodes were executed programmatically (e.g., `await node.ExecuteNode()` or `await Graph.RunAsync()`), the event handlers were never attached, so:
@@ -13,6 +14,9 @@ If nodes were executed programmatically (e.g., `await node.ExecuteNode()` or `aw
 - No red border on errors
 - No green output port indicators
 - Labels showed up but weren't properly initialized
+
+### Issue 2: Threading - Event Handlers Not Marshaled to UI Thread
+The event handlers were firing on background threads (from node execution), but Blazor requires UI updates to be marshaled back to the UI thread using `InvokeAsync()`. Without this, the JavaScript interop calls would fail silently or not update the DOM.
 
 ## The Fix
 
@@ -46,7 +50,8 @@ void HandleNodeStartExecuting(object? sender, EventArgs e)
 {
     if (sender is Node node)
     {
-        _ = SetStatusAsync(node.DrawflowNodeId, true);
+        // CRITICAL: Use InvokeAsync to marshal UI updates back to Blazor's synchronization context
+        _ = InvokeAsync(async () => await SetStatusAsync(node.DrawflowNodeId, true));
     }
 }
 
@@ -54,7 +59,8 @@ void HandleNodeStopExecuting(object? sender, EventArgs e)
 {
     if (sender is Node node)
     {
-        _ = SetStatusAsync(node.DrawflowNodeId, false);
+        // CRITICAL: Use InvokeAsync to marshal UI updates back to Blazor's synchronization context
+        _ = InvokeAsync(async () => await SetStatusAsync(node.DrawflowNodeId, false));
     }
 }
 ```
@@ -130,6 +136,7 @@ private async Task Run()
 - ❌ Programmatic execution (`await Graph.RunAsync()`) showed no status
 - ❌ No feedback for users running workflows via code
 - ❌ Event handlers re-attached on every run (memory leak potential)
+- ❌ UI updates from background threads failed silently
 
 ### After Fix:
 - ✅ Status works immediately after component initialization
@@ -137,6 +144,7 @@ private async Task Run()
 - ✅ Works whether you use UI button or code
 - ✅ Event handlers attached once, no duplication
 - ✅ New nodes automatically get event handlers
+- ✅ UI updates properly marshaled to Blazor's synchronization context (thread-safe)
 
 ## Testing
 
