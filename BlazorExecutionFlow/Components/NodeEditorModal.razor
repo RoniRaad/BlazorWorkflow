@@ -465,8 +465,8 @@ role="dialog"
 
         foreach (var param in parameters)
         {
-            // Skip NodeContext parameters as they're handled automatically
-            if (param.ParameterType == typeof(NodeContext))
+            // Skip NodeContext and IServiceProvider parameters as they're handled automatically
+            if (param.ParameterType == typeof(NodeContext) || param.ParameterType == typeof(IServiceProvider))
                 continue;
 
             // Check if parameter has DrawflowInputField attribute (means it should be a literal)
