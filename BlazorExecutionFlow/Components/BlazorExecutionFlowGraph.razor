@@ -139,6 +139,7 @@
 @code {
     [Parameter] public EventCallback<string> OnNodeDoubleClicked { get; set; }
     [Parameter] public bool IncludeControlPanel { get; set; } = true;
+    [Parameter] public bool EnableStatusAnimations { get; set; } = true;
 
     private Dictionary<string, object> options = new Dictionary<string, object>() { ["reroute"] = true };
     private BlazorExecutionFlowGraphBase? _base;
@@ -263,6 +264,8 @@
 
     void HandleNodeError(object? sender, NodeErrorEventArgs e)
     {
+        if (!EnableStatusAnimations) return;
+
         _ = InvokeAsync(async () =>
         {
             await SetStatusAsync(e.Node.DrawflowNodeId, false, true, e.Message);
@@ -291,20 +294,59 @@
         }
     }
 
+    private readonly Dictionary<string, DateTime> _lastStatusUpdate = new();
+    private readonly Dictionary<string, long> _statusSequence = new();
+    private readonly TimeSpan _statusUpdateThrottle = TimeSpan.FromMilliseconds(50); // Max 20 updates/sec per node
+
     void HandleNodeStartExecuting(object? sender, EventArgs e)
     {
-        if (sender is Node node)
+        if (!EnableStatusAnimations || sender is not Node node) return;
+
+        // Throttle: Skip if we updated this node too recently
+        if (_lastStatusUpdate.TryGetValue(node.DrawflowNodeId, out var lastUpdate))
         {
-            _ = InvokeAsync(async () => await SetStatusAsync(node.DrawflowNodeId, true));
+            if (DateTime.UtcNow - lastUpdate < _statusUpdateThrottle)
+            {
+                return; // Skip this update
+            }
         }
+
+        // Increment sequence number for this node
+        if (!_statusSequence.ContainsKey(node.DrawflowNodeId))
+            _statusSequence[node.DrawflowNodeId] = 0;
+
+        var sequence = ++_statusSequence[node.DrawflowNodeId];
+        _lastStatusUpdate[node.DrawflowNodeId] = DateTime.UtcNow;
+
+        _ = InvokeAsync(async () =>
+        {
+            // Only apply if this is still the latest sequence
+            if (_statusSequence.TryGetValue(node.DrawflowNodeId, out var currentSeq) && sequence <= currentSeq)
+            {
+                await SetStatusAsync(node.DrawflowNodeId, true);
+            }
+        });
     }
 
     void HandleNodeStopExecuting(object? sender, EventArgs e)
     {
-        if (sender is Node node)
+        if (!EnableStatusAnimations || sender is not Node node) return;
+
+        // Increment sequence number for this node
+        if (!_statusSequence.ContainsKey(node.DrawflowNodeId))
+            _statusSequence[node.DrawflowNodeId] = 0;
+
+        var sequence = ++_statusSequence[node.DrawflowNodeId];
+        _lastStatusUpdate[node.DrawflowNodeId] = DateTime.UtcNow;
+
+        _ = InvokeAsync(async () =>
         {
-            _ = InvokeAsync(async () => await SetStatusAsync(node.DrawflowNodeId, false));
-        }
+            // Only apply if this is still the latest sequence
+            if (_statusSequence.TryGetValue(node.DrawflowNodeId, out var currentSeq) && sequence <= currentSeq)
+            {
+                await SetStatusAsync(node.DrawflowNodeId, false);
+            }
+        });
     }
 
     private async Task Run()
