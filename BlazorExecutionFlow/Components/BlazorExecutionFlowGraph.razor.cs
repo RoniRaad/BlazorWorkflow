@@ -190,21 +190,24 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
 
         if (!connectionObj.TryGetProperty("output_id", out var outputIdProp) ||
             !connectionObj.TryGetProperty("input_id", out var inputIdProp) ||
-            !connectionObj.TryGetProperty("output_class", out var outputClassProp))
+            !connectionObj.TryGetProperty("output_class", out var outputClassProp) ||
+            !connectionObj.TryGetProperty("input_class", out var inputClassProp))
             return Task.CompletedTask;
 
         var outputId = outputIdProp.GetString();
         var inputId = inputIdProp.GetString();
         var outputClass = outputClassProp.GetString();
+        var inputClass = inputClassProp.GetString();
 
-        if (string.IsNullOrEmpty(outputId) || string.IsNullOrEmpty(inputId) || string.IsNullOrEmpty(outputClass))
+        if (string.IsNullOrEmpty(outputId) || string.IsNullOrEmpty(inputId) ||
+            string.IsNullOrEmpty(outputClass) || string.IsNullOrEmpty(inputClass))
             return Task.CompletedTask;
 
         if (Graph.Nodes.TryGetValue(outputId, out var sourceNode) &&
             Graph.Nodes.TryGetValue(inputId, out var targetNode))
         {
-            // Determine port name from output_class (e.g., "output_1" -> first port)
-            var portName = "default";
+            // Determine output port name from output_class (e.g., "output_1" -> first port)
+            var outputPortName = "default";
             if (sourceNode.DeclaredOutputPorts is { Count: > 0 } ports)
             {
                 // Extract port index from "output_1", "output_2", etc.
@@ -213,12 +216,12 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
                     int.TryParse(outputClass.Substring(underscoreIndex + 1), out var portIndex) &&
                     portIndex > 0 && portIndex <= ports.Count)
                 {
-                    portName = ports[portIndex - 1];
+                    outputPortName = ports[portIndex - 1];
                 }
             }
 
             // Add connection
-            sourceNode.AddOutputConnection(portName, targetNode);
+            sourceNode.AddOutputConnection(outputPortName, targetNode);
 
             // Add to InputNodes if not already there
             if (!targetNode.InputNodes.Contains(sourceNode))
@@ -238,15 +241,20 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
         if (payload.ValueKind != JsonValueKind.Array || payload.GetArrayLength() < 4)
             return Task.CompletedTask;
 
-        var outputId = payload[0].ToString();
-        var inputId = payload[1].ToString();
-        var outputClass = payload[2].ToString();
+        var outputId = payload[0].GetString();
+        var inputId = payload[1].GetString();
+        var outputClass = payload[2].GetString();
+        var inputClass = payload[3].GetString();
+
+        if (string.IsNullOrEmpty(outputId) || string.IsNullOrEmpty(inputId) ||
+            string.IsNullOrEmpty(outputClass) || string.IsNullOrEmpty(inputClass))
+            return Task.CompletedTask;
 
         if (Graph.Nodes.TryGetValue(outputId, out var sourceNode) &&
             Graph.Nodes.TryGetValue(inputId, out var targetNode))
         {
-            // Determine port name
-            var portName = "default";
+            // Determine output port name from output_class (e.g., "output_1" -> first port)
+            var outputPortName = "default";
             if (sourceNode.DeclaredOutputPorts is { Count: > 0 } ports)
             {
                 var underscoreIndex = outputClass.LastIndexOf('_');
@@ -254,17 +262,17 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
                     int.TryParse(outputClass.Substring(underscoreIndex + 1), out var portIndex) &&
                     portIndex > 0 && portIndex <= ports.Count)
                 {
-                    portName = ports[portIndex - 1];
+                    outputPortName = ports[portIndex - 1];
                 }
             }
 
             // Remove connection from OutputPorts
-            if (sourceNode.OutputPorts.TryGetValue(portName, out var targets))
+            if (sourceNode.OutputPorts.TryGetValue(outputPortName, out var targets))
             {
                 targets.Remove(targetNode);
                 if (targets.Count == 0)
                 {
-                    sourceNode.OutputPorts.Remove(portName);
+                    sourceNode.OutputPorts.Remove(outputPortName);
                 }
             }
 

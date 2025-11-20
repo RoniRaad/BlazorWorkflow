@@ -89,6 +89,30 @@ public sealed class DrawflowGraph
             e.ToNodeId == toNodeId &&
             e.ToInputPort == toInputPort);
 
+    /// <summary>Add an edge to the graph's cached edge list.</summary>
+    public void AddEdge(Edge edge)
+    {
+        // Avoid duplicates
+        if (!_edges.Any(e =>
+            e.FromNodeId == edge.FromNodeId &&
+            e.FromOutputPort == edge.FromOutputPort &&
+            e.ToNodeId == edge.ToNodeId &&
+            e.ToInputPort == edge.ToInputPort))
+        {
+            _edges.Add(edge);
+        }
+    }
+
+    /// <summary>Remove an edge from the graph's cached edge list.</summary>
+    public void RemoveEdge(string fromNodeId, string fromOutputPort, string toNodeId, string toInputPort)
+    {
+        _edges.RemoveAll(e =>
+            e.FromNodeId == fromNodeId &&
+            e.FromOutputPort == fromOutputPort &&
+            e.ToNodeId == toNodeId &&
+            e.ToInputPort == toInputPort);
+    }
+
     // Build edges by inspecting OUTPUTS (authoritative in Drawflow)
     private static List<Edge> BuildEdges(DrawflowPage page)
     {
