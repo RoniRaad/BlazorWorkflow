@@ -28,6 +28,52 @@ window.DrawflowBlazor = (function () {
         if (typeof opts.reroute !== "undefined") editor.reroute = opts.reroute;
         editor.start();
 
+        editor.createCurvature = function (
+            start_pos_x,
+            start_pos_y,
+            end_pos_x,
+            end_pos_y,
+            curvature_value,
+            type // Drawflow passes a "type" arg, you can ignore it if you don't need it
+        ) {
+            const dx = end_pos_x - start_pos_x;
+            const dy = end_pos_y - start_pos_y;
+
+            // --- tune these to taste ---
+            const MIN_DISTANCE_FOR_CHECK = 40;   // ignore very short links
+            const BIG_BEND_RATIO = 1.5;          // how much vertical vs horizontal = "big bend"
+            // ----------------------------
+
+            const absDx = Math.abs(dx);
+            const absDy = Math.abs(dy);
+
+            if (end_pos_x < start_pos_x) {
+                // 90° path: horizontal → vertical → horizontal
+                start_pos_x = start_pos_x + 20;
+                end_pos_x = end_pos_x - 20;
+                const center_y = (start_pos_y + end_pos_y) / 2;
+                return (
+                    'M ' + (start_pos_x - 20) + ' ' + start_pos_y + // move to start
+                    ' L ' + start_pos_x + ' ' + start_pos_y + // go horizontally
+                    ' L ' + start_pos_x + ' ' + center_y + // go horizontally
+                    ' L ' + end_pos_x + ' ' + center_y + // then vertically
+                    ' L ' + end_pos_x + ' ' + end_pos_y + // then vertically
+                    ' L ' + (end_pos_x + 20) + ' ' + end_pos_y     // then horizontally to end
+                );
+            }
+
+            // Default Drawflow-style bezier for smaller bends
+            const hx1 = start_pos_x + absDx * curvature_value;
+            const hx2 = end_pos_x - absDx * curvature_value;
+
+            return (
+                'M ' + start_pos_x + ' ' + start_pos_y +
+                ' C ' + hx1 + ' ' + start_pos_y +
+                ' ' + hx2 + ' ' + end_pos_y +
+                ' ' + end_pos_x + ' ' + end_pos_y
+            );
+        };
+
         const state = { id, editor, dotNetRef, eventHandlers: {} };
 
         const knownEvents = [

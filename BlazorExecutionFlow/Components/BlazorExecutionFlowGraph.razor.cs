@@ -235,16 +235,26 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
 
     private Task HandleConnectionRemoved(string payloadJson)
     {
-        // Parse: ["output_id", "input_id", "output_class", "input_class"]
+        // Parse: [{"output_id":"1","input_id":"2","output_class":"output_1","input_class":"input_1"}]
         var payload = JsonSerializer.Deserialize<JsonElement>(payloadJson, jsonSerializerOptions);
 
-        if (payload.ValueKind != JsonValueKind.Array || payload.GetArrayLength() < 4)
+        if (payload.ValueKind != JsonValueKind.Array || payload.GetArrayLength() < 1)
             return Task.CompletedTask;
 
-        var outputId = payload[0].GetString();
-        var inputId = payload[1].GetString();
-        var outputClass = payload[2].GetString();
-        var inputClass = payload[3].GetString();
+        var connectionObj = payload[0];
+        if (connectionObj.ValueKind != JsonValueKind.Object)
+            return Task.CompletedTask;
+
+        if (!connectionObj.TryGetProperty("output_id", out var outputIdProp) ||
+            !connectionObj.TryGetProperty("input_id", out var inputIdProp) ||
+            !connectionObj.TryGetProperty("output_class", out var outputClassProp) ||
+            !connectionObj.TryGetProperty("input_class", out var inputClassProp))
+            return Task.CompletedTask;
+
+        var outputId = outputIdProp.GetString();
+        var inputId = inputIdProp.GetString();
+        var outputClass = outputClassProp.GetString();
+        var inputClass = inputClassProp.GetString();
 
         if (string.IsNullOrEmpty(outputId) || string.IsNullOrEmpty(inputId) ||
             string.IsNullOrEmpty(outputClass) || string.IsNullOrEmpty(inputClass))

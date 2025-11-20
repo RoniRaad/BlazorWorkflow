@@ -217,72 +217,90 @@ role="dialog"
                             <hr class="panel-divider" />
 
                             <!-- Function output map -->
-                            <div class="panel-section" data-role="function-output-map">
-                                <div class="panel-section-header">
-                                    <span>Function output map</span>
-                                    <button onclick="@AddOutputMapping" type="button"
-                                            class="btn btn-xs btn-outline-secondary"
-                                            disabled="@(!CanAddOutputMapping())"
-                                            data-role="add-output-mapping">
-                                        Add mapping
-                                    </button>
-                                </div>
+                            @if (BackingNode.DeclaredOutputPorts.Count == 0)
+                            {
+                                <div class="panel-section" data-role="function-output-map">
+                                    <div class="panel-section-header">
+                                        <span>Function output map</span>
+                                        <button onclick="@AddOutputMapping" type="button"
+                                                class="btn btn-xs btn-outline-secondary"
+                                                disabled="@(!CanAddOutputMapping())"
+                                                data-role="add-output-mapping">
+                                            Add mapping
+                                        </button>
+                                    </div>
 
-                                <div class="mapping-list" data-role="output-mapping-list">
-                                    @{ var propInfos = GetReturnProperties(); }
-                                    @if (propInfos is not null)
-                                    {
-                                        @foreach (var outputMapping in ViewModel.MethodOutputToNodeOutputMap)
+                                    <div class="mapping-list" data-role="output-mapping-list">
+                                        @{ var propInfos = GetReturnProperties(); }
+                                        @if (propInfos is not null)
                                         {
-                                            <div class="mapping-row" data-role="output-mapping-row">
-                                                <div class="mapping-col">
-                                                    <label>Function output</label>
-                                                    <InputSelect @bind-Value="outputMapping.From"
-                                                                 class="form-select form-select-sm"
-                                                                 aria-label="Function output field"
-                                                                 data-role="function-output">
-                                                        <option value="">Select output…</option>
+                                            @foreach (var outputMapping in ViewModel.MethodOutputToNodeOutputMap)
+                                            {
+                                                <div class="mapping-row" data-role="output-mapping-row">
+                                                    <div class="mapping-col">
+                                                        <label>Function output</label>
+                                                        <InputSelect @bind-Value="outputMapping.From"
+                                                                     class="form-select form-select-sm"
+                                                                     aria-label="Function output field"
+                                                                     data-role="function-output">
+                                                            <option value="">Select output…</option>
 
-                                                        @if (propInfos.Count() > 0)
-                                                        {
-                                                            @foreach (var property in GetAvailableOutputProperties(outputMapping, propInfos))
+                                                            @if (propInfos.Count() > 0)
                                                             {
-                                                                <option value="@property.Name">(@property.Type) @property.Name</option>
+                                                                @foreach (var property in GetAvailableOutputProperties(outputMapping, propInfos))
+                                                                {
+                                                                    <option value="@property.Name">(@property.Type) @property.Name</option>
+                                                                }
                                                             }
-                                                        }
-                                                        else
-                                                        {
-                                                            @if (IsOutputValueAvailable(outputMapping, "result"))
+                                                            else
                                                             {
-                                                                <option value="result">(@BackingNode.BackingMethod.ReturnType.Name) result</option>
+                                                                @if (IsOutputValueAvailable(outputMapping, "result"))
+                                                                {
+                                                                    <option value="result">(@BackingNode.BackingMethod.ReturnType.Name) result</option>
+                                                                }
                                                             }
-                                                        }
 
-                                                    </InputSelect>
+                                                        </InputSelect>
+                                                    </div>
+                                                    <div class="mapping-arrow">→</div>
+                                                    <div class="mapping-col">
+                                                        <label>Payload path</label>
+                                                        <InputText @bind-Value="outputMapping.To" type="text"
+                                                                   class="form-control form-control-sm"
+                                                                   placeholder="e.g. name"
+                                                                   aria-label="Target payload path for output mapping"
+                                                                   required
+                                                                   data-role="target-payload-path" />
+                                                    </div>
+                                                    <button onclick="@(() => RemoveMethodOutputToNodeOutputMap(outputMapping))"
+                                                            type="button"
+                                                            class="btn btn-icon btn-xs"
+                                                            aria-label="Remove output mapping"
+                                                            title="Remove this output mapping"
+                                                            data-role="remove-mapping">
+                                                        <span aria-hidden="true">✕</span>
+                                                    </button>
                                                 </div>
-                                                <div class="mapping-arrow">→</div>
-                                                <div class="mapping-col">
-                                                    <label>Payload path</label>
-                                                    <InputText @bind-Value="outputMapping.To" type="text"
-                                                               class="form-control form-control-sm"
-                                                               placeholder="e.g. name"
-                                                               aria-label="Target payload path for output mapping"
-                                                               required
-                                                               data-role="target-payload-path" />
-                                                </div>
-                                                <button onclick="@(() => RemoveMethodOutputToNodeOutputMap(outputMapping))"
-                                                        type="button"
-                                                        class="btn btn-icon btn-xs"
-                                                        aria-label="Remove output mapping"
-                                                        title="Remove this output mapping"
-                                                        data-role="remove-mapping">
-                                                    <span aria-hidden="true">✕</span>
-                                                </button>
-                                            </div>
+                                            }
                                         }
-                                    }
+                                    </div>
                                 </div>
-                            </div>
+                            }
+                            else
+                            {
+                                <!-- Port-driven nodes don't use output mappings -->
+                                <div class="panel-section" data-role="port-driven-info">
+                                    <div class="alert alert-info" style="margin: 0;">
+                                        <strong>Port-Driven Node</strong>
+                                        <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem;">
+                                            This node uses port-driven execution with outputs: <strong>@string.Join(", ", BackingNode.DeclaredOutputPorts)</strong>
+                                        </p>
+                                        <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: #666;">
+                                            Data provided by this node varies by port. Output mappings are not used—downstream nodes receive data automatically based on which port they're connected to.
+                                        </p>
+                                    </div>
+                                </div>
+                            }
                         </div>
                     </section>
 

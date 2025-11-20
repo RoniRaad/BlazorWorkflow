@@ -1,4 +1,4 @@
-:root {
+ï»¿:root {
     /* Spacing */
     --spacing-xs: 0.15rem;
     --spacing-sm: 0.45rem;
@@ -957,7 +957,7 @@
     padding-top: 13px;
 }
 
-/* PORTS – color only */
+/* PORTS â€“ color only */
 .drawflow .drawflow-node .input,
 .drawflow .drawflow-node .output {
     background: var(--df-port);
@@ -968,7 +968,7 @@
         background: var(--df-port-hover);
     }
 
-/* TITLE BAR – same position/width, fixed height 24px to match type box */
+/* TITLE BAR â€“ same position/width, fixed height 24px to match type box */
 .drawflow .title-container {
     position: absolute;
     top: 0;
@@ -987,7 +987,7 @@
     background: linear-gradient( 90deg, var(--df-accent), var(--df-accent-2) ) !important;
 }
 
-/* title text – high contrast on header */
+/* title text â€“ high contrast on header */
 .drawflow .title {
     color: var(--df-heading);
     padding-left: 30px; /* Make room for 24px type symbol + gap */
@@ -1000,12 +1000,12 @@
     color: #020617;
 }
 
-/* SELECTED NODE – color only */
+/* SELECTED NODE â€“ color only */
 .drawflow .drawflow-node.selected {
     background: var(--df-node-2);
 }
 
-/* TYPE BOX – default: solid accent */
+/* TYPE BOX â€“ default: solid accent */
 .node-type-id-container {
     position: absolute;
     top: 0;
@@ -1025,7 +1025,7 @@
     background: transparent;
 }
 
-/* type icon text – light for contrast */
+/* type icon text â€“ light for contrast */
 .node-type-id {
     text-align: center;
     font-size: 16px;
@@ -1043,7 +1043,7 @@
     color: var(--df-text-weak);
 }
 
-/* your inline port labels – override the old blue with readable gray */
+/* your inline port labels â€“ override the old blue with readable gray */
 .drawflow .drawflow-node .port_type {
     color: var(--df-text-weak) !important;
     font-size: 10px !important;
@@ -1055,13 +1055,34 @@
     font-size: 12px;
 }
 
-/* WIRES – cosmetic only */
+/* WIRES â€“ cosmetic only */
 .drawflow .connection .main-path {
     stroke: var(--df-wire);
     stroke-width: 2;
 }
 
-    .drawflow .connection.selected .main-path,
-    .drawflow .connection .main-path.selected {
-        stroke: var(--df-wire-active);
+.drawflow .connection.selected .main-path,
+.drawflow .connection .main-path.selected {
+    stroke: var(--df-wire-active);
+}
+
+/* Base style (adjust to your theme) */
+.drawflow .connection .main-path {
+    fill: none;
+    stroke-width: 3;
+    stroke-linecap: round;
+    /* Flow / pulse effect */
+    stroke-dasharray: 21 4; /* pattern: dash, gap */
+    animation: df-flow 0.8s linear infinite;
+}
+
+/* Directional "marching ants" style */
+@keyframes df-flow {
+    from {
+        stroke-dashoffset: 0;
     }
+
+    to {
+        stroke-dashoffset: -25; /* negative = move from start â†’ end */
+    }
+}
