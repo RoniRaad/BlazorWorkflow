@@ -48,6 +48,12 @@ try
     Console.WriteLine(new string('-', 80));
     Console.WriteLine();
 
+    // Run IServiceProvider parameter test
+    await ServiceProviderTest.Run();
+
+    Console.WriteLine(new string('-', 80));
+    Console.WriteLine();
+
     // Run performance tests
     await NodeTests.RunAllTests();
 }

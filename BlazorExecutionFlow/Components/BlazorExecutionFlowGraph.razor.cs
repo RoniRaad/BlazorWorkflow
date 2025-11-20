@@ -397,6 +397,20 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
         var internalNode = JsonSerializer.Deserialize<Node>(nodeJson, jsonSerializerOptions)
                           ?? throw new InvalidOperationException($"Failed to deserialize internal Node for Drawflow node {dfNode.Id}.");
 
+        // Clean up any invalid mappings for auto-handled parameters (IServiceProvider, NodeContext)
+        // This handles workflows saved before these parameters were properly excluded
+        var parametersToExclude = internalNode.BackingMethod.GetParameters()
+            .Where(p => p.ParameterType == typeof(NodeContext) || p.ParameterType == typeof(IServiceProvider))
+            .Select(p => p.Name)
+            .ToHashSet();
+
+        if (parametersToExclude.Any())
+        {
+            internalNode.NodeInputToMethodInputMap = internalNode.NodeInputToMethodInputMap
+                .Where(m => !parametersToExclude.Contains(m.To))
+                .ToList();
+        }
+
         internalNode.DrawflowNodeId = nodeKey;
         internalNode.PosX = dfNode.PosX;
         internalNode.PosY = dfNode.PosY;
