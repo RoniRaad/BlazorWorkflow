@@ -46,8 +46,10 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
         public List<PathMapEntry> NodeInputToMethodInputMap { get; set; } = [];
         public List<PathMapEntry> MethodOutputToNodeOutputMap { get; set; } = [];
-        public JsonObject? Input { get; set; }
-        public JsonObject? Result { get; set; }
+
+        [JsonIgnore] public JsonObject? Input { get; set; }
+        [JsonIgnore] public JsonObject? Result { get; set; }
+
         public bool MergeOutputWithInput { get; set; } = false;
 
         public List<string> DeclaredOutputPorts { get; set; } = [];

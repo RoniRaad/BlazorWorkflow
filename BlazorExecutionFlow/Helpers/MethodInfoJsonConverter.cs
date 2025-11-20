@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using BlazorExecutionFlow.Helpers;
 
 public sealed class MethodInfoJsonConverter : JsonConverter<MethodInfo>
 {
@@ -48,6 +49,14 @@ public sealed class MethodInfoJsonConverter : JsonConverter<MethodInfo>
             types: parameterTypes,
             modifiers: null);
 
+        // If exact match fails, try the helper's fallback logic which handles
+        // auto-injected parameters (IServiceProvider, NodeContext) and version differences
+        if (method == null)
+        {
+            method = MethodInfoHelpers.FromSerializableString(
+                $"{typeName}|{methodName}|{string.Join(",", parameterTypes.Select(t => t.AssemblyQualifiedName))}");
+        }
+
         return method;
     }
 
@@ -68,6 +77,14 @@ public sealed class MethodInfoJsonConverter : JsonConverter<MethodInfo>
         writer.WriteStartArray();
         foreach (var param in value.GetParameters())
         {
+            // Skip auto-injected parameters (IServiceProvider, NodeContext)
+            // These are handled automatically by the execution engine
+            if (param.ParameterType == typeof(IServiceProvider) ||
+                param.ParameterType.Name == "NodeContext")
+            {
+                continue;
+            }
+
             writer.WriteStringValue(param.ParameterType.AssemblyQualifiedName);
         }
         writer.WriteEndArray();

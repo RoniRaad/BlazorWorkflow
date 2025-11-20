@@ -168,13 +168,30 @@ namespace TestRunner
                 // Serialize
                 var json = JsonSerializer.Serialize(node);
                 Console.WriteLine($"  Serialized length: {json.Length} chars");
+                Console.WriteLine($"  Serialized JSON: {json.Substring(0, Math.Min(300, json.Length))}...");
 
                 // Deserialize
-                var deserialized = JsonSerializer.Deserialize<Node>(json);
+                Node? deserialized;
+                try
+                {
+                    deserialized = JsonSerializer.Deserialize<Node>(json);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"  ✗ FAILED: Deserialization threw exception: {ex.Message}");
+                    Console.WriteLine($"  Stack: {ex.StackTrace}");
+                    return false;
+                }
 
                 if (deserialized == null)
                 {
                     Console.WriteLine("  ✗ FAILED: Deserialization returned null");
+                    return false;
+                }
+
+                if (deserialized.BackingMethod == null)
+                {
+                    Console.WriteLine("  ✗ FAILED: Deserialized node has null BackingMethod");
                     return false;
                 }
 

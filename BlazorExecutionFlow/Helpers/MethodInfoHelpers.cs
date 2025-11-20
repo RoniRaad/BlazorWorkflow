@@ -140,6 +140,7 @@ namespace BlazorExecutionFlow.Helpers
         /// <summary>
         /// Tries to find a method by matching name and parameter types more loosely.
         /// This helps when exact type matching fails due to assembly version differences.
+        /// Also handles auto-injected parameters (IServiceProvider, NodeContext) that are not serialized.
         /// </summary>
         private static MethodInfo? TryFindMethodBySignature(Type type, string methodName, Type[] expectedParamTypes)
         {
@@ -151,15 +152,22 @@ namespace BlazorExecutionFlow.Helpers
             {
                 var methodParams = method.GetParameters();
 
-                // Check parameter count matches
-                if (methodParams.Length != expectedParamTypes.Length)
+                // Filter out auto-injected parameters (IServiceProvider, NodeContext)
+                // These are not serialized but may be present in the actual method
+                var filteredParams = methodParams
+                    .Where(p => p.ParameterType != typeof(IServiceProvider) &&
+                               p.ParameterType.Name != "NodeContext")
+                    .ToArray();
+
+                // Check parameter count matches (after filtering)
+                if (filteredParams.Length != expectedParamTypes.Length)
                     continue;
 
                 // Check if parameter types are compatible
                 bool allMatch = true;
-                for (int i = 0; i < methodParams.Length; i++)
+                for (int i = 0; i < filteredParams.Length; i++)
                 {
-                    var methodParamType = methodParams[i].ParameterType;
+                    var methodParamType = filteredParams[i].ParameterType;
                     var expectedParamType = expectedParamTypes[i];
 
                     // Try exact match first
