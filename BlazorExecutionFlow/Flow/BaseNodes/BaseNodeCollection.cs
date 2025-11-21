@@ -61,18 +61,6 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
         public static int Abs(int value) => Math.Abs(value);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
-        public static int Negate(int value) => -value;
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
-        public static int Increment(int value) => value + 1;
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
-        public static int Decrement(int value) => value - 1;
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
-        public static int Sign(int value) => Math.Sign(value);
-
         // Map value from one range to another
         [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
         public static double MapRange(
@@ -190,10 +178,6 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         [BlazorFlowNodeMethod(Models.NodeType.Function, "Logic")]
         public static bool Not(bool value) => !value;
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Logic")]
-        public static bool CoalesceBool(bool? value, [BlazorFlowInputField] bool @default = false)
-            => value ?? @default;
-
         // ---------- Strings ----------
 
         [BlazorFlowNodeMethod(Models.NodeType.Function, "Strings")]
@@ -272,27 +256,11 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         }
 
         [BlazorFlowNodeMethod(Models.NodeType.Function, "Strings")]
-        public static string CoalesceString(string primary, [BlazorFlowInputField] string fallback = "")
-            => string.IsNullOrEmpty(primary) ? fallback ?? string.Empty : primary;
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Strings")]
         public static int IndexOf(string input, string value, [BlazorFlowInputField] bool ignoreCase = false)
         {
             if (input == null || value == null) return -1;
             var comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
             return input.IndexOf(value, comparison);
-        }
-
-        // Simple format: replaces {0}, {1}, {2}
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Strings")]
-        public static string Format3(
-            [BlazorFlowInputField] string format,
-            [BlazorFlowInputField] string arg0,
-            [BlazorFlowInputField] string arg1,
-            [BlazorFlowInputField] string arg2)
-        {
-            format ??= string.Empty;
-            return string.Format(CultureInfo.InvariantCulture, format, arg0, arg1, arg2);
         }
 
         // ---------- Parsing / Conversion ----------
@@ -355,18 +323,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         public static void Log(string message) => Console.WriteLine(message);
 
         [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility")]
-        public static void LogWarning(string message) => Console.WriteLine("[WARN] " + message);
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility")]
         public static void LogError(string message) => Console.Error.WriteLine("[ERROR] " + message);
-
-        // Logs the current node's JSON input
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility")]
-        public static void DumpInput(NodeContext ctx)
-        {
-            var json = ctx.CurrentNode.Input?.ToJsonString() ?? "{}";
-            Console.WriteLine($"[DumpInput:{ctx.CurrentNode.BackingMethod.Name}] {json}");
-        }
 
         [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility")]
         public static async Task Wait([BlazorFlowInputField] int timeMs)
@@ -374,9 +331,6 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
         [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility")]
         public static string NewGuid() => Guid.NewGuid().ToString("D");
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility")]
-        public static string MachineName() => Environment.MachineName;
 
         // ---------- Random ----------
 
@@ -548,21 +502,6 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
             }
         }
 
-        // Gate: only forwards when "open" is true
-        [BlazorFlowNodeMethod(Models.NodeType.BooleanOperation, "Conditionals")]
-        [NodeFlowPorts("open", "closed")]
-        public static async Task Gate(NodeContext ctx, bool open)
-        {
-            if (open)
-            {
-                await ctx.ExecutePortAsync("open");
-            }
-            else
-            {
-                await ctx.ExecutePortAsync("closed");
-            }
-        }
-
         // SwitchInt: 3 cases + default
         [BlazorFlowNodeMethod(Models.NodeType.BooleanOperation, "Conditionals")]
         [NodeFlowPorts("case1", "case2", "case3", "default")]
@@ -681,18 +620,6 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
             }
         }
 
-        // ---------- Simple templating (for quick tests) ----------
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Templates")]
-        public static string InterpolateString(
-            [BlazorFlowInputField] string template,
-            [BlazorFlowInputField] string value)
-        {
-            template ??= string.Empty;
-            value ??= string.Empty;
-            return template.Replace("{{value}}", value, StringComparison.Ordinal);
-        }
-
         // ---------- HTTP ----------
         private static readonly HttpClient _httpClient = new();
 
@@ -746,34 +673,6 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         }
 
         [BlazorFlowNodeMethod(Models.NodeType.Function, "HTTP")]
-        public static async Task<int> HttpGetStatusCode(
-            [BlazorFlowInputField] string url,
-            [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,
-            [BlazorFlowInputField] int timeoutMs = 10000)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-                return 0;
-
-            using var cts = timeoutMs > 0
-                ? new CancellationTokenSource(timeoutMs)
-                : new CancellationTokenSource();
-
-            try
-            {
-                using var request = new HttpRequestMessage(HttpMethod.Get, url);
-                ApplyHeaders(request, headers);
-
-                var response = await _httpClient.SendAsync(request, cts.Token);
-                return (int)response.StatusCode;
-            }
-            catch (Exception ex)
-            {
-                LogError($"HttpGetStatusCode failed: {ex.Message}");
-                return 0;
-            }
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "HTTP")]
         public static async Task<string> HttpPostString(
             [BlazorFlowInputField] string url,
             string body,
@@ -804,40 +703,6 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
             {
                 LogError($"HttpPostString failed: {ex.Message}");
                 return string.Empty;
-            }
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "HTTP")]
-        public static async Task<int> HttpPostStatusCode(
-            [BlazorFlowInputField] string url,
-            string body,
-            [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,
-            [BlazorFlowInputField] string contentType = "application/json",
-            [BlazorFlowInputField] int timeoutMs = 10000)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-                return 0;
-
-            body ??= string.Empty;
-            contentType ??= "application/json";
-
-            using var cts = timeoutMs > 0
-                ? new CancellationTokenSource(timeoutMs)
-                : new CancellationTokenSource();
-
-            try
-            {
-                using var request = new HttpRequestMessage(HttpMethod.Post, url);
-                request.Content = new StringContent(body, Encoding.UTF8, contentType);
-                ApplyHeaders(request, headers);
-
-                var response = await _httpClient.SendAsync(request, cts.Token);
-                return (int)response.StatusCode;
-            }
-            catch (Exception ex)
-            {
-                LogError($"HttpPostStatusCode failed: {ex.Message}");
-                return 0;
             }
         }
 
@@ -944,31 +809,6 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         // ---------- String Utilities ----------
 
         [BlazorFlowNodeMethod(Models.NodeType.Function, "String")]
-        public static string Reverse([BlazorFlowInputField] string input)
-        {
-            if (string.IsNullOrEmpty(input)) return string.Empty;
-            char[] chars = input.ToCharArray();
-            Array.Reverse(chars);
-            return new string(chars);
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "String")]
-        public static string PadLeft([BlazorFlowInputField] string input, int totalWidth, [BlazorFlowInputField] string paddingChar = " ")
-        {
-            if (string.IsNullOrEmpty(input)) input = string.Empty;
-            char pad = string.IsNullOrEmpty(paddingChar) ? ' ' : paddingChar[0];
-            return input.PadLeft(totalWidth, pad);
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "String")]
-        public static string PadRight([BlazorFlowInputField] string input, int totalWidth, [BlazorFlowInputField] string paddingChar = " ")
-        {
-            if (string.IsNullOrEmpty(input)) input = string.Empty;
-            char pad = string.IsNullOrEmpty(paddingChar) ? ' ' : paddingChar[0];
-            return input.PadRight(totalWidth, pad);
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "String")]
         public static string FormatString([BlazorFlowInputField] string template, [BlazorFlowInputField] string arg0 = "", [BlazorFlowInputField] string arg1 = "", [BlazorFlowInputField] string arg2 = "")
         {
             try
@@ -984,14 +824,6 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         // ---------- Array Utilities ----------
 
         [BlazorFlowNodeMethod(Models.NodeType.Function, "Array")]
-        public static string ArrayJoin(JsonArray items, [BlazorFlowInputField] string separator = ",")
-        {
-            if (items == null || items.Count == 0) return string.Empty;
-            var stringValues = items.Select(node => node?.ToString() ?? string.Empty);
-            return string.Join(separator, stringValues);
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Array")]
         public static JsonNode? ArrayFirst(JsonArray items)
         {
             return items == null || items.Count == 0 ? null : items[0];
@@ -1004,12 +836,6 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         }
 
         [BlazorFlowNodeMethod(Models.NodeType.Function, "Array")]
-        public static int ArrayCount(JsonArray items)
-        {
-            return items?.Count ?? 0;
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Array")]
         public static JsonArray ArrayReverse(JsonArray items)
         {
             if (items == null || items.Count == 0) return new JsonArray();
@@ -1019,13 +845,6 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
                 reversed.Add(items[i]?.DeepClone());
             }
             return reversed;
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Array")]
-        public static JsonNode? ArrayGet(JsonArray items, int index)
-        {
-            if (items == null || index < 0 || index >= items.Count) return null;
-            return items[index];
         }
 
         [BlazorFlowNodeMethod(Models.NodeType.Function, "Array")]
@@ -1049,34 +868,11 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         // ---------- Logic Utilities ----------
 
         [BlazorFlowNodeMethod(Models.NodeType.Function, "Logic")]
-        public static bool IsNull(string? input)
-        {
-            return input == null;
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Logic")]
-        public static bool IsEmpty([BlazorFlowInputField] string? input)
-        {
-            return string.IsNullOrEmpty(input);
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Logic")]
-        public static bool IsWhitespace([BlazorFlowInputField] string? input)
-        {
-            return string.IsNullOrWhiteSpace(input);
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Logic")]
         public static string Ternary(bool condition, [BlazorFlowInputField] string trueValue, [BlazorFlowInputField] string falseValue)
         {
             return condition ? trueValue : falseValue;
         }
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Logic")]
-        public static int TernaryInt(bool condition, int trueValue, int falseValue)
-        {
-            return condition ? trueValue : falseValue;
-        }
 
         // ---------- Math Utilities ----------
 
