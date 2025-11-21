@@ -36,57 +36,124 @@
             </div>
             <div class="node-browser">
                 <div class="node-search">
-                    <input type="text"
+                    <input @ref="searchInputRef"
+                    type="text"
                     class="form-control"
-                    placeholder="Search nodes..."
+                    placeholder="@(selectedCategory == null ? "Search sections..." : "Search nodes...")"
                     @bind="searchQuery"
                     @bind:event="oninput"
-                    aria-label="Search nodes" />
+                    @onkeydown="HandleSearchKeyDown"
+                    aria-label="Search"
+                    autocomplete="off" />
                     <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8"></circle>
                         <path d="m21 21-4.35-4.35"></path>
                     </svg>
-                </div>
-
-                <div class="category-filters">
-                    <button class="category-pill @(selectedCategory == null ? "active" : "")"
-                    @onclick="@(() => selectedCategory = null)"
-                    aria-label="Show all categories">
-                        All
-                    </button>
-                    @foreach (var category in Categories)
+                    @if (!string.IsNullOrWhiteSpace(searchQuery))
                     {
-                        <button class="category-pill @(selectedCategory == category ? "active" : "")"
-                        @onclick="@(() => selectedCategory = category)"
-                        aria-label="Filter by @category">
-                            @category
+                        <button class="search-clear" @onclick="ClearSearch" aria-label="Clear search">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
                         </button>
                     }
                 </div>
 
-                <div class="node-list">
-                    @if (FilteredNodes.Any())
+                @if (selectedCategory != null)
+                {
+                    <div class="breadcrumb-nav">
+                        <button class="breadcrumb-back" @onclick="BackToSections" aria-label="Back to sections">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M19 12H5M12 19l-7-7 7-7"/>
+                            </svg>
+                        </button>
+                        <span class="breadcrumb-text">@selectedCategory</span>
+                    </div>
+                }
+
+                <div class="node-list" @ref="nodeListRef">
+                    @if (selectedCategory == null)
                     {
-                        @foreach (var node in FilteredNodes)
+                        @* Show sections *@
+                        var filteredSections = MatchingCategories.ToList();
+                        if (filteredSections.Any())
                         {
-                            <button class="node-item"
-                            @onclick="@(() => CreateNode(node))"
-                            aria-label="Create @node.BackingMethod.Name node">
-                                <span class="node-name">@TypeHelpers.AddSpacesToPascalCase(node.BackingMethod.Name)</span>
-                                <span class="node-category">@node.Section</span>
-                            </button>
+                            for (int i = 0; i < filteredSections.Count; i++)
+                            {
+                                var section = filteredSections[i];
+                                var index = i;
+                                var isSelected = selectedNodeIndex == index;
+                                var nodeCount = _nodes.Count(n => n.Section == section);
+                                <button class="node-item section-item @(isSelected ? "selected" : "")"
+                                @onclick="@(() => SelectSection(section))"
+                                data-node-index="@index"
+                                aria-label="Open @(section) section">
+                                    <div class="node-content">
+                                        <span class="node-name">@(section)</span>
+                                        <span class="node-count">@nodeCount node@(nodeCount == 1 ? "" : "s")</span>
+                                    </div>
+                                    <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M9 18l6-6-6-6"/>
+                                    </svg>
+                                </button>
+                            }
+                        }
+                        else
+                        {
+                            <div class="no-results">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M12 8v4"></path>
+                                    <path d="M12 16h.01"></path>
+                                </svg>
+                                <p>No sections found</p>
+                            </div>
                         }
                     }
                     else
                     {
-                        <div class="no-results">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <path d="M12 8v4"></path>
-                                <path d="M12 16h.01"></path>
-                            </svg>
-                            <p>No nodes found</p>
-                        </div>
+                        @* Show nodes within selected section *@
+                        var filteredNodesList = FilteredNodes.ToList();
+                        if (filteredNodesList.Any())
+                        {
+                            for (int i = 0; i < filteredNodesList.Count; i++)
+                            {
+                                var node = filteredNodesList[i];
+                                var index = i;
+                                var isSelected = selectedNodeIndex == index;
+                                <button class="node-item @(isSelected ? "selected" : "")"
+                                @onclick="@(() => CreateNode(node))"
+                                data-node-index="@index"
+                                aria-label="Create @node.BackingMethod.Name node">
+                                    <div class="node-content">
+                                        <span class="node-name">@((MarkupString)HighlightMatch(TypeHelpers.AddSpacesToPascalCase(node.BackingMethod.Name), searchQuery))</span>
+                                    </div>
+                                    @if (isSelected)
+                                    {
+                                        <svg class="node-selected-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="9 11 12 14 22 4"></polyline>
+                                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                                        </svg>
+                                    }
+                                </button>
+                            }
+                        }
+                        else
+                        {
+                            <div class="no-results">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M12 8v4"></path>
+                                    <path d="M12 16h.01"></path>
+                                </svg>
+                                <p>No nodes found</p>
+                                @if (!string.IsNullOrWhiteSpace(searchQuery))
+                                {
+                                    <button class="btn btn-sm btn-outline-secondary mt-2" @onclick="ClearSearch">Clear search</button>
+                                }
+                            </div>
+                        }
                     }
                 </div>
             </div>
@@ -154,11 +221,41 @@
 
     private string searchQuery = string.Empty;
     private string? selectedCategory = null;
+    private int selectedNodeIndex = -1;
+    private ElementReference searchInputRef;
+    private ElementReference nodeListRef;
 
     private IEnumerable<string> Categories => _nodes
         .Select(n => n.Section)
         .Distinct()
         .OrderBy(s => s);
+
+    private IEnumerable<string> MatchingCategories
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(searchQuery))
+            {
+                return Categories;
+            }
+
+            var query = searchQuery.ToLower();
+            return _nodes
+                .Where(n =>
+                {
+                    var originalName = n.BackingMethod.Name.ToLower();
+                    var displayName = TypeHelpers.AddSpacesToPascalCase(n.BackingMethod.Name).ToLower();
+                    var section = n.Section.ToLower();
+
+                    return ContainsFuzzy(displayName, query) ||
+                           ContainsFuzzy(originalName, query) ||
+                           section.Contains(query);
+                })
+                .Select(n => n.Section)
+                .Distinct()
+                .OrderBy(s => s);
+        }
+    }
 
     private IEnumerable<Node> FilteredNodes
     {
@@ -166,26 +263,191 @@
         {
             var filtered = _nodes.AsEnumerable();
 
+            // If searching, auto-select first matching category
+            var effectiveCategory = selectedCategory;
+            if (!string.IsNullOrWhiteSpace(searchQuery) && selectedCategory == null)
+            {
+                effectiveCategory = MatchingCategories.FirstOrDefault();
+            }
+
+            // Filter by category
+            if (effectiveCategory != null)
+            {
+                filtered = filtered.Where(n => n.Section == effectiveCategory);
+            }
+
+            // Then filter by search within that category
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
+                var query = searchQuery.ToLower();
                 filtered = filtered.Where(n =>
                 {
-                    var originalName = n.BackingMethod.Name;
-                    var displayName = TypeHelpers.AddSpacesToPascalCase(originalName);
+                    var originalName = n.BackingMethod.Name.ToLower();
+                    var displayName = TypeHelpers.AddSpacesToPascalCase(n.BackingMethod.Name).ToLower();
 
-                    return originalName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
-                           displayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
-                           n.Section.Contains(searchQuery, StringComparison.OrdinalIgnoreCase);
+                    return ContainsFuzzy(displayName, query) ||
+                           ContainsFuzzy(originalName, query);
                 });
             }
 
-            if (selectedCategory != null)
-            {
-                filtered = filtered.Where(n => n.Section == selectedCategory);
-            }
-
-            return filtered.OrderBy(n => n.Section).ThenBy(n => n.BackingMethod.Name);
+            return filtered.OrderBy(n => n.BackingMethod.Name);
         }
+    }
+
+    private bool ContainsFuzzy(string text, string pattern)
+    {
+        // Simple fuzzy match: all pattern chars must appear in order in text
+        if (string.IsNullOrWhiteSpace(pattern)) return true;
+        if (string.IsNullOrWhiteSpace(text)) return false;
+
+        int patternIndex = 0;
+        foreach (char c in text)
+        {
+            if (patternIndex < pattern.Length && c == pattern[patternIndex])
+            {
+                patternIndex++;
+            }
+        }
+        return patternIndex == pattern.Length;
+    }
+
+    private string HighlightMatch(string text, string searchQuery)
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery) || string.IsNullOrWhiteSpace(text))
+            return text;
+
+        var query = searchQuery.ToLower();
+        var lowerText = text.ToLower();
+
+        // Find the index of the search query in the text
+        int index = lowerText.IndexOf(query);
+        if (index >= 0)
+        {
+            var before = text.Substring(0, index);
+            var match = text.Substring(index, query.Length);
+            var after = text.Substring(index + query.Length);
+            return $"{System.Net.WebUtility.HtmlEncode(before)}<mark class=\"search-highlight\">{System.Net.WebUtility.HtmlEncode(match)}</mark>{System.Net.WebUtility.HtmlEncode(after)}";
+        }
+
+        return System.Net.WebUtility.HtmlEncode(text);
+    }
+
+    private async Task HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (selectedCategory == null)
+        {
+            // We're showing sections
+            var sections = MatchingCategories.ToList();
+
+            if (e.Key == "ArrowDown")
+            {
+                if (sections.Any())
+                {
+                    selectedNodeIndex = (selectedNodeIndex + 1) % sections.Count;
+                    await ScrollToSelectedNode();
+                }
+            }
+            else if (e.Key == "ArrowUp")
+            {
+                if (sections.Any())
+                {
+                    selectedNodeIndex = selectedNodeIndex <= 0 ? sections.Count - 1 : selectedNodeIndex - 1;
+                    await ScrollToSelectedNode();
+                }
+            }
+            else if (e.Key == "Enter" && selectedNodeIndex >= 0 && selectedNodeIndex < sections.Count)
+            {
+                SelectSection(sections[selectedNodeIndex]);
+            }
+            else if (e.Key == "Escape")
+            {
+                ClearSearch();
+            }
+            else
+            {
+                // Reset selection when typing
+                selectedNodeIndex = -1;
+            }
+        }
+        else
+        {
+            // We're showing nodes within a section
+            var filteredList = FilteredNodes.ToList();
+
+            if (e.Key == "ArrowDown")
+            {
+                if (filteredList.Any())
+                {
+                    selectedNodeIndex = (selectedNodeIndex + 1) % filteredList.Count;
+                    await ScrollToSelectedNode();
+                }
+            }
+            else if (e.Key == "ArrowUp")
+            {
+                if (filteredList.Any())
+                {
+                    selectedNodeIndex = selectedNodeIndex <= 0 ? filteredList.Count - 1 : selectedNodeIndex - 1;
+                    await ScrollToSelectedNode();
+                }
+            }
+            else if (e.Key == "Enter" && selectedNodeIndex >= 0 && selectedNodeIndex < filteredList.Count)
+            {
+                await CreateNode(filteredList[selectedNodeIndex]);
+                selectedNodeIndex = -1;
+            }
+            else if (e.Key == "Escape")
+            {
+                BackToSections();
+            }
+            else
+            {
+                // Reset selection when typing
+                selectedNodeIndex = -1;
+            }
+        }
+    }
+
+    private async Task ScrollToSelectedNode()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("eval", $@"
+                const container = document.querySelector('.node-list');
+                const selected = container?.querySelector('.node-item.selected');
+                if (selected && container) {{
+                    const rect = selected.getBoundingClientRect();
+                    const parentRect = container.getBoundingClientRect();
+                    if (rect.top < parentRect.top || rect.bottom > parentRect.bottom) {{
+                        selected.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }});
+                    }}
+                }}
+            ");
+        }
+        catch
+        {
+            // Silently ignore errors
+        }
+    }
+
+    private void ClearSearch()
+    {
+        searchQuery = string.Empty;
+        selectedCategory = null;
+        selectedNodeIndex = -1;
+    }
+
+    private void SelectSection(string section)
+    {
+        selectedCategory = section;
+        selectedNodeIndex = -1;
+        searchQuery = string.Empty;
+    }
+
+    private void BackToSections()
+    {
+        selectedCategory = null;
+        selectedNodeIndex = -1;
+        searchQuery = string.Empty;
     }
 
     private async Task SaveChanges()

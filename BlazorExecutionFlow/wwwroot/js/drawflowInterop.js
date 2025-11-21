@@ -483,6 +483,21 @@ window.nextFrame = () => {
     return new Promise(resolve => requestAnimationFrame(() => resolve()));
 };
 
+window.scrollIntoViewIfNeeded = (element) => {
+    if (!element) return;
+
+    const rect = element.getBoundingClientRect();
+    const parent = element.parentElement;
+    if (!parent) return;
+
+    const parentRect = parent.getBoundingClientRect();
+
+    // Check if element is outside the visible area
+    if (rect.top < parentRect.top || rect.bottom > parentRect.bottom) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+};
+
 function _measureTextPx(text, font = "12px 'Helvetica Neue', Helvetica, Arial, sans-serif") {
     const span = document.createElement('span');
     span.style.visibility = 'hidden';
