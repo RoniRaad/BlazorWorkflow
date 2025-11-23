@@ -1,4 +1,7 @@
-﻿@inherits LayoutComponentBase
+@using BlazorExecutionFlow.Components
+@using BlazorExecutionFlow.Services
+@inherits LayoutComponentBase
+@inject UserPromptService PromptService
 
 <div class="app-container">
     <header class="app-header">
@@ -40,3 +43,5 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">✕</a>
 </div>
+
+<UserPromptModal @rendermode="InteractiveServer" PromptService="@PromptService" />

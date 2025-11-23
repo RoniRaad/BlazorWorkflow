@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using BlazorExecutionFlow.Flow.Attributes;
 using BlazorExecutionFlow.Helpers;
 using BlazorExecutionFlow.Models.NodeV2;
+using BlazorExecutionFlow.Services;
 
 namespace BlazorExecutionFlow.Flow.BaseNodes
 {
@@ -395,6 +396,57 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
         [BlazorFlowNodeMethod(Models.NodeType.Function, "Variables")]
         public static bool BoolVariable([BlazorFlowInputField] bool constantBool) => constantBool;
+
+        // ---------- Workflow Inputs ----------
+
+        /// <summary>
+        /// Gets a workflow input by name. The input must be provided when executing the workflow.
+        /// This node automatically populates the workflow's input requirements.
+        /// </summary>
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Workflow")]
+        public static object GetInput(NodeContext ctx, [BlazorFlowInputField] string inputName)
+        {
+            if (string.IsNullOrWhiteSpace(inputName))
+                throw new ArgumentException("Input name cannot be empty");
+
+            if (ctx.Context.TryGetValue($"workflow_input_{inputName}", out var value))
+                return value ?? throw new ArgumentException($"Workflow input '{inputName}' is null");
+
+            throw new ArgumentException($"Workflow input '{inputName}' not found. Ensure the input is provided when executing the workflow.");
+        }
+
+        /// <summary>
+        /// Sets a workflow output value. This value will be included in the workflow execution results.
+        /// </summary>
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Workflow")]
+        public static void SetOutput(NodeContext ctx, [BlazorFlowInputField] string outputName, object value)
+        {
+            if (string.IsNullOrWhiteSpace(outputName))
+                throw new ArgumentException("Output name cannot be empty");
+
+            ctx.Context[$"workflow_output_{outputName}"] = value;
+        }
+
+        /// <summary>
+        /// Prompts the user for input during workflow execution. The workflow will pause until the user provides a value.
+        /// </summary>
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Workflow")]
+        public static async Task<string> PromptUser(IServiceProvider serviceProvider, [BlazorFlowInputField] string promptMessage, [BlazorFlowInputField] string defaultValue = "")
+        {
+            if (string.IsNullOrWhiteSpace(promptMessage))
+                throw new ArgumentException("Prompt message cannot be empty");
+
+            // Get the prompt service from the service provider
+            var promptService = serviceProvider.GetService(typeof(IUserPromptService)) as IUserPromptService;
+            if (promptService == null)
+            {
+                throw new InvalidOperationException("User prompt service is not available. Ensure UserPromptService is registered in the DI container.");
+            }
+
+            // Request user input and wait for response
+            var result = await promptService.PromptUserAsync(promptMessage, defaultValue);
+            return result ?? defaultValue;
+        }
 
         // ---------- Collections (string arrays) ----------
 

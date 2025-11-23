@@ -72,6 +72,12 @@ namespace BlazorExecutionFlow.Models.NodeV2
         public Dictionary<string, List<Node>> OutputPorts { get; } =
             new(StringComparer.OrdinalIgnoreCase);
 
+        /// <summary>
+        /// Shared execution context containing workflow inputs and global state.
+        /// Set this before executing the workflow to provide inputs to GetInput nodes.
+        /// </summary>
+        [JsonIgnore] public Dictionary<string, object?>? SharedExecutionContext { get; set; }
+
         [JsonIgnore] private bool _portsInitialized;
         [JsonIgnore] private bool _isPortDriven;
 
@@ -223,6 +229,11 @@ namespace BlazorExecutionFlow.Models.NodeV2
             {
                 foreach (var outputNode in OutputNodes)
                 {
+                    // Propagate shared execution context to downstream nodes
+                    if (SharedExecutionContext != null && outputNode.SharedExecutionContext == null)
+                    {
+                        outputNode.SharedExecutionContext = SharedExecutionContext;
+                    }
                     await outputNode.ExecuteNode(this);
                 }
             }
@@ -529,12 +540,22 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
                 if (parameter.ParameterType == typeof(NodeContext))
                 {
+                    // Create context dictionary, merging shared execution context if available
+                    var contextDict = new Dictionary<string, object?>();
+                    if (SharedExecutionContext != null)
+                    {
+                        foreach (var kvp in SharedExecutionContext)
+                        {
+                            contextDict[kvp.Key] = kvp.Value;
+                        }
+                    }
+
                     orderedMethodParameters[i] = new NodeContext
                     {
                         CurrentNode = this,
                         InputNodes = InputNodes,
                         OutputNodes = OutputNodes,
-                        Context = [],
+                        Context = contextDict,
                         ExecutePortInternal = ExecutePortAsync
                     };
                     continue;
