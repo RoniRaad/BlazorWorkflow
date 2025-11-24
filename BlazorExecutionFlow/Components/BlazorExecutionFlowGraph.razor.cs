@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Xml.Linq;
 using BlazorExecutionFlow.Helpers;
 using BlazorExecutionFlow.Models.DTOs;
@@ -43,6 +44,9 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
 
     [Parameter] public Graph Graph { get; set; } = new();
     protected string ElementId => Id ?? $"df_{GetHashCode():x}";
+
+    public double PosX { get; set; }
+    public double PosY { get; set; }
 
     private static JsonSerializerOptions jsonSerializerOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -121,6 +125,10 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
                     case "nodeRemoved":
                         await HandleNodeRemoved(payloadJson);
                         break;
+
+                    case "translate":
+                        await HandleCanvasTranslate(payloadJson);
+                        break;
                 }
             }
             catch (Exception ex)
@@ -135,6 +143,18 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
                 _ = InvokeAsync(() => OnEvent.InvokeAsync(new DrawflowEventArgs { Name = name, PayloadJson = payloadJson }));
             }
         });
+    }
+
+    private async Task HandleCanvasTranslate(string payloadJson)
+    {
+        // Parse: [x, y] - Drawflow passes the new canvas position
+        var payload = JsonSerializer.Deserialize<JsonArray>(payloadJson, jsonSerializerOptions);
+        var innerObject = payload.First().AsObject();
+        innerObject.TryGetPropertyValue("x", out var jsonPosX);
+        innerObject.TryGetPropertyValue("y", out var jsonPosY);
+
+        PosX = jsonPosX.GetValue<int>();;
+        PosY = jsonPosY.GetValue<int>();
     }
 
     private Task HandleNodeCreated(string payloadJson)

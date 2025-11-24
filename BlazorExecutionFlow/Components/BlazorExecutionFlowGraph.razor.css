@@ -330,7 +330,8 @@ h1 {
 }
 
 .node-editor-dialog {
-    max-width: 1539px;
+    width: 90%;
+    max-width: 1660px;
     width: 100%;
     margin: 0 auto;
     height: 100vh;
@@ -580,7 +581,7 @@ h1 {
     }
 
     .node-editor-content {
-        height: 90vh;
+        height: 93vh;
     }
 }
 

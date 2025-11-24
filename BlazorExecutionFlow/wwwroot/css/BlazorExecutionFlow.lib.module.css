@@ -50,7 +50,8 @@
 
 /* Node Editor Modal */
 .node-editor-dialog {
-    max-width: 1120px;
+    width: 90%;
+    max-width: 1660px;
     width: 100%;
     margin: 0 auto;
     height: 100vh;
@@ -64,7 +65,7 @@
     border-radius: 1.25rem;
     border: 1px solid rgba(148, 163, 184, 0.35);
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.85);
-    height: 80vh;
+    height: 93vh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -707,7 +708,7 @@
     }
 
     .node-editor-content {
-        height: 90vh;
+        height: 93vh;
     }
 }
 

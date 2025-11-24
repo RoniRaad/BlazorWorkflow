@@ -31,9 +31,9 @@
         <div class="sidebar-panel">
             <div class="control-buttons">
                 <button class="btn btn-sm btn-primary" @onclick="Run" aria-label="Run workflow">Run</button>
+                <button class="btn btn-sm btn-primary" @onclick="Clear" aria-label="Clear workflow">Clear</button>
                 <button class="btn btn-sm btn-success" @onclick="ExportCSharp" aria-label="Export to C# JSON">Export C#</button>
                 <button class="btn btn-sm btn-primary" @onclick="() => showImportModal = true" aria-label="Import from C# JSON">Import C#</button>
-                <button class="btn btn-sm btn-primary" @onclick="Clear" aria-label="Clear workflow">Clear</button>
             </div>
             <div class="node-browser">
                 <div class="node-search">
@@ -494,41 +494,7 @@
 
     private async Task ExecuteInputNodes()
     {
-        if (editNode is null) return;
-
-        // Clear results from all nodes to ensure fresh execution
-        foreach (var node in Graph.Nodes)
-        {
-            node.Value.Result = null;
-            node.Value.HasError = false;
-            node.Value.ErrorMessage = null;
-        }
-
-        // Event handlers are already attached during component initialization
-        // No need to re-attach them here
-
-        // Find all start nodes in the graph
-        var startNodes = Graph.Nodes.Where(x =>
-        {
-            var attributes = x.Value.BackingMethod.GetCustomAttributes(typeof(BlazorFlowNodeMethodAttribute), false);
-            if (attributes.Length > 0 && ((BlazorFlowNodeMethodAttribute)attributes.First()).NodeType == NodeType.Event)
-            {
-                return true;
-            }
-
-            return false;
-        });
-
-        // Execute all start nodes, which will cascade through the graph
-        var tasks = new List<Task>();
-        foreach (var startNode in startNodes)
-        {
-            tasks.Add(startNode.Value.ExecuteNode());
-        }
-
-        await Task.WhenAll(tasks);
-
-        // The editNode.Input should now be populated with fresh data from upstream nodes
+        await Run();
     }
 
     async Task SetStatusAsync(string nodeId, bool isRunning, bool hasError = false, string? errorMessage = null, int? outputPos = null, object? value = null)
@@ -708,9 +674,13 @@
         if (returnProps?.Count > 0)
         {
             node.MethodOutputToNodeOutputMap = MappingHelpers.GenerateSmartOutputMappings(node.BackingMethod, returnProps);
-		}
+        }
+
+		var random = new Random();
 
         // Use smart mapping helper to generate intelligent default output mappings
+        node.PosX = PosX + 60 + (30 * random.NextDouble());
+        node.PosY = PosY + 60 + (30 * random.NextDouble());
         node.NodeInputToMethodInputMap = MappingHelpers.GenerateDefaultInputMappings(node.BackingMethod);
         node.DrawflowNodeId = (await _base.CreateNodeV2(node, "ƒ")).ToString();
         Graph.Nodes[node.DrawflowNodeId] = node;
