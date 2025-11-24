@@ -137,6 +137,11 @@ namespace BlazorExecutionFlow.Helpers
             }
             catch
             {
+                if (typeof(string) == targetType)
+                {
+                    return node.ToJsonString();
+                }
+
                 throw new InvalidCastException($"Unable to cast {node.GetValueKind()} to {targetType}"); 
             }
         }

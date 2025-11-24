@@ -13,6 +13,7 @@
 @using BlazorExecutionFlow.Models
 @using BlazorExecutionFlow.Models.NodeV2
 @using System.Text.Json
+@using System.Collections.Frozen
 @using static BlazorExecutionFlow.Helpers.DrawflowHelpers
 @inherits BlazorExecutionFlowGraphBase
 
@@ -39,7 +40,7 @@
                     <input @ref="searchInputRef"
                     type="text"
                     class="form-control"
-                    placeholder="@(selectedCategory == null ? "Search sections..." : "Search nodes...")"
+                    placeholder="@(EffectiveSelectedCategory == null ? "Search sections..." : "Search nodes...")"
                     @bind="searchQuery"
                     @bind:event="oninput"
                     @onkeydown="HandleSearchKeyDown"
@@ -60,7 +61,7 @@
                     }
                 </div>
 
-                @if (selectedCategory != null)
+                @if (EffectiveSelectedCategory != null)
                 {
                     <div class="breadcrumb-nav">
                         <button class="breadcrumb-back" @onclick="BackToSections" aria-label="Back to sections">
@@ -68,12 +69,12 @@
                                 <path d="M19 12H5M12 19l-7-7 7-7"/>
                             </svg>
                         </button>
-                        <span class="breadcrumb-text">@selectedCategory</span>
+                        <span class="breadcrumb-text">@EffectiveSelectedCategory</span>
                     </div>
                 }
 
                 <div class="node-list" @ref="nodeListRef">
-                    @if (selectedCategory == null)
+                    @if (EffectiveSelectedCategory == null)
                     {
                         @* Show sections *@
                         var filteredSections = MatchingCategories.ToList();
@@ -207,6 +208,7 @@
     [Parameter] public EventCallback<string> OnNodeDoubleClicked { get; set; }
     [Parameter] public bool IncludeControlPanel { get; set; } = true;
     [Parameter] public bool EnableStatusAnimations { get; set; } = true;
+    [Parameter] public Dictionary<string, string> WorkflowParameters { get; set; } = new();
 
     private Dictionary<string, object> options = new Dictionary<string, object>() { ["reroute"] = true };
     private BlazorExecutionFlowGraphBase? _base;
@@ -257,20 +259,34 @@
         }
     }
 
+    private string? EffectiveSelectedCategory
+    {
+        get
+        {
+            // If explicitly selected, use that
+            if (selectedCategory != null)
+                return selectedCategory;
+
+            // If searching and only one section matches, auto-select it
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                var matches = MatchingCategories.ToList();
+                if (matches.Count == 1)
+                    return matches[0];
+            }
+
+            return null;
+        }
+    }
+
     private IEnumerable<Node> FilteredNodes
     {
         get
         {
             var filtered = _nodes.AsEnumerable();
 
-            // If searching, auto-select first matching category
-            var effectiveCategory = selectedCategory;
-            if (!string.IsNullOrWhiteSpace(searchQuery) && selectedCategory == null)
-            {
-                effectiveCategory = MatchingCategories.FirstOrDefault();
-            }
-
-            // Filter by category
+            // Filter by effective category
+            var effectiveCategory = EffectiveSelectedCategory;
             if (effectiveCategory != null)
             {
                 filtered = filtered.Where(n => n.Section == effectiveCategory);
@@ -334,7 +350,7 @@
 
     private async Task HandleSearchKeyDown(KeyboardEventArgs e)
     {
-        if (selectedCategory == null)
+        if (EffectiveSelectedCategory == null)
         {
             // We're showing sections
             var sections = MatchingCategories.ToList();
@@ -678,25 +694,10 @@
 
     private async Task Run()
     {
-        // Clear results and errors from previous runs
-        foreach (var node in Graph.Nodes)
+        _ = Graph.Run(new()
         {
-            node.Value.Result = null;
-            node.Value.HasError = false;
-            node.Value.ErrorMessage = null;
-        }
-
-        // Event handlers are already attached during component initialization
-        // No need to re-attach them here
-
-        var startNodes = Graph.Nodes.Where(x => x.Value.BackingMethod.Name == nameof(BaseNodeCollection.Start));
-        var tasks = new List<Task>();
-        foreach (var startNode in startNodes)
-        {
-            tasks.Add(startNode.Value.ExecuteNode());
-        }
-
-        await Task.WhenAll(tasks);
+            Parameters = WorkflowParameters.ToFrozenDictionary()
+        });
     }
 
     private async Task CreateNode(Node nodeTemplate)
@@ -805,6 +806,56 @@
         if (_base is null) return;
         await _base.CallAsync<object>("clear");
         _exportJson = null;
+    }
+
+    /// <summary>
+    /// Loads a workflow from serialized JSON data.
+    /// </summary>
+    public async Task LoadFromJson(string flowJson)
+    {
+        if (_base is null || string.IsNullOrWhiteSpace(flowJson)) return;
+
+        try
+        {
+            var nodes = FlowSerializer.DeserializeFlow(flowJson);
+
+            // Clear existing graph
+            await _base.CallAsync<object>("clear");
+
+            // Import nodes to drawflow
+            var json = DrawflowExporter.ExportToDrawflowJson(nodes);
+            await _base.CallAsync("import", json);
+            await _base.JS.InvokeVoidAsync("nextFrame");
+
+            // Update Graph.Nodes to match imported nodes
+            Graph.Nodes.Clear();
+            foreach (var node in nodes)
+            {
+                Graph.Nodes[node.DrawflowNodeId] = node;
+            }
+
+            // Re-apply port labels for nodes with multiple outputs
+            foreach (var node in nodes)
+            {
+                if (node.DeclaredOutputPorts.Count > 0)
+                {
+                    await _base.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", _base.Id, node.DrawflowNodeId, new List<List<string>>(), node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
+                }
+
+                // Set node width based on title
+                await _base.JS.InvokeVoidAsync("DrawflowBlazor.setNodeWidthFromTitle", _base.Id, node.DrawflowNodeId);
+            }
+
+            // Update connection positions after import to prevent glitches
+            await _base.JS.InvokeVoidAsync("DrawflowBlazor.updateConnectionNodes", _base.Id);
+
+            // Attach event handlers to loaded nodes
+            AttachNodeEventHandlers();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"LoadFromJson failed: {ex.Message}");
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

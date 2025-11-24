@@ -52,7 +52,7 @@ namespace TestRunner
             Console.WriteLine("[Test 4] Comparison Node -> If Node Simulation");
 
             // Create a simple comparison node
-            var equalMethod = typeof(BaseNodeCollection).GetMethod("Equal",
+            var equalMethod = typeof(CoreNodes).GetMethod("Equal",
                 BindingFlags.Public | BindingFlags.Static,
                 null,
                 new[] { typeof(int), typeof(int) },

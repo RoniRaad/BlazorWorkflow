@@ -510,3 +510,59 @@ function _measureTextPx(text, font = "12px 'Helvetica Neue', Helvetica, Arial, s
     span.remove();
     return Math.ceil(width);
 }
+
+// Position popover relative to button
+window.positionPopover = function(buttonElement, popoverElement) {
+    if (!buttonElement || !popoverElement) return;
+
+    const buttonRect = buttonElement.getBoundingClientRect();
+    const popoverRect = popoverElement.getBoundingClientRect();
+
+    // Position above the button with some spacing
+    const top = buttonRect.top - popoverRect.height - 8;
+    const left = buttonRect.right - popoverRect.width;
+
+    // Ensure it doesn't go off screen
+    const finalTop = Math.max(10, top);
+    const finalLeft = Math.max(10, Math.min(left, window.innerWidth - popoverRect.width - 10));
+
+    popoverElement.style.top = finalTop + 'px';
+    popoverElement.style.left = finalLeft + 'px';
+}
+
+// Click-away handler for popover
+let _popoverClickAwayHandler = null;
+let _popoverDotNetRef = null;
+
+window.setupPopoverClickAway = function(dotNetRef, popoverElement, buttonElement) {
+    // Clean up any existing handler
+    window.removePopoverClickAway();
+
+    _popoverDotNetRef = dotNetRef;
+
+    _popoverClickAwayHandler = function(event) {
+        // Check if click is outside both the popover and the button
+        const clickedInsidePopover = popoverElement && popoverElement.contains(event.target);
+        const clickedButton = buttonElement && buttonElement.contains(event.target);
+
+        if (!clickedInsidePopover && !clickedButton) {
+            // Close the popover
+            if (_popoverDotNetRef) {
+                _popoverDotNetRef.invokeMethodAsync('ClosePopover');
+            }
+        }
+    };
+
+    // Add listener with a small delay to avoid immediately closing from the same click that opened it
+    setTimeout(() => {
+        document.addEventListener('click', _popoverClickAwayHandler);
+    }, 100);
+}
+
+window.removePopoverClickAway = function() {
+    if (_popoverClickAwayHandler) {
+        document.removeEventListener('click', _popoverClickAwayHandler);
+        _popoverClickAwayHandler = null;
+    }
+    _popoverDotNetRef = null;
+}

@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/quickstart"
 @using BlazorExecutionFlow.Components
 @using BlazorExecutionFlow.Flow.BaseNodes
 @using BlazorExecutionFlow.Helpers
@@ -10,7 +10,7 @@
 <div class="page-container">
     <div class="page-header">
         <div>
-            <h1 class="page-title">Workflow Canvas</h1>
+            <h1 class="page-title">Quick Start Canvas</h1>
             <p class="page-description">Drag nodes from the toolbar to build your visual workflow</p>
         </div>
     </div>
@@ -18,7 +18,7 @@
     <div class="canvas-container">
         <div class="canvas-wrapper">
             <BlazorExecutionFlowGraph
-                Id="BlazorExecutionFlow-demo"
+                Id="BlazorExecutionFlow-quickstart"
                 Style="height:100vh;"
                 Options="@options" />
         </div>

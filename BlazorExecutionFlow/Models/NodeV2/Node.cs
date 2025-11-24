@@ -43,7 +43,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
         public string DrawflowNodeId { get; set; } = string.Empty;
         public double PosX { get; set; }
         public double PosY { get; set; }
-
+        public GraphExecutionContext? SharedExecutionContext { get; set; }
         public List<PathMapEntry> NodeInputToMethodInputMap { get; set; } = [];
         public List<PathMapEntry> MethodOutputToNodeOutputMap { get; set; } = [];
 
@@ -266,6 +266,15 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
                 var filledMethodParameters = GetMethodParametersFromInputResult(formattedJsonObjectResult);
                 Result = await InvokeBackingMethod(filledMethodParameters);
+
+                var outputResults = Result.GetByPath("workflow.output")?.AsObject();
+                foreach (var item in outputResults ?? [])
+                {
+                    if (SharedExecutionContext == null || item.Value == null)
+                        continue;
+
+                    SharedExecutionContext.Output[item.Key] = item.Value; 
+                }
 
                 if (MergeOutputWithInput)
                 {
@@ -529,12 +538,15 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
                 if (parameter.ParameterType == typeof(NodeContext))
                 {
+                    // Create context dictionary, merging shared execution context if available
+                    var contextDict = new Dictionary<string, object?>();
+
                     orderedMethodParameters[i] = new NodeContext
                     {
                         CurrentNode = this,
                         InputNodes = InputNodes,
                         OutputNodes = OutputNodes,
-                        Context = [],
+                        Context = contextDict,
                         ExecutePortInternal = ExecutePortAsync
                     };
                     continue;
@@ -607,6 +619,11 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 }
 
                 // Fall back to template rendering for complex expressions
+                if (SharedExecutionContext is not null)
+                {
+                    inputPayload.SetByPath("workflow.parameters", SharedExecutionContext.Parameters);
+                }
+
                 var modelDict = inputPayload.ToPlainObject()!;
 
                 var scriptObject = new ScriptObject();
@@ -618,7 +635,8 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 if (parameter.ParameterType == typeof(string) &&
                     value is not null &&
                     !value.StartsWith("\"") &&
-                    !value.EndsWith("\""))
+                    !value.EndsWith("\"") &&
+                    !value.Contains("{{"))
                 {
                     value = $"\"{value}\"";
                 }

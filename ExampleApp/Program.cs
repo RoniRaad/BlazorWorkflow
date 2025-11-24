@@ -1,10 +1,17 @@
 using ExampleApp.Components;
+using ExampleApp.Services;
+using BlazorExecutionFlow.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Register workflow service
+builder.Services.AddSingleton<WorkflowService>();
+builder.Services.AddSingleton<EnvironmentVariablesService>();
+builder.Services.AddSingleton<UserPromptService>();
 
 var app = builder.Build();
 

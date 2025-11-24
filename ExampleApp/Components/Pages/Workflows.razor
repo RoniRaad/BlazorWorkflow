@@ -1,0 +1,210 @@
+@page "/"
+@page "/workflows"
+@using BlazorExecutionFlow.Components
+@using BlazorExecutionFlow.Models
+@using ExampleApp.Services
+@using ExampleApp.Components.Layout
+@layout EmptyLayout
+@inject NavigationManager Navigation
+@inject WorkflowService WorkflowService
+@inject EnvironmentVariablesService EnvVarService
+
+<PageTitle>Workflows</PageTitle>
+
+<div style="height: 100vh; overflow: hidden; background: var(--background); color: var(--text-primary);">
+    <WorkflowManager
+        @rendermode="InteractiveServer"
+        Workflows="@workflows"
+        EnvironmentVariables="@environmentVariables"
+        Environments="@environments"
+        SelectedEnvironment="@selectedEnvironment"
+        OnCreateWorkflow="HandleCreateWorkflow"
+        OnUpdateWorkflow="HandleUpdateWorkflow"
+        OnDeleteWorkflow="HandleDeleteWorkflow"
+        OnEditWorkflow="HandleEditWorkflow"
+        OnExecuteWorkflow="HandleExecuteWorkflow"
+        OnEnvironmentChanged="HandleEnvironmentChanged"
+        OnAddEnvironment="HandleAddEnvironment"
+        OnDeleteEnvironment="HandleDeleteEnvironment"
+        OnEnvironmentRenamed="HandleEnvironmentRenamed"
+        OnAddEnvVar="HandleAddEnvVar"
+        OnRemoveEnvVar="HandleRemoveEnvVar"
+        OnEnvVarKeyChanged="HandleEnvVarKeyChanged"
+        OnEnvVarChanged="HandleEnvVarChanged" />
+</div>
+
+@code {
+    private List<WorkflowInfo> workflows = new();
+    private Dictionary<string, string> environmentVariables = new();
+    private List<string> environments = new();
+    private string selectedEnvironment = "Development";
+
+    protected override void OnInitialized()
+    {
+        workflows = WorkflowService.GetAllWorkflows();
+        environments = EnvVarService.GetAllEnvironments();
+
+        if (environments.Any())
+        {
+            selectedEnvironment = environments.First();
+        }
+
+        environmentVariables = EnvVarService.GetAllVariables(selectedEnvironment);
+    }
+
+    private void RefreshWorkflows()
+    {
+        workflows = WorkflowService.GetAllWorkflows();
+        StateHasChanged();
+    }
+
+    private void RefreshEnvVars()
+    {
+        environmentVariables = EnvVarService.GetAllVariables(selectedEnvironment);
+        StateHasChanged();
+    }
+
+    private void RefreshEnvironments()
+    {
+        environments = EnvVarService.GetAllEnvironments();
+        StateHasChanged();
+    }
+
+    private async Task HandleCreateWorkflow(CreateWorkflowRequest request)
+    {
+        var workflow = new WorkflowInfo
+        {
+            Id = Guid.NewGuid().ToString(),
+            Name = request.Name,
+            Description = request.Description,
+            CreatedAt = DateTime.Now,
+            ModifiedAt = DateTime.Now,
+			FlowGraph = new(),
+        };
+
+        WorkflowService.AddWorkflow(workflow);
+        RefreshWorkflows();
+
+        // Navigate to the workflow editor
+        Navigation.NavigateTo($"/workflow/{workflow.Id}");
+    }
+
+    private async Task HandleUpdateWorkflow(WorkflowInfo workflow)
+    {
+        workflow.ModifiedAt = DateTime.Now;
+        WorkflowService.UpdateWorkflow(workflow);
+        RefreshWorkflows();
+    }
+
+    private async Task HandleDeleteWorkflow(string workflowId)
+    {
+        WorkflowService.DeleteWorkflow(workflowId);
+        RefreshWorkflows();
+    }
+
+    private async Task HandleEditWorkflow(string workflowId)
+    {
+        Navigation.NavigateTo($"/workflow/{workflowId}");
+    }
+
+    private async Task HandleExecuteWorkflow(string workflowId)
+    {
+        var workflow = WorkflowService.GetWorkflow(workflowId);
+        if (workflow == null) return;
+
+        // TODO: Implement actual workflow execution
+        // For now, just create a mock execution record
+        var execution = new WorkflowExecution
+        {
+            Id = Guid.NewGuid().ToString(),
+            ExecutedAt = DateTime.Now,
+            Success = true,
+            Duration = TimeSpan.FromSeconds(2.5),
+            Output = new Dictionary<string, object>
+            {
+                ["status"] = "completed",
+                ["itemsProcessed"] = 42
+            }
+        };
+
+        workflow.PreviousExecutions.Add(execution);
+        workflow.ModifiedAt = DateTime.Now;
+        WorkflowService.UpdateWorkflow(workflow);
+        RefreshWorkflows();
+    }
+
+    private async Task HandleEnvironmentChanged(string newEnvironment)
+    {
+        selectedEnvironment = newEnvironment;
+        RefreshEnvVars();
+    }
+
+    private async Task HandleAddEnvironment()
+    {
+        var count = environments.Count + 1;
+        var newEnvName = $"Environment_{count}";
+
+        while (environments.Contains(newEnvName))
+        {
+            count++;
+            newEnvName = $"Environment_{count}";
+        }
+
+        EnvVarService.AddEnvironment(newEnvName);
+        selectedEnvironment = newEnvName;
+        RefreshEnvironments();
+        RefreshEnvVars();
+    }
+
+    private async Task HandleDeleteEnvironment()
+    {
+        if (environments.Count <= 1)
+            return;
+
+        EnvVarService.RemoveEnvironment(selectedEnvironment);
+        RefreshEnvironments();
+
+        if (environments.Any())
+        {
+            selectedEnvironment = environments.First();
+            RefreshEnvVars();
+        }
+    }
+
+    private async Task HandleEnvironmentRenamed(string newName)
+    {
+        if (string.IsNullOrWhiteSpace(newName) || environments.Contains(newName))
+            return;
+
+        EnvVarService.RenameEnvironment(selectedEnvironment, newName);
+        selectedEnvironment = newName;
+        RefreshEnvironments();
+        RefreshEnvVars();
+    }
+
+    private async Task HandleAddEnvVar(string key)
+    {
+        EnvVarService.SetVariable(selectedEnvironment, key, string.Empty);
+        RefreshEnvVars();
+    }
+
+    private async Task HandleRemoveEnvVar(string key)
+    {
+        EnvVarService.RemoveVariable(selectedEnvironment, key);
+        RefreshEnvVars();
+    }
+
+    private async Task HandleEnvVarKeyChanged((string OldKey, string NewKey) change)
+    {
+        var value = EnvVarService.GetVariable(selectedEnvironment, change.OldKey) ?? string.Empty;
+        EnvVarService.RemoveVariable(selectedEnvironment, change.OldKey);
+        EnvVarService.SetVariable(selectedEnvironment, change.NewKey, value);
+        RefreshEnvVars();
+    }
+
+    private async Task HandleEnvVarChanged((string Key, string Value) change)
+    {
+        EnvVarService.SetVariable(selectedEnvironment, change.Key, change.Value);
+        RefreshEnvVars();
+    }
+}

@@ -1,0 +1,105 @@
+@using BlazorExecutionFlow.Services
+@using Microsoft.AspNetCore.Components.Web
+@namespace BlazorExecutionFlow.Components
+@implements IDisposable
+
+@if (_isVisible)
+{
+    <div class="user-prompt-overlay" @onclick="HandleOverlayClick">
+        <div class="user-prompt-modal" @onclick:stopPropagation="true">
+            <div class="user-prompt-header">
+                <h3>@_currentMessage</h3>
+                <button class="user-prompt-close" @onclick="HandleCancel">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            <div class="user-prompt-body">
+                <input type="text"
+                       class="user-prompt-input"
+                       @bind="_inputValue"
+                       @bind:event="oninput"
+                       @onkeydown="HandleKeyDown"
+                       placeholder="Enter your response..."
+                       @ref="_inputElement" />
+            </div>
+            <div class="user-prompt-footer">
+                <button class="btn btn-secondary" @onclick="HandleCancel">Cancel</button>
+                <button class="btn btn-primary" @onclick="HandleSubmit">Submit</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public UserPromptService? PromptService { get; set; }
+
+    private bool _isVisible = false;
+    private string _currentPromptId = string.Empty;
+    private string _currentMessage = string.Empty;
+    private string _inputValue = string.Empty;
+    private ElementReference _inputElement;
+
+    protected override void OnInitialized()
+    {
+        if (PromptService != null)
+        {
+            PromptService.PromptRequested += OnPromptRequested;
+        }
+    }
+
+    private async void OnPromptRequested(object? sender, UserPromptRequestedEventArgs e)
+    {
+        _currentPromptId = e.PromptId;
+        _currentMessage = e.Message;
+        _inputValue = e.DefaultValue;
+        _isVisible = true;
+
+        // Need to invoke on UI thread
+        await InvokeAsync(StateHasChanged);
+
+        // Focus the input field after a short delay
+        await Task.Delay(100);
+        // Note: Auto-focus would require JS interop, keeping it simple for now
+    }
+
+    private void HandleSubmit()
+    {
+        PromptService?.SubmitResponse(_currentPromptId, _inputValue);
+        _isVisible = false;
+        StateHasChanged();
+    }
+
+    private void HandleCancel()
+    {
+        PromptService?.CancelPrompt(_currentPromptId);
+        _isVisible = false;
+        StateHasChanged();
+    }
+
+    private void HandleOverlayClick()
+    {
+        // Close on overlay click
+        HandleCancel();
+    }
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            HandleSubmit();
+        }
+        else if (e.Key == "Escape")
+        {
+            HandleCancel();
+        }
+    }
+
+    public void Dispose()
+    {
+        if (PromptService != null)
+        {
+            PromptService.PromptRequested -= OnPromptRequested;
+        }
+    }
+}

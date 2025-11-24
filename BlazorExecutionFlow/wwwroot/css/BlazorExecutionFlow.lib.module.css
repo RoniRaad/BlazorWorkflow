@@ -237,6 +237,7 @@
     gap: 0.4rem;
     max-height: 180px;
     overflow: auto;
+    position: relative;
 }
 
 .mapping-row {
@@ -377,6 +378,28 @@
     height: 1.25rem;
     color: #fca5a5;
     flex-shrink: 0;
+}
+
+.error-dismiss-btn {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    color: #fca5a5;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.error-dismiss-btn:hover {
+    background: rgba(220, 38, 38, 0.2);
+    color: #fecaca;
+}
+
+.error-dismiss-btn:active {
+    transform: scale(0.95);
 }
 
 .node-error-alert .error-message {
@@ -1085,4 +1108,228 @@
     to {
         stroke-dashoffset: -25; /* negative = move from start → end */
     }
+}
+
+/* Draggable JSON Styles */
+.draggable-json {
+    user-select: none;
+}
+
+.json-key.draggable,
+.json-value.draggable {
+    cursor: grab;
+    padding: 1px 3px;
+    border-radius: 2px;
+    transition: all 0.15s ease;
+}
+
+.json-key.draggable {
+    color: #93c5fd;
+    font-weight: 600;
+}
+
+.json-key.draggable:hover {
+    background: rgba(147, 197, 253, 0.2);
+    box-shadow: 0 0 0 1px rgba(147, 197, 253, 0.5);
+}
+
+.json-key.draggable:active {
+    cursor: grabbing;
+    background: rgba(147, 197, 253, 0.3);
+}
+
+.json-value.draggable {
+    color: #a78bfa;
+}
+
+.json-value.draggable:hover {
+    background: rgba(167, 139, 250, 0.2);
+    box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.5);
+}
+
+.json-value.draggable:active {
+    cursor: grabbing;
+    background: rgba(167, 139, 250, 0.3);
+}
+
+/* Input with Preview Button */
+.input-with-preview {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-with-preview input {
+    flex: 1;
+    padding-right: 2.5rem;
+}
+
+.btn-preview {
+    position: absolute;
+    right: 0.25rem;
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #bfdbfe;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all var(--transition-fast);
+    z-index: 1;
+}
+
+.btn-preview:hover {
+    background: rgba(59, 130, 246, 0.25);
+    border-color: rgba(59, 130, 246, 0.5);
+    transform: scale(1.05);
+}
+
+.btn-preview:active {
+    transform: scale(0.95);
+}
+
+/* Preview Button Container */
+.preview-button-container {
+    position: relative;
+    display: inline-block;
+}
+
+/* Preview Popover */
+.preview-popover {
+    position: fixed;
+    z-index: 9999;
+    min-width: 200px;
+    max-width: 350px;
+    animation: popoverSlideIn 0.2s ease;
+    pointer-events: none;
+}
+
+.preview-popover > * {
+    pointer-events: auto;
+}
+
+@keyframes popoverSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.preview-popover-arrow {
+    position: absolute;
+    bottom: -6px;
+    right: 1rem;
+    width: 12px;
+    height: 12px;
+    background: rgba(15, 23, 42, 0.95);
+    border-right: 1px solid rgba(59, 130, 246, 0.4);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.4);
+    transform: rotate(45deg);
+}
+
+.preview-popover-content {
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    border-radius: var(--radius-md);
+    padding: 0.75rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+}
+
+.preview-popover-label {
+    color: #bfdbfe;
+    font-weight: 600;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+.preview-popover-value {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.8rem;
+    color: #e5e7eb;
+    word-break: break-all;
+    line-height: 1.4;
+    max-height: 150px;
+    overflow: auto;
+}
+
+/* Mapping Preview Display (deprecated - kept for compatibility) */
+.mapping-preview {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: var(--radius-sm);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.75rem;
+    animation: slideDown 0.2s ease;
+}
+
+.mapping-preview-label {
+    color: #bfdbfe;
+    font-weight: 600;
+    margin-right: 0.5rem;
+}
+
+.mapping-preview-value {
+    color: #e5e7eb;
+    word-break: break-all;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Execute Flow Button */
+.btn-execute-flow {
+    position: absolute;
+    right: 42px;
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    border: 1px solid rgba(22, 163, 74, 0.5);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+    box-shadow: 0 2px 4px rgba(22, 163, 74, 0.3);
+}
+
+.btn-execute-flow:hover:not(:disabled) {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    border-color: rgba(34, 197, 94, 0.7);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(22, 163, 74, 0.4);
+}
+
+.btn-execute-flow:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(22, 163, 74, 0.3);
+}
+
+.btn-execute-flow:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: linear-gradient(135deg, #16a34a, #15803d);
+}
+
+.btn-execute-flow .spinner-border {
+    width: 1rem;
+    height: 1rem;
+    border-width: 2px;
 }

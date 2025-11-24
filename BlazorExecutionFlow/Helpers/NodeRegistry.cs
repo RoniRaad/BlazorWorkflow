@@ -95,6 +95,8 @@ namespace BlazorExecutionFlow.Helpers
             // Add default built-in node types if enabled
             if (_includeDefaultNodes)
             {
+                types.Add(typeof(CoreNodes));
+                types.Add(typeof(HttpNodes));
                 types.Add(typeof(BaseNodeCollection));
                 types.Add(typeof(CollectionNodes));
                 types.Add(typeof(AdvancedIterationNodes));

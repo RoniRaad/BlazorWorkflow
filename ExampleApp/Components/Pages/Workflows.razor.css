@@ -1,0 +1,9 @@
+/* Override global dark theme for workflows page */
+:root {
+    color-scheme: light;
+}
+
+html, body {
+    background: #f8f9fa !important;
+    color: #212529 !important;
+}
