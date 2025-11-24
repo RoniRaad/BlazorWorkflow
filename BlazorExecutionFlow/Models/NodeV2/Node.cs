@@ -1,4 +1,6 @@
-﻿using System.Reflection;
+﻿using System.Data.Common;
+using System.Reflection;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -6,6 +8,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using BlazorExecutionFlow.Flow.Attributes;
 using BlazorExecutionFlow.Helpers;
+using Newtonsoft.Json.Linq;
 using Scriban;
 using Scriban.Runtime;
 
@@ -667,6 +670,70 @@ namespace BlazorExecutionFlow.Models.NodeV2
             }
 
             return orderedMethodParameters!;
+        }
+
+        public object? GetScribanString(string value, JsonObject inputPayload, TypeInfo parameterType)
+        {
+            // Check if value is a simple path reference (no Scriban template expressions like {{ }})
+            // If so, get the JsonNode directly to preserve type information (especially for arrays/objects)
+            if (!value.Contains("{{") && !value.Contains("}}"))
+            {
+                var jsonValue = inputPayload.GetByPath(value);
+                if (jsonValue != null)
+                {
+                    // Deserialize directly to the target type without template rendering
+                    // This preserves arrays, objects, and other complex types
+                    orderedMethodParameters[i] = jsonValue.CoerceToType(parameterType);
+                    continue;
+                }
+            }
+
+            // Fall back to template rendering for complex expressions
+            if (SharedExecutionContext is not null)
+            {
+                inputPayload.SetByPath("workflow.parameters", SharedExecutionContext.Parameters);
+            }
+
+            var modelDict = inputPayload.ToPlainObject()!;
+
+            var scriptObject = new ScriptObject();
+            scriptObject.Import(modelDict);
+
+            var context = new TemplateContext();
+            context.PushGlobal(scriptObject);
+
+            if (parameterType == typeof(string) &&
+                value is not null &&
+                !value.StartsWith("\"") &&
+                !value.EndsWith("\"") &&
+                !value.Contains("{{"))
+            {
+                value = $"\"{value}\"";
+            }
+
+            var template = Template.Parse(value);
+            var result = template.Render(context);
+
+            if (result == string.Empty)
+            {
+                if (parameterType == typeof(string))
+                {
+                    return result;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                // Fix arrays/objects rendered by Scriban without proper JSON quoting
+                // e.g., [a,b,c] should be ["a","b","c"]
+                result = EnsureValidJson(result);
+
+                var parsedResult = ParseLiteral(result);
+                return  parsedResult.CoerceToType(parameterType);
+            }
         }
 
         private string EnsureValidJson(string input)

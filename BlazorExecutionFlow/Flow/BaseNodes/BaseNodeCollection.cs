@@ -272,10 +272,10 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
         private static readonly Random _random = new();
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Random")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility")]
         public static int RandomInteger() => _random.Next();
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Random")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility")]
         public static int RandomIntegerRange([BlazorFlowInputField] int min, [BlazorFlowInputField] int max)
         {
             if (min == max) return min;
@@ -283,10 +283,10 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
             return _random.Next(min, max);
         }
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Random")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility")]
         public static double RandomDouble() => _random.NextDouble();
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Random")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility")]
         public static bool RandomBool() => _random.Next(0, 2) == 1;
 
         // ---------- Date/Time ----------
@@ -372,19 +372,19 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
             return items.Any(x => string.Equals(x?.ToString() ?? string.Empty, value ?? string.Empty, comparison));
         }
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Array")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Collections")]
         public static JsonNode? ArrayFirst(JsonArray items)
         {
             return items == null || items.Count == 0 ? null : items[0];
         }
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Array")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Collections")]
         public static JsonNode? ArrayLast(JsonArray items)
         {
             return items == null || items.Count == 0 ? null : items[items.Count - 1];
         }
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Array")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Collections")]
         public static JsonArray ArrayReverse(JsonArray items)
         {
             if (items == null || items.Count == 0) return new JsonArray();
@@ -396,7 +396,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
             return reversed;
         }
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Array")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Collections")]
         public static JsonArray ArraySlice(JsonArray items, int start, int count)
         {
             if (items == null || items.Count == 0) return new JsonArray();

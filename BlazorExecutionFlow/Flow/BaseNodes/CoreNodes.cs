@@ -43,107 +43,16 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
             return result ?? defaultValue;
         }
 
-        // ==========================================
-        // CONDITIONALS (CONTROL FLOW)
-        // ==========================================
-
         /// <summary>
         /// Routes execution based on a boolean condition.
         /// Connects to "true" port if condition is true, otherwise "false" port.
         /// </summary>
-        [BlazorFlowNodeMethod(NodeType.BooleanOperation, "Conditionals")]
+        [BlazorFlowNodeMethod(NodeType.BooleanOperation, "Logic")]
         [NodeFlowPorts("true", "false")]
         public static Task If(NodeContext ctx, bool condition)
         {
             var port = condition ? "true" : "false";
             return ctx.ExecutePortAsync(port);
-        }
-
-        /// <summary>
-        /// Routes execution based on a nullable boolean condition.
-        /// Routes to "true", "false", or "error" (if null) ports.
-        /// </summary>
-        [BlazorFlowNodeMethod(NodeType.BooleanOperation, "Conditionals")]
-        [NodeFlowPorts("true", "false", "error")]
-        public static async Task IfNullable(NodeContext ctx, bool? condition)
-        {
-            if (condition is null)
-            {
-                await ctx.ExecutePortAsync("error");
-            }
-            else
-            {
-                await ctx.ExecutePortAsync(condition.Value ? "true" : "false");
-            }
-        }
-
-        /// <summary>
-        /// Routes execution based on an integer value comparison.
-        /// Supports 3 cases + default fallback.
-        /// </summary>
-        [BlazorFlowNodeMethod(NodeType.BooleanOperation, "Conditionals")]
-        [NodeFlowPorts("case1", "case2", "case3", "default")]
-        public static async Task SwitchInt(
-            NodeContext ctx,
-            int value,
-            [BlazorFlowInputField] int case1,
-            [BlazorFlowInputField] int case2,
-            [BlazorFlowInputField] int case3)
-        {
-            if (value == case1)
-            {
-                await ctx.ExecutePortAsync("case1");
-            }
-            else if (value == case2)
-            {
-                await ctx.ExecutePortAsync("case2");
-            }
-            else if (value == case3)
-            {
-                await ctx.ExecutePortAsync("case3");
-            }
-            else
-            {
-                await ctx.ExecutePortAsync("default");
-            }
-        }
-
-        /// <summary>
-        /// Routes execution based on a string value comparison.
-        /// Supports 3 cases + default fallback with optional case-insensitive matching.
-        /// </summary>
-        [BlazorFlowNodeMethod(NodeType.BooleanOperation, "Conditionals")]
-        [NodeFlowPorts("case1", "case2", "case3", "default")]
-        public static async Task SwitchString(
-            NodeContext ctx,
-            string value,
-            [BlazorFlowInputField] string case1,
-            [BlazorFlowInputField] string case2,
-            [BlazorFlowInputField] string case3,
-            [BlazorFlowInputField] bool ignoreCase = false)
-        {
-            var comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-            value ??= string.Empty;
-            case1 ??= string.Empty;
-            case2 ??= string.Empty;
-            case3 ??= string.Empty;
-
-            if (string.Equals(value, case1, comparison))
-            {
-                await ctx.ExecutePortAsync("case1");
-            }
-            else if (string.Equals(value, case2, comparison))
-            {
-                await ctx.ExecutePortAsync("case2");
-            }
-            else if (string.Equals(value, case3, comparison))
-            {
-                await ctx.ExecutePortAsync("case3");
-            }
-            else
-            {
-                await ctx.ExecutePortAsync("default");
-            }
         }
 
         // ==========================================
