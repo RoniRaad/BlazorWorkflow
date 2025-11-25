@@ -92,6 +92,24 @@ role="dialog"
                             <p class="panel-caption">Preview the payload that arrives at this node.</p>
                         </header>
                         <div class="panel-body">
+                            <!-- Search and Filter Controls -->
+                            <div class="json-controls">
+                                <input type="text"
+                                       class="form-control form-control-sm json-search"
+                                       placeholder="Search in JSON..."
+                                       @bind="_jsonSearchTerm"
+                                       @bind:event="oninput"
+                                       data-role="json-search" />
+                                <select class="form-select form-select-sm json-filter"
+                                        @bind="_jsonFilterMode"
+                                        data-role="json-filter">
+                                    <option value="all">All fields</option>
+                                    <option value="primitives">Primitives only</option>
+                                    <option value="compact">Compact view</option>
+                                    <option value="keys">Keys only</option>
+                                </select>
+                            </div>
+
                             <div class="payload-preview draggable-json" data-role="payload-preview">
                                 @RenderDraggableJson(IncomingPayloadJson, "")
                             </div>
@@ -116,12 +134,13 @@ role="dialog"
                                     @foreach (var inputMapping in ViewModel.NodeInputToMethodInputMap)
                                     {
                                         var param = GetParameterInfo(inputMapping.To);
+                                        var formattedType = param != null ? FormatTypeName(param.ParameterType) : "unknown";
                                         <div class="simple-mapping-item" data-role="input-mapping-row">
-                                            <label class="simple-mapping-label" title="@(param?.ParameterType.Name ?? "unknown")">
+                                            <label class="simple-mapping-label" title="@formattedType">
                                                 @inputMapping.To
                                                 @if (param != null)
                                                 {
-                                                    <span class="param-type-hint">(@param.ParameterType.Name)</span>
+                                                    <span class="param-type-hint">(@formattedType)</span>
                                                 }
                                             </label>
                                             <div class="input-with-preview">
@@ -253,7 +272,7 @@ role="dialog"
                                             {
                                                 var propInfo = propInfos.FirstOrDefault(p => p.Name == outputMapping.From);
                                                 var hasProperty = !string.IsNullOrEmpty(propInfo.Name);
-                                                var typeDisplay = hasProperty ? propInfo.Type : BackingNode.BackingMethod.ReturnType.Name;
+                                                var typeDisplay = hasProperty ? propInfo.Type : TypeHelpers.FormatTypeName(BackingNode.BackingMethod.ReturnType);
                                                 <div class="simple-mapping-item" data-role="output-mapping-row">
                                                     <label class="simple-mapping-label" title="@typeDisplay">
                                                         @outputMapping.From
@@ -364,6 +383,10 @@ role="dialog"
     private ElementReference _previewButtonRef;
     private ElementReference _previewPopoverRef;
     private bool _errorDismissed = false;
+
+    // JSON preview controls
+    private string _jsonSearchTerm = "";
+    private string _jsonFilterMode = "all";
 
     protected override void OnParametersSet()
     {
@@ -756,6 +779,11 @@ role="dialog"
         return parameters.FirstOrDefault(p => p.Name == parameterName);
     }
 
+    /// <summary>
+    /// Formats a type name to display properly, handling generics like List<int> instead of List`1
+    /// </summary>
+    private string FormatTypeName(Type? type) => TypeHelpers.FormatTypeName(type);
+
     private IEnumerable<ParameterInfo> GetAvailableInputParameters(PathMapEntry currentMapping)
     {
         var parameters = BackingNode?.BackingMethod?.GetParameters() ?? Array.Empty<ParameterInfo>();
@@ -990,68 +1018,137 @@ role="dialog"
                 return;
             }
 
-            var indent = new string(' ', depth * 2);
+            // Determine if we should use compact mode
+            bool isCompact = _jsonFilterMode == "compact";
+            bool showKeysOnly = _jsonFilterMode == "keys";
+            bool primitivesOnly = _jsonFilterMode == "primitives";
+            var indent = isCompact ? "" : new string(' ', depth * 2);
+            var newline = isCompact ? "" : "\n";
 
             if (node is JsonObject obj)
             {
-                builder.AddContent(0, "{\n");
+                // Skip nested objects in primitives-only mode (unless depth is 0)
+                if (primitivesOnly && depth > 0)
+                {
+                    return;
+                }
+
+                builder.AddContent(0, "{" + newline);
                 var properties = obj.AsEnumerable().ToList();
+
+                // Filter properties based on search term
+                if (!string.IsNullOrWhiteSpace(_jsonSearchTerm))
+                {
+                    properties = properties.Where(kvp =>
+                        kvp.Key.Contains(_jsonSearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                        JsonNodeContainsSearchTerm(kvp.Value, _jsonSearchTerm)
+                    ).ToList();
+                }
+
                 for (int i = 0; i < properties.Count; i++)
                 {
                     var kvp = properties[i];
                     var propPath = string.IsNullOrEmpty(path) ? kvp.Key : $"{path}.{kvp.Key}";
 
-                    builder.AddContent(1, indent + "  ");
+                    if (!isCompact)
+                    {
+                        builder.AddContent(1, indent + "  ");
+                    }
+
+                    // Determine if this key matches the search term
+                    bool keyMatches = !string.IsNullOrWhiteSpace(_jsonSearchTerm) &&
+                                      kvp.Key.Contains(_jsonSearchTerm, StringComparison.OrdinalIgnoreCase);
 
                     // Render key as draggable
                     builder.OpenElement(2, "span");
-                    builder.AddAttribute(3, "class", "json-key draggable");
+                    builder.AddAttribute(3, "class", keyMatches ? "json-key draggable json-highlight" : "json-key draggable");
                     builder.AddAttribute(4, "draggable", "true");
                     builder.AddAttribute(5, "ondragstart", EventCallback.Factory.Create<DragEventArgs>(this, e => HandleDragStart(e, $"{propPath} | object.to_json")));
                     builder.AddContent(6, $"\"{kvp.Key}\"");
                     builder.CloseElement();
 
-                    builder.AddContent(7, ": ");
-                    builder.AddContent(8, RenderDraggableJson(kvp.Value, propPath, depth + 1));
+                    if (!showKeysOnly)
+                    {
+                        builder.AddContent(7, isCompact ? ":" : ": ");
+                        builder.AddContent(8, RenderDraggableJson(kvp.Value, propPath, depth + 1));
+                    }
 
                     if (i < properties.Count - 1)
                     {
-                        builder.AddContent(9, ",");
+                        builder.AddContent(9, isCompact ? "," : ",");
                     }
-                    builder.AddContent(10, "\n");
+                    builder.AddContent(10, newline);
                 }
-                builder.AddContent(11, indent + "}");
+                builder.AddContent(11, (isCompact ? "" : indent) + "}");
             }
             else if (node is JsonArray arr)
             {
-                builder.AddContent(0, "[\n");
+                // Skip arrays in primitives-only mode (unless depth is 0)
+                if (primitivesOnly && depth > 0)
+                {
+                    return;
+                }
+
+                builder.AddContent(0, "[" + newline);
                 for (int i = 0; i < arr.Count; i++)
                 {
                     var itemPath = $"{path}[{i}]";
-                    builder.AddContent(1, indent + "  ");
+                    if (!isCompact)
+                    {
+                        builder.AddContent(1, indent + "  ");
+                    }
                     builder.AddContent(2, RenderDraggableJson(arr[i], $"{itemPath} | object.to_json", depth + 1));
 
                     if (i < arr.Count - 1)
                     {
-                        builder.AddContent(3, ",");
+                        builder.AddContent(3, isCompact ? "," : ",");
                     }
-                    builder.AddContent(4, "\n");
+                    builder.AddContent(4, newline);
                 }
-                builder.AddContent(5, indent + "]");
+                builder.AddContent(5, (isCompact ? "" : indent) + "]");
             }
             else if (node is JsonValue val)
             {
                 // Render primitive value as draggable
                 var jsonString = val.ToJsonString();
 
+                // Check if value matches search term
+                bool valueMatches = !string.IsNullOrWhiteSpace(_jsonSearchTerm) &&
+                                   jsonString.Contains(_jsonSearchTerm, StringComparison.OrdinalIgnoreCase);
+
                 builder.OpenElement(0, "span");
-                builder.AddAttribute(1, "class", "json-value draggable");
+                builder.AddAttribute(1, "class", valueMatches ? "json-value draggable json-highlight" : "json-value draggable");
                 builder.AddAttribute(2, "draggable", "true");
                 builder.AddAttribute(3, "ondragstart", EventCallback.Factory.Create<DragEventArgs>(this, e => HandleDragStart(e, path)));
                 builder.AddContent(4, jsonString);
                 builder.CloseElement();
             }
         };
+    }
+
+    // Helper to check if a JsonNode contains the search term
+    private bool JsonNodeContainsSearchTerm(JsonNode? node, string searchTerm)
+    {
+        if (node == null || string.IsNullOrWhiteSpace(searchTerm))
+            return false;
+
+        if (node is JsonObject obj)
+        {
+            return obj.AsEnumerable().Any(kvp =>
+                kvp.Key.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                JsonNodeContainsSearchTerm(kvp.Value, searchTerm)
+            );
+        }
+        else if (node is JsonArray arr)
+        {
+            return arr.Any(item => JsonNodeContainsSearchTerm(item, searchTerm));
+        }
+        else if (node is JsonValue val)
+        {
+            return val.ToJsonString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase);
+        }
+
+        return false;
     }
 
     // Dictionary parameter methods

@@ -35,7 +35,7 @@ namespace BlazorExecutionFlow.Helpers
             // Fall back to template rendering for complex expressions
             if (executionContext is not null)
             {
-                inputPayload.SetByPath("workflow.parameters", executionContext.Parameters);
+                inputPayload.Merge(executionContext.SharedContext);
             }
 
             var modelDict = inputPayload.ToPlainObject()!;

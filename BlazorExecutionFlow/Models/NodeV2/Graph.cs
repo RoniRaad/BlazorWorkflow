@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
+using System.Reflection;
+using System.Text.Json.Nodes;
 using BlazorExecutionFlow.Flow.BaseNodes;
 using BlazorExecutionFlow.Helpers;
 namespace BlazorExecutionFlow.Models.NodeV2
@@ -8,10 +10,11 @@ namespace BlazorExecutionFlow.Models.NodeV2
     public class Graph
     {
         public ConcurrentDictionary<string, Node> Nodes = [];
+        private readonly static MethodInfo startMethod = typeof(CoreNodes).GetMethod(nameof(CoreNodes.Start))!;
 
         public Graph()
         {
-            Nodes["0"] = DrawflowHelpers.CreateNodeFromMethod(typeof(CoreNodes).GetMethod("Start"));
+            Nodes["0"] = DrawflowHelpers.CreateNodeFromMethod(startMethod);
             Nodes["0"].DrawflowNodeId = "0";
         }
 
@@ -29,7 +32,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
             // Event handlers are already attached during component initialization
             // No need to re-attach them here
 
-            var startNodes = Nodes.Where(x => x.Value.BackingMethod.Name == nameof(CoreNodes.Start));
+            var startNodes = Nodes.Where(x => x.Value.BackingMethod == startMethod);
             var tasks = new List<Task>();
             foreach (var startNode in startNodes)
             {
@@ -42,7 +45,14 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
     public class GraphExecutionContext
     {
+        private JsonObject _sharedContext = new JsonObject();
         public FrozenDictionary<string, string> Parameters { get; set; } = new Dictionary<string, string>().ToFrozenDictionary();
-        public Dictionary<string, object> Output { get; set; } = [];
+        public JsonObject SharedContext { 
+            get 
+            {
+                _sharedContext.TryAdd("workflow.parameters", JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(Parameters))!);
+                return _sharedContext;
+            }
+        }
     }
 }

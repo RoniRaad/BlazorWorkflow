@@ -270,13 +270,11 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 var filledMethodParameters = GetMethodParametersFromInputResult(formattedJsonObjectResult);
                 Result = await InvokeBackingMethod(filledMethodParameters);
 
-                var outputResults = Result.GetByPath("workflow.output")?.AsObject();
-                foreach (var item in outputResults ?? [])
+                var outputResults = Result.GetByPath("output.workflow.output");
+                var outputResultsAsObject = outputResults as JsonObject;
+                if (outputResultsAsObject is null)
                 {
-                    if (SharedExecutionContext == null || item.Value == null)
-                        continue;
-
-                    SharedExecutionContext.Output[item.Key] = item.Value; 
+                    SharedExecutionContext?.SharedContext?.Merge(outputResultsAsObject);
                 }
 
                 if (MergeOutputWithInput)
