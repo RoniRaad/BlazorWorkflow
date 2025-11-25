@@ -109,79 +109,55 @@ role="dialog"
                             <!-- Function input map -->
                             <div class="panel-section" data-role="function-input-map">
                                 <div class="panel-section-header">
-                                    <span>Function input map</span>
-                                    <button onclick="@AddInputMapping" type="button"
-                                            class="btn btn-xs btn-outline-secondary"
-                                            disabled="@(!CanAddInputMapping())"
-                                            data-role="add-input-mapping">
-                                        Add mapping
-                                    </button>
+                                    <span>Function inputs</span>
                                 </div>
 
-                                <div class="mapping-list" data-role="input-mapping-list">
-                                    <!-- Template row; duplicate dynamically -->
+                                <div class="simple-mapping-list" data-role="input-mapping-list">
                                     @foreach (var inputMapping in ViewModel.NodeInputToMethodInputMap)
                                     {
-                                        <div class="mapping-row" data-role="input-mapping-row">
-                                            <div class="mapping-col">
-                                                <label>Payload path</label>
-                                                <div class="input-with-preview">
-                                                    <input @bind="inputMapping.From"
-                                                           @bind:event="oninput"
-                                                           type="text"
-                                                           class="form-control form-control-sm droppable-input"
-                                                           placeholder="e.g. input.name or {{input.name}}"
-                                                           aria-label="Payload path for input mapping"
-                                                           @ondragover="@((e) => HandleDragOver(e))"
-                                                           @ondragover:preventDefault="true"
-                                                           @ondrop="@((e) => HandleDrop(e, inputMapping))"
-                                                           style="padding-right: 3px"
-                                                           required
-                                                           data-role="payload-path" />
-                                                    <div class="preview-button-container">
-                                                        <button type="button"
-                                                                class="btn-preview"
-                                                                style="background-color: transparent;border: transparent;color: black;right: -5px;top: -4px;"
-                                                                @ref="_previewButtonRef"
-                                                                @onclick="@(() => TogglePreview(inputMapping))"
-                                                                title="Toggle preview">
-                                                            👁
-                                                        </button>
-                                                        @if (_previewMapping == inputMapping)
-                                                        {
-                                                            <div class="preview-popover" @ref="_previewPopoverRef">
-                                                                <div class="preview-popover-arrow"></div>
-                                                                <div class="preview-popover-content">
-                                                                    <div class="preview-popover-label">Preview</div>
-                                                                    <div class="preview-popover-value">@GetScribanPreviewValue(inputMapping)</div>
-                                                                </div>
+                                        var param = GetParameterInfo(inputMapping.To);
+                                        <div class="simple-mapping-item" data-role="input-mapping-row">
+                                            <label class="simple-mapping-label" title="@(param?.ParameterType.Name ?? "unknown")">
+                                                @inputMapping.To
+                                                @if (param != null)
+                                                {
+                                                    <span class="param-type-hint">(@param.ParameterType.Name)</span>
+                                                }
+                                            </label>
+                                            <div class="input-with-preview">
+                                                <input @bind="inputMapping.From"
+                                                       @bind:event="oninput"
+                                                       type="text"
+                                                       class="form-control form-control-sm droppable-input"
+                                                       placeholder="e.g. input.name or {{input.name}}"
+                                                       aria-label="Scriban template for @inputMapping.To"
+                                                       @ondragover="@((e) => HandleDragOver(e))"
+                                                       @ondragover:preventDefault="true"
+                                                       @ondrop="@((e) => HandleDrop(e, inputMapping))"
+                                                       style="padding-right: 3px"
+                                                       required
+                                                       data-role="payload-path" />
+                                                <div class="preview-button-container">
+                                                    <button type="button"
+                                                            class="btn-preview"
+                                                            style="background-color: transparent;border: transparent;color: black;right: -5px;top: -4px;"
+                                                            @ref="_previewButtonRef"
+                                                            @onclick="@(() => TogglePreview(inputMapping))"
+                                                            title="Toggle preview">
+                                                        👁
+                                                    </button>
+                                                    @if (_previewMapping == inputMapping)
+                                                    {
+                                                        <div class="preview-popover" @ref="_previewPopoverRef">
+                                                            <div class="preview-popover-arrow"></div>
+                                                            <div class="preview-popover-content">
+                                                                <div class="preview-popover-label">Preview</div>
+                                                                <div class="preview-popover-value">@GetScribanPreviewValue(inputMapping)</div>
                                                             </div>
-                                                        }
-                                                    </div>
+                                                        </div>
+                                                    }
                                                 </div>
                                             </div>
-                                            <div class="mapping-arrow">→</div>
-                                            <div class="mapping-col">
-                                                <label>Parameter</label>
-                                                <InputSelect @bind-Value="inputMapping.To"
-                                                             class="form-select form-select-sm"
-                                                             aria-label="Target parameter for input mapping"
-                                                             data-role="parameter-name">
-                                                    <option value="">Select parameter…</option>
-                                                    @foreach (var param in GetAvailableInputParameters(inputMapping))
-                                                    {
-                                                        <option @key="@param.Name" value="@param.Name">(@param.ParameterType.Name) @param.Name</option>
-                                                    }
-                                                </InputSelect>
-                                            </div>
-                                            <button onclick="@(() => RemoveNodeInputToMethodInputMap(inputMapping))"
-                                                    type="button"
-                                                    class="btn btn-icon btn-xs"
-                                                    aria-label="Remove input mapping"
-                                                    title="Remove this input mapping"
-                                                    data-role="remove-mapping">
-                                                <span aria-hidden="true">✕</span>
-                                            </button>
                                         </div>
                                     }
                                 </div>
@@ -266,65 +242,28 @@ role="dialog"
                             {
                                 <div class="panel-section" data-role="function-output-map">
                                     <div class="panel-section-header">
-                                        <span>Function output map</span>
-                                        <button onclick="@AddOutputMapping" type="button"
-                                                class="btn btn-xs btn-outline-secondary"
-                                                disabled="@(!CanAddOutputMapping())"
-                                                data-role="add-output-mapping">
-                                            Add mapping
-                                        </button>
+                                        <span>Function outputs</span>
                                     </div>
 
-                                    <div class="mapping-list" data-role="output-mapping-list">
+                                    <div class="simple-mapping-list" data-role="output-mapping-list">
                                         @{ var propInfos = GetReturnProperties(); }
                                         @if (propInfos is not null)
                                         {
                                             @foreach (var outputMapping in ViewModel.MethodOutputToNodeOutputMap)
                                             {
-                                                <div class="mapping-row" data-role="output-mapping-row">
-                                                    <div class="mapping-col">
-                                                        <label>Function output</label>
-                                                        <InputSelect @bind-Value="outputMapping.From"
-                                                                     class="form-select form-select-sm"
-                                                                     aria-label="Function output field"
-                                                                     data-role="function-output">
-                                                            <option value="">Select output…</option>
-
-                                                            @if (propInfos.Count() > 0)
-                                                            {
-                                                                @foreach (var property in GetAvailableOutputProperties(outputMapping, propInfos))
-                                                                {
-                                                                    <option value="@property.Name">(@property.Type) @property.Name</option>
-                                                                }
-                                                            }
-                                                            else
-                                                            {
-                                                                @if (IsOutputValueAvailable(outputMapping, "result"))
-                                                                {
-                                                                    <option value="result">(@BackingNode.BackingMethod.ReturnType.Name) result</option>
-                                                                }
-                                                            }
-
-                                                        </InputSelect>
-                                                    </div>
-                                                    <div class="mapping-arrow">→</div>
-                                                    <div class="mapping-col">
-                                                        <label>Payload path</label>
-                                                        <InputText @bind-Value="outputMapping.To" type="text"
-                                                                   class="form-control form-control-sm"
-                                                                   placeholder="e.g. name"
-                                                                   aria-label="Target payload path for output mapping"
-                                                                   required
-                                                                   data-role="target-payload-path" />
-                                                    </div>
-                                                    <button onclick="@(() => RemoveMethodOutputToNodeOutputMap(outputMapping))"
-                                                            type="button"
-                                                            class="btn btn-icon btn-xs"
-                                                            aria-label="Remove output mapping"
-                                                            title="Remove this output mapping"
-                                                            data-role="remove-mapping">
-                                                        <span aria-hidden="true">✕</span>
-                                                    </button>
+                                                var propInfo = propInfos.FirstOrDefault(p => p.Name == outputMapping.From);
+                                                var hasProperty = !string.IsNullOrEmpty(propInfo.Name);
+                                                var typeDisplay = hasProperty ? propInfo.Type : BackingNode.BackingMethod.ReturnType.Name;
+                                                <div class="simple-mapping-item" data-role="output-mapping-row">
+                                                    <label class="simple-mapping-label" title="@typeDisplay">
+                                                        @outputMapping.From
+                                                        <span class="param-type-hint">(@typeDisplay)</span>
+                                                    </label>
+                                                    <InputText @bind-Value="outputMapping.To" type="text"
+                                                               class="form-control form-control-sm"
+                                                               placeholder="e.g. output.name"
+                                                               required
+                                                               data-role="target-payload-path" />
                                                 </div>
                                             }
                                         }
@@ -808,6 +747,13 @@ role="dialog"
 
         // Can add if there are unmapped parameters
         return availableParams.Any(p => !mappedParams.Contains(p.Name ?? string.Empty));
+    }
+
+    private ParameterInfo? GetParameterInfo(string parameterName)
+    {
+        if (string.IsNullOrEmpty(parameterName)) return null;
+        var parameters = BackingNode?.BackingMethod?.GetParameters() ?? Array.Empty<ParameterInfo>();
+        return parameters.FirstOrDefault(p => p.Name == parameterName);
     }
 
     private IEnumerable<ParameterInfo> GetAvailableInputParameters(PathMapEntry currentMapping)
