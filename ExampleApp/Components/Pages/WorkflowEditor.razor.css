@@ -21,12 +21,12 @@
 .page-title {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--text-primary);
+    color: var(--bef--text-primary, #f1f5f9);
     letter-spacing: -0.025em;
 }
 
 .page-description {
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
     font-size: 0.875rem;
     margin-top: 0.25rem;
 }
@@ -80,13 +80,13 @@
 
 .btn-outline-secondary {
     background: transparent;
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
     border: 1px solid var(--border-color);
 }
 
 .btn-outline-secondary:hover {
     background: var(--background);
-    color: var(--text-primary);
+    color: var(--bef--text-primary, #f1f5f9);
 }
 
 /* Workflow Name Editing */
@@ -104,7 +104,7 @@
 .btn-icon-edit-small {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid transparent;
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
     padding: 0.375rem;
     border-radius: var(--radius);
     cursor: pointer;
@@ -130,7 +130,7 @@
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
-    color: var(--text-primary);
+    color: var(--bef--text-primary, #f1f5f9);
     transition: all 0.15s ease;
     width: 100%;
     max-width: 500px;
