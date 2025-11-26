@@ -44,16 +44,10 @@ role="dialog"
                     }
                     else
                     {
-                        <svg viewBox="0 0 24 24" fill="currentColor" style="width: 1rem; height: 1rem;">
+                        <svg viewBox="0 0 24 24" fill="currentColor" style="width: 2.5rem; height: 2.5rem;">
                             <path d="M8 5v14l11-7z"/>
                         </svg>
                     }
-                </button>
-                <button type="button"
-                style="color:white"
-                class="btn-close"
-                @onclick="HandleClose"
-                aria-label="Close modal">
                 </button>
             </div>
 
@@ -104,14 +98,15 @@ role="dialog"
                                         @bind="_jsonFilterMode"
                                         data-role="json-filter">
                                     <option value="all">All fields</option>
-                                    <option value="primitives">Primitives only</option>
-                                    <option value="compact">Compact view</option>
-                                    <option value="keys">Keys only</option>
+                                    @foreach (var filter in GetAvailableFilters())
+                                    {
+                                        <option value="@filter.Key">@filter.Value</option>
+                                    }
                                 </select>
                             </div>
 
                             <div class="payload-preview draggable-json" data-role="payload-preview">
-                                @RenderDraggableJson(IncomingPayloadJson, "")
+                                @RenderDraggableJson(GetFilteredJson(), "")
                             </div>
                         </div>
                     </section>
@@ -396,6 +391,21 @@ role="dialog"
     // JSON preview controls
     private string _jsonSearchTerm = "";
     private string _jsonFilterMode = "all";
+
+    // Filter registry - register filters by name for easy extensibility
+    private readonly Dictionary<string, JsonFilter> _filterRegistry = new();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        // Register all available filters
+        // To add a new filter: _filterRegistry.Add("filtername", FilterMethod);
+        _filterRegistry.Add("search", SearchFilter);
+        _filterRegistry.Add("primitives", PrimitivesOnlyFilter);
+        _filterRegistry.Add("global", GlobalOnlyFilter);
+        _filterRegistry.Add("input", InputOnlyFilter);
+    }
 
     protected override void OnParametersSet()
     {
@@ -1016,7 +1026,214 @@ role="dialog"
         }
     }
 
-    // Render draggable JSON
+    // ==========================================
+    // JSON FILTER SYSTEM
+    // ==========================================
+
+    /// <summary>
+    /// Delegate for JSON filters. Returns true if the node should be included, false to exclude it.
+    /// </summary>
+    private delegate bool JsonFilter(JsonNode? node, string key, int depth);
+
+    /// <summary>
+    /// Gets the filtered JSON based on current filter settings.
+    /// </summary>
+    private JsonNode? GetFilteredJson()
+    {
+        if (IncomingPayloadJson == null)
+            return null;
+
+        // Build filter chain based on active settings
+        var filters = new List<JsonFilter>();
+
+        // Add search filter if there's a search term
+        if (!string.IsNullOrWhiteSpace(_jsonSearchTerm) && _filterRegistry.ContainsKey("search"))
+            filters.Add(_filterRegistry["search"]);
+
+        // Add mode-specific data filters (not display modes like "compact" or "keys")
+        // Display modes (compact, keys) are handled in RenderDraggableJson
+        if (_filterRegistry.ContainsKey(_jsonFilterMode))
+            filters.Add(_filterRegistry[_jsonFilterMode]);
+
+        // If no filters are active, return original JSON
+        if (filters.Count == 0)
+            return IncomingPayloadJson;
+
+        // Apply all registered filters
+        var filtered = ApplyFilters(IncomingPayloadJson.DeepClone(), filters);
+        return filtered;
+    }
+
+    /// <summary>
+    /// Applies a chain of filters to a JsonNode recursively.
+    /// </summary>
+    private JsonNode? ApplyFilters(JsonNode? node, List<JsonFilter> filters, string key = "", int depth = 0, bool includeAllChildren = false)
+    {
+        if (node == null)
+            return null;
+
+        // If we're inside a matched subtree, include everything without filtering
+        if (includeAllChildren)
+            return node.DeepClone();
+
+        if (node is JsonObject obj)
+        {
+            var filtered = new JsonObject();
+
+            foreach (var kvp in obj.AsEnumerable())
+            {
+                // Check if this key matches search (for search filter specifically)
+                bool keyMatchesSearch = !string.IsNullOrWhiteSpace(_jsonSearchTerm) &&
+                                       kvp.Key.Contains(_jsonSearchTerm, StringComparison.OrdinalIgnoreCase);
+
+                // Apply all filters - if any filter returns false, skip this node
+                bool shouldInclude = filters.All(filter => filter(kvp.Value, kvp.Key, depth));
+
+                if (!shouldInclude)
+                    continue;
+
+                // If key matches search, include entire subtree without filtering
+                var filteredValue = ApplyFilters(kvp.Value, filters, kvp.Key, depth + 1, keyMatchesSearch);
+                if (filteredValue != null)
+                {
+                    filtered.Add(kvp.Key, filteredValue);
+                }
+            }
+
+            return filtered.Count > 0 ? filtered : null;
+        }
+        else if (node is JsonArray arr)
+        {
+            // Check if arrays should be filtered out entirely
+            bool shouldInclude = filters.All(filter => filter(node, key, depth));
+            if (!shouldInclude)
+                return null;
+
+            var filtered = new JsonArray();
+
+            foreach (var item in arr)
+            {
+                // Recursively filter nested nodes
+                var filteredItem = ApplyFilters(item, filters, key, depth + 1, false);
+                if (filteredItem != null)
+                {
+                    filtered.Add(filteredItem);
+                }
+            }
+
+            return filtered.Count > 0 ? filtered : null;
+        }
+        else if (node is JsonValue)
+        {
+            // Apply all filters - if any filter returns false, exclude this value
+            bool shouldInclude = filters.All(filter => filter(node, key, depth));
+            return shouldInclude ? node.DeepClone() : null;
+        }
+
+        return node.DeepClone();
+    }
+
+    /// <summary>
+    /// Gets the available filters for the dropdown, excluding "search" which is applied separately.
+    /// </summary>
+    private Dictionary<string, string> GetAvailableFilters()
+    {
+        var filters = new Dictionary<string, string>();
+
+        foreach (var filterKey in _filterRegistry.Keys)
+        {
+            // Exclude "search" - it's applied separately when there's a search term
+            if (filterKey == "search")
+                continue;
+
+            // Format display name: capitalize first letter and add "only" suffix
+            var displayName = char.ToUpper(filterKey[0]) + filterKey.Substring(1) + " only";
+            filters.Add(filterKey, displayName);
+        }
+
+        return filters;
+    }
+
+    // ==========================================
+    // REGISTERED FILTERS
+    // ==========================================
+    // To add a new DATA filter:
+    // 1. Create a method with signature: bool MyFilter(JsonNode? node, string key, int depth)
+    // 2. Return true to include the node, false to exclude it
+    // 3. Register it in OnInitialized() using: _filterRegistry.Add("filtername", MyFilter);
+
+    /// <summary>
+    /// Filter: Search - shows only nodes matching search term and their parent paths.
+    /// </summary>
+    private bool SearchFilter(JsonNode? node, string key, int depth)
+    {
+        if (string.IsNullOrWhiteSpace(_jsonSearchTerm))
+            return true;
+
+        // Check if key matches
+        if (key.Contains(_jsonSearchTerm, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // Check if value matches (for primitives)
+        if (node is JsonValue val)
+        {
+            var jsonString = val.ToJsonString();
+            return jsonString.Contains(_jsonSearchTerm, StringComparison.OrdinalIgnoreCase);
+        }
+
+        // For objects and arrays, check if they contain matching nested values
+        // If they do, include them (they are parent paths to matches)
+        return JsonNodeContainsSearchTerm(node, _jsonSearchTerm);
+    }
+
+    /// <summary>
+    /// Filter: Primitives only - excludes nested objects and arrays.
+    /// </summary>
+    private bool PrimitivesOnlyFilter(JsonNode? node, string key, int depth)
+    {
+        // At root level (depth 0), allow objects
+        if (depth == 0)
+            return true;
+
+        // Skip nested objects and arrays
+        if (node is JsonObject or JsonArray)
+            return false;
+
+        return true;
+    }
+
+    private bool GlobalOnlyFilter(JsonNode? node, string key, int depth)
+    {
+        if (depth == 0)
+        {
+            // At depth 1, allow only specific global keys
+            var allowedKeys = new HashSet<string> { "workflow" };
+            return allowedKeys.Contains(key.ToLowerInvariant());
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    private bool InputOnlyFilter(JsonNode? node, string key, int depth)
+    {
+        if (depth == 0)
+        {
+            // At depth 1, allow only specific global keys
+            var allowedKeys = new HashSet<string> { "input" };
+            return allowedKeys.Contains(key.ToLowerInvariant());
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Renders draggable JSON. Assumes the node is already filtered.
+    /// Only handles display modes (compact, keys).
+    /// </summary>
     private RenderFragment RenderDraggableJson(JsonNode? node, string path, int depth = 0)
     {
         return builder =>
@@ -1027,32 +1244,16 @@ role="dialog"
                 return;
             }
 
-            // Determine if we should use compact mode
+            // Display modes only (filtering already done)
             bool isCompact = _jsonFilterMode == "compact";
             bool showKeysOnly = _jsonFilterMode == "keys";
-            bool primitivesOnly = _jsonFilterMode == "primitives";
             var indent = isCompact ? "" : new string(' ', depth * 2);
             var newline = isCompact ? "" : "\n";
 
             if (node is JsonObject obj)
             {
-                // Skip nested objects in primitives-only mode (unless depth is 0)
-                if (primitivesOnly && depth > 0)
-                {
-                    return;
-                }
-
                 builder.AddContent(0, "{" + newline);
                 var properties = obj.AsEnumerable().ToList();
-
-                // Filter properties based on search term
-                if (!string.IsNullOrWhiteSpace(_jsonSearchTerm))
-                {
-                    properties = properties.Where(kvp =>
-                        kvp.Key.Contains(_jsonSearchTerm, StringComparison.OrdinalIgnoreCase) ||
-                        JsonNodeContainsSearchTerm(kvp.Value, _jsonSearchTerm)
-                    ).ToList();
-                }
 
                 for (int i = 0; i < properties.Count; i++)
                 {
@@ -1064,7 +1265,7 @@ role="dialog"
                         builder.AddContent(1, indent + "  ");
                     }
 
-                    // Determine if this key matches the search term
+                    // Determine if this key matches the search term for highlighting
                     bool keyMatches = !string.IsNullOrWhiteSpace(_jsonSearchTerm) &&
                                       kvp.Key.Contains(_jsonSearchTerm, StringComparison.OrdinalIgnoreCase);
 
@@ -1092,12 +1293,6 @@ role="dialog"
             }
             else if (node is JsonArray arr)
             {
-                // Skip arrays in primitives-only mode (unless depth is 0)
-                if (primitivesOnly && depth > 0)
-                {
-                    return;
-                }
-
                 builder.AddContent(0, "[" + newline);
                 for (int i = 0; i < arr.Count; i++)
                 {
@@ -1121,7 +1316,7 @@ role="dialog"
                 // Render primitive value as draggable
                 var jsonString = val.ToJsonString();
 
-                // Check if value matches search term
+                // Check if value matches search term for highlighting
                 bool valueMatches = !string.IsNullOrWhiteSpace(_jsonSearchTerm) &&
                                    jsonString.Contains(_jsonSearchTerm, StringComparison.OrdinalIgnoreCase);
 

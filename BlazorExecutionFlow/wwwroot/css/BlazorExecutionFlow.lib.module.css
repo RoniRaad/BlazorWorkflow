@@ -378,7 +378,7 @@ textarea.mapping-input {
     min-width: 0;
     background-color: rgba(31, 41, 55, 0.5);
     border: 1px solid rgba(75, 85, 99, 0.6);
-    color: #e5e7eb;
+    color: #e5e7eb !important;
     font-size: 0.8rem;
     padding: 0.375rem 0.5rem;
     border-radius: var(--radius-sm);
@@ -389,6 +389,7 @@ textarea.mapping-input {
     border-color: rgba(96, 165, 250, 0.6);
     outline: none;
     box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+    color: #e5e7eb !important;
 }
 
 .json-search::placeholder {
@@ -1469,36 +1470,33 @@ textarea.mapping-input {
 /* Execute Flow Button */
 .btn-execute-flow {
     position: absolute;
-    right: 42px;
-    background: linear-gradient(135deg, #16a34a, #15803d);
-    border: 1px solid rgba(22, 163, 74, 0.5);
-    color: white;
-    padding: 0.5rem 0.75rem;
-    border-radius: var(--radius-md);
+    right: 10px;
+    background: transparent;
+    border: none;
+    color: #16a34a;
+    padding: 0;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     transition: all var(--transition-fast);
-    box-shadow: 0 2px 4px rgba(22, 163, 74, 0.3);
+    font-size: 2.5rem;
+    margin-top: -4px;
 }
 
 .btn-execute-flow:hover:not(:disabled) {
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-    border-color: rgba(34, 197, 94, 0.7);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(22, 163, 74, 0.4);
+    color: #22c55e;
+    transform: scale(1.1);
 }
 
 .btn-execute-flow:active:not(:disabled) {
-    transform: translateY(0);
-    box-shadow: 0 1px 2px rgba(22, 163, 74, 0.3);
+    transform: scale(1);
 }
 
 .btn-execute-flow:disabled {
-    opacity: 0.6;
+    opacity: 0.4;
     cursor: not-allowed;
-    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: #16a34a;
 }
 
 .btn-execute-flow .spinner-border {
