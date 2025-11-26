@@ -462,6 +462,9 @@ namespace BlazorExecutionFlow.Models.NodeV2
                     var methodOutputValue = methodOutputJsonObject.GetByPath(methodOutputMap.From);
                     resultObject.SetByPath($"output.{methodOutputMap.To}", methodOutputValue);
 
+                    SharedExecutionContext?.SharedContext.SetByPath($"nodes.node_{DrawflowNodeId}.output", methodOutputValue?.DeepClone());
+                    SharedExecutionContext?.SharedContext.SetByPath($"nodes.node_{DrawflowNodeId}.name", BackingMethod.Name);
+
                     // Also expose to workflow.output.* if flagged
                     if (methodOutputMap.ExposeAsWorkflowOutput)
                     {
@@ -513,11 +516,13 @@ namespace BlazorExecutionFlow.Models.NodeV2
                         // For single-value types, the mapping is typically "result" -> "result"
                         // Just map the whole serialized response
                         resultObject.SetByPath($"output.{methodOutputMap.To}", serializedResponse);
+                        SharedExecutionContext?.SharedContext.SetByPath($"nodes.node_{DrawflowNodeId}.output", serializedResponse?.DeepClone());
+                        SharedExecutionContext?.SharedContext.SetByPath($"nodes.node_{DrawflowNodeId}.name", BackingMethod.Name);
 
                         // Also expose to workflow.output.* if flagged
                         if (methodOutputMap.ExposeAsWorkflowOutput)
                         {
-                            SharedExecutionContext.SharedContext.SetByPath($"workflow.output.{methodOutputMap.To}", serializedResponse?.DeepClone());
+                            SharedExecutionContext?.SharedContext.SetByPath($"workflow.output.{methodOutputMap.To}", serializedResponse?.DeepClone());
                         }
                     }
                 }
@@ -527,6 +532,8 @@ namespace BlazorExecutionFlow.Models.NodeV2
                     foreach (var methodOutputMap in MethodOutputToNodeOutputMap)
                     {
                         resultObject.SetByPath($"output.{methodOutputMap.To}", methodOutputJsonObject);
+                        SharedExecutionContext?.SharedContext.SetByPath($"nodes.node_{DrawflowNodeId}.output", methodOutputJsonObject?.DeepClone());
+                        SharedExecutionContext?.SharedContext.SetByPath($"nodes.node_{DrawflowNodeId}.name", BackingMethod.Name);
 
                         // Also expose to workflow.output.* if flagged
                         if (methodOutputMap.ExposeAsWorkflowOutput)

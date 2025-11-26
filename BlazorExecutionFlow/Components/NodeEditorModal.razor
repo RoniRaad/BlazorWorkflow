@@ -97,11 +97,11 @@ role="dialog"
                                 <select class="form-select form-select-sm json-filter"
                                         @bind="_jsonFilterMode"
                                         data-role="json-filter">
-                                    <option value="all">All fields</option>
                                     @foreach (var filter in GetAvailableFilters())
                                     {
                                         <option value="@filter.Key">@filter.Value</option>
                                     }
+                                    <option value="all">All</option>
                                 </select>
                             </div>
 
@@ -390,7 +390,7 @@ role="dialog"
 
     // JSON preview controls
     private string _jsonSearchTerm = "";
-    private string _jsonFilterMode = "all";
+    private string _jsonFilterMode = "Input";
 
     // Filter registry - register filters by name for easy extensibility
     private readonly Dictionary<string, JsonFilter> _filterRegistry = new();
@@ -402,9 +402,10 @@ role="dialog"
         // Register all available filters
         // To add a new filter: _filterRegistry.Add("filtername", FilterMethod);
         _filterRegistry.Add("search", SearchFilter);
-        _filterRegistry.Add("primitives", PrimitivesOnlyFilter);
-        _filterRegistry.Add("global", GlobalOnlyFilter);
-        _filterRegistry.Add("input", InputOnlyFilter);
+        _filterRegistry.Add("Input", InputOnlyFilter);
+        _filterRegistry.Add("Values", PrimitivesOnlyFilter);
+        _filterRegistry.Add("Workflow", GlobalOnlyFilter);
+        _filterRegistry.Add("Nodes", NodeOnlyFilter);
     }
 
     protected override void OnParametersSet()
@@ -1147,7 +1148,7 @@ role="dialog"
                 continue;
 
             // Format display name: capitalize first letter and add "only" suffix
-            var displayName = char.ToUpper(filterKey[0]) + filterKey.Substring(1) + " only";
+            var displayName =  filterKey;
             filters.Add(filterKey, displayName);
         }
 
@@ -1222,6 +1223,20 @@ role="dialog"
         {
             // At depth 1, allow only specific global keys
             var allowedKeys = new HashSet<string> { "input" };
+            return allowedKeys.Contains(key.ToLowerInvariant());
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    private bool NodeOnlyFilter(JsonNode? node, string key, int depth)
+    {
+        if (depth == 0)
+        {
+            // At depth 1, allow only specific global keys
+            var allowedKeys = new HashSet<string> { "nodes" };
             return allowedKeys.Contains(key.ToLowerInvariant());
         }
         else
