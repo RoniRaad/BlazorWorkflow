@@ -1,4 +1,6 @@
-﻿using System.Reflection;
+﻿using System.Data.Common;
+using System.Reflection;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -6,6 +8,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using BlazorExecutionFlow.Flow.Attributes;
 using BlazorExecutionFlow.Helpers;
+using Newtonsoft.Json.Linq;
 using Scriban;
 using Scriban.Runtime;
 
@@ -43,7 +46,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
         public string DrawflowNodeId { get; set; } = string.Empty;
         public double PosX { get; set; }
         public double PosY { get; set; }
-        public GraphExecutionContext? SharedExecutionContext { get; set; }
+        [JsonIgnore] public GraphExecutionContext? SharedExecutionContext { get; set; }
         public List<PathMapEntry> NodeInputToMethodInputMap { get; set; } = [];
         public List<PathMapEntry> MethodOutputToNodeOutputMap { get; set; } = [];
 
@@ -267,13 +270,11 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 var filledMethodParameters = GetMethodParametersFromInputResult(formattedJsonObjectResult);
                 Result = await InvokeBackingMethod(filledMethodParameters);
 
-                var outputResults = Result.GetByPath("workflow.output")?.AsObject();
-                foreach (var item in outputResults ?? [])
+                var outputResults = Result.GetByPath("output.workflow.output");
+                var outputResultsAsObject = outputResults as JsonObject;
+                if (outputResultsAsObject is null)
                 {
-                    if (SharedExecutionContext == null || item.Value == null)
-                        continue;
-
-                    SharedExecutionContext.Output[item.Key] = item.Value; 
+                    SharedExecutionContext?.SharedContext?.Merge(outputResultsAsObject);
                 }
 
                 if (MergeOutputWithInput)
@@ -460,6 +461,15 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 {
                     var methodOutputValue = methodOutputJsonObject.GetByPath(methodOutputMap.From);
                     resultObject.SetByPath($"output.{methodOutputMap.To}", methodOutputValue);
+
+                    SharedExecutionContext?.SharedContext.SetByPath($"nodes.node_{DrawflowNodeId}.output", methodOutputValue?.DeepClone());
+                    SharedExecutionContext?.SharedContext.SetByPath($"nodes.node_{DrawflowNodeId}.name", BackingMethod.Name);
+
+                    // Also expose to workflow.output.* if flagged
+                    if (methodOutputMap.ExposeAsWorkflowOutput)
+                    {
+                        SharedExecutionContext?.SharedContext.SetByPath($"workflow.output.{methodOutputMap.To}", methodOutputValue?.DeepClone());
+                    }
                 }
             }
             else
@@ -506,6 +516,14 @@ namespace BlazorExecutionFlow.Models.NodeV2
                         // For single-value types, the mapping is typically "result" -> "result"
                         // Just map the whole serialized response
                         resultObject.SetByPath($"output.{methodOutputMap.To}", serializedResponse);
+                        SharedExecutionContext?.SharedContext.SetByPath($"nodes.node_{DrawflowNodeId}.output", serializedResponse?.DeepClone());
+                        SharedExecutionContext?.SharedContext.SetByPath($"nodes.node_{DrawflowNodeId}.name", BackingMethod.Name);
+
+                        // Also expose to workflow.output.* if flagged
+                        if (methodOutputMap.ExposeAsWorkflowOutput)
+                        {
+                            SharedExecutionContext?.SharedContext.SetByPath($"workflow.output.{methodOutputMap.To}", serializedResponse?.DeepClone());
+                        }
                     }
                 }
                 else
@@ -514,6 +532,14 @@ namespace BlazorExecutionFlow.Models.NodeV2
                     foreach (var methodOutputMap in MethodOutputToNodeOutputMap)
                     {
                         resultObject.SetByPath($"output.{methodOutputMap.To}", methodOutputJsonObject);
+                        SharedExecutionContext?.SharedContext.SetByPath($"nodes.node_{DrawflowNodeId}.output", methodOutputJsonObject?.DeepClone());
+                        SharedExecutionContext?.SharedContext.SetByPath($"nodes.node_{DrawflowNodeId}.name", BackingMethod.Name);
+
+                        // Also expose to workflow.output.* if flagged
+                        if (methodOutputMap.ExposeAsWorkflowOutput)
+                        {
+                            SharedExecutionContext?.SharedContext.SetByPath($"workflow.output.{methodOutputMap.To}", methodOutputJsonObject?.DeepClone());
+                        }
                     }
                 }
             }
@@ -574,15 +600,8 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
                             if (!string.IsNullOrWhiteSpace(mapping.From))
                             {
-                                // Fall back to template rendering for complex expressions
-                                var dictModelDict = inputPayload.ToPlainObject()!;
-                                var dictScriptObject = new ScriptObject();
-                                dictScriptObject.Import(dictModelDict);
-                                var dictContext = new TemplateContext();
-                                dictContext.PushGlobal(dictScriptObject);
-
-                                var dictTemplate = Template.Parse(mapping.From);
-                                dictValue = dictTemplate.Render(dictContext);
+                                var result = ScribanHelpers.GetScribanObject(mapping.From, inputPayload, SharedExecutionContext ?? new(), parameter.ParameterType);
+                                dictValue = result?.ToString();
                             }
 
                             dictionary[mapping.To] = dictValue ?? string.Empty;
@@ -595,248 +614,10 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
                 methodParameterNameToValueMap.TryGetValue(parameter.Name!, out var value);
 
-                if (value is null)
-                {
-                    orderedMethodParameters[i] =
-                        parameter.ParameterType.IsValueType
-                            ? Activator.CreateInstance(parameter.ParameterType)
-                            : null;
-                    continue;
-                }
-
-                // Check if value is a simple path reference (no Scriban template expressions like {{ }})
-                // If so, get the JsonNode directly to preserve type information (especially for arrays/objects)
-                if (!value.Contains("{{") && !value.Contains("}}"))
-                {
-                    var jsonValue = inputPayload.GetByPath(value);
-                    if (jsonValue != null)
-                    {
-                        // Deserialize directly to the target type without template rendering
-                        // This preserves arrays, objects, and other complex types
-                        orderedMethodParameters[i] = jsonValue.CoerceToType(parameter.ParameterType);
-                        continue;
-                    }
-                }
-
-                // Fall back to template rendering for complex expressions
-                if (SharedExecutionContext is not null)
-                {
-                    inputPayload.SetByPath("workflow.parameters", SharedExecutionContext.Parameters);
-                }
-
-                var modelDict = inputPayload.ToPlainObject()!;
-
-                var scriptObject = new ScriptObject();
-                scriptObject.Import(modelDict);
-
-                var context = new TemplateContext();
-                context.PushGlobal(scriptObject);
-
-                if (parameter.ParameterType == typeof(string) &&
-                    value is not null &&
-                    !value.StartsWith("\"") &&
-                    !value.EndsWith("\"") &&
-                    !value.Contains("{{"))
-                {
-                    value = $"\"{value}\"";
-                }
-
-                var template = Template.Parse(value);
-                var result = template.Render(context);
-
-                if (result == string.Empty)
-                {
-                    if (parameter.ParameterType == typeof(string))
-                    {
-                        orderedMethodParameters[i] = result;
-                    }
-                    else
-                    {
-                        orderedMethodParameters[i] = null;
-                    }
-                }
-                else
-                {
-                    // Fix arrays/objects rendered by Scriban without proper JSON quoting
-                    // e.g., [a,b,c] should be ["a","b","c"]
-                    result = EnsureValidJson(result);
-
-                    var parsedResult = ParseLiteral(result);
-                    orderedMethodParameters[i] = parsedResult.CoerceToType(parameter.ParameterType);
-                }
+                orderedMethodParameters[i] = ScribanHelpers.GetScribanObject(value, inputPayload, SharedExecutionContext ?? new(), parameter.ParameterType);
             }
 
             return orderedMethodParameters!;
-        }
-
-        private string EnsureValidJson(string input)
-        {
-            if (string.IsNullOrWhiteSpace(input))
-                return input;
-
-            var trimmed = input.Trim();
-
-            // Check if it looks like an array or object
-            if (!trimmed.StartsWith("[") && !trimmed.StartsWith("{"))
-                return input;
-
-            // Try to parse as-is - if it's already valid JSON, return it
-            try
-            {
-                JsonSerializer.Deserialize<JsonNode>(trimmed);
-                return input; // Already valid JSON
-            }
-            catch
-            {
-                // Not valid JSON, try to fix it
-            }
-
-            // Fix arrays with unquoted string elements: [a,b,c] -> ["a","b","c"]
-            if (trimmed.StartsWith("[") && trimmed.EndsWith("]"))
-            {
-                try
-                {
-                    return FixArrayQuoting(trimmed);
-                }
-                catch
-                {
-                    // If we can't fix it, return original
-                    return input;
-                }
-            }
-
-            return input;
-        }
-
-        private string FixArrayQuoting(string arrayString)
-        {
-            // Remove brackets
-            var content = arrayString.Substring(1, arrayString.Length - 2).Trim();
-
-            if (string.IsNullOrEmpty(content))
-                return "[]";
-
-            // Split by comma, but respect nested structures
-            var elements = SplitArrayElements(content);
-
-            // Process each element
-            var fixedElements = elements.Select(element =>
-            {
-                var trimmedElement = element.Trim();
-
-                // Already quoted string
-                if (trimmedElement.StartsWith("\"") && trimmedElement.EndsWith("\""))
-                    return trimmedElement;
-
-                // Nested array or object
-                if (trimmedElement.StartsWith("[") || trimmedElement.StartsWith("{"))
-                    return EnsureValidJson(trimmedElement);
-
-                // Boolean literals
-                if (trimmedElement == "true" || trimmedElement == "false")
-                    return trimmedElement;
-
-                // Null literal
-                if (trimmedElement == "null")
-                    return trimmedElement;
-
-                // Number (int or decimal)
-                if (double.TryParse(trimmedElement, out _))
-                    return trimmedElement;
-
-                // Otherwise, treat as unquoted string and quote it
-                return JsonSerializer.Serialize(trimmedElement);
-            });
-
-            return $"[{string.Join(",", fixedElements)}]";
-        }
-
-        private List<string> SplitArrayElements(string content)
-        {
-            var elements = new List<string>();
-            var currentElement = new StringBuilder();
-            var depth = 0;
-            var inString = false;
-            var escapeNext = false;
-
-            foreach (var ch in content)
-            {
-                if (escapeNext)
-                {
-                    currentElement.Append(ch);
-                    escapeNext = false;
-                    continue;
-                }
-
-                if (ch == '\\')
-                {
-                    currentElement.Append(ch);
-                    escapeNext = true;
-                    continue;
-                }
-
-                if (ch == '"')
-                {
-                    inString = !inString;
-                    currentElement.Append(ch);
-                    continue;
-                }
-
-                if (!inString)
-                {
-                    if (ch == '[' || ch == '{')
-                    {
-                        depth++;
-                        currentElement.Append(ch);
-                        continue;
-                    }
-
-                    if (ch == ']' || ch == '}')
-                    {
-                        depth--;
-                        currentElement.Append(ch);
-                        continue;
-                    }
-
-                    if (ch == ',' && depth == 0)
-                    {
-                        // End of current element
-                        elements.Add(currentElement.ToString());
-                        currentElement.Clear();
-                        continue;
-                    }
-                }
-
-                currentElement.Append(ch);
-            }
-
-            // Add the last element
-            if (currentElement.Length > 0)
-            {
-                elements.Add(currentElement.ToString());
-            }
-
-            return elements;
-        }
-
-        private JsonNode? ParseLiteral(string input)
-        {
-            var json = input;
-            var trimmed = input.TrimStart();
-
-            if (trimmed.Length > 0 &&
-                !trimmed.StartsWith("{") &&
-                !trimmed.StartsWith("[") &&
-                !trimmed.StartsWith("\"") &&
-                !char.IsDigit(trimmed[0]) &&
-                !trimmed.StartsWith("-") &&  // Allow negative numbers
-                !trimmed.StartsWith("+") &&  // Allow explicit positive numbers
-                !"tfn".Contains(char.ToLowerInvariant(trimmed[0])))
-            {
-                json = JsonSerializer.Serialize(input);
-            }
-
-            return JsonSerializer.Deserialize<JsonNode>(json);
         }
 
         public void Dispose()
@@ -868,5 +649,6 @@ namespace BlazorExecutionFlow.Models.NodeV2
     {
         public string From { get; set; } = string.Empty;
         public string To { get; set; } = string.Empty;
+        public bool ExposeAsWorkflowOutput { get; set; } = false;
     }
 }

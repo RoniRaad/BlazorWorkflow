@@ -40,20 +40,14 @@ role="dialog"
                 title="Execute Flow">
                     @if (isExecuting)
                     {
-                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span class="spinner-border" role="status" aria-hidden="true" style="width: 2.5rem; height: 2.5rem;"></span>
                     }
                     else
                     {
-                        <svg viewBox="0 0 24 24" fill="currentColor" style="width: 1rem; height: 1rem;">
+                        <svg viewBox="0 0 24 24" fill="currentColor" style="width: 2.5rem; height: 2.5rem;">
                             <path d="M8 5v14l11-7z"/>
                         </svg>
                     }
-                </button>
-                <button type="button"
-                style="color:white"
-                class="btn-close"
-                @onclick="HandleClose"
-                aria-label="Close modal">
                 </button>
             </div>
 
@@ -92,8 +86,27 @@ role="dialog"
                             <p class="panel-caption">Preview the payload that arrives at this node.</p>
                         </header>
                         <div class="panel-body">
+                            <!-- Search and Filter Controls -->
+                            <div class="json-controls">
+                                <input type="text"
+                                       class="form-control form-control-sm json-search"
+                                       placeholder="Search in JSON..."
+                                       @bind="_jsonSearchTerm"
+                                       @bind:event="oninput"
+                                       data-role="json-search" />
+                                <select class="form-select form-select-sm json-filter"
+                                        @bind="_jsonFilterMode"
+                                        data-role="json-filter">
+                                    @foreach (var filter in GetAvailableFilters())
+                                    {
+                                        <option value="@filter.Key">@filter.Value</option>
+                                    }
+                                    <option value="all">All</option>
+                                </select>
+                            </div>
+
                             <div class="payload-preview draggable-json" data-role="payload-preview">
-                                @RenderDraggableJson(IncomingPayloadJson, "")
+                                @RenderDraggableJson(GetFilteredJson(), "")
                             </div>
                         </div>
                     </section>
@@ -109,79 +122,56 @@ role="dialog"
                             <!-- Function input map -->
                             <div class="panel-section" data-role="function-input-map">
                                 <div class="panel-section-header">
-                                    <span>Function input map</span>
-                                    <button onclick="@AddInputMapping" type="button"
-                                            class="btn btn-xs btn-outline-secondary"
-                                            disabled="@(!CanAddInputMapping())"
-                                            data-role="add-input-mapping">
-                                        Add mapping
-                                    </button>
+                                    <span>Function inputs</span>
                                 </div>
 
-                                <div class="mapping-list" data-role="input-mapping-list">
-                                    <!-- Template row; duplicate dynamically -->
+                                <div class="simple-mapping-list" data-role="input-mapping-list">
                                     @foreach (var inputMapping in ViewModel.NodeInputToMethodInputMap)
                                     {
-                                        <div class="mapping-row" data-role="input-mapping-row">
-                                            <div class="mapping-col">
-                                                <label>Payload path</label>
-                                                <div class="input-with-preview">
-                                                    <input @bind="inputMapping.From"
-                                                           @bind:event="oninput"
-                                                           type="text"
-                                                           class="form-control form-control-sm droppable-input"
-                                                           placeholder="e.g. input.name or {{input.name}}"
-                                                           aria-label="Payload path for input mapping"
-                                                           @ondragover="@((e) => HandleDragOver(e))"
-                                                           @ondragover:preventDefault="true"
-                                                           @ondrop="@((e) => HandleDrop(e, inputMapping))"
-                                                           style="padding-right: 3px"
-                                                           required
-                                                           data-role="payload-path" />
-                                                    <div class="preview-button-container">
-                                                        <button type="button"
-                                                                class="btn-preview"
-                                                                style="background-color: transparent;border: transparent;color: black;right: -5px;top: -4px;"
-                                                                @ref="_previewButtonRef"
-                                                                @onclick="@(() => TogglePreview(inputMapping))"
-                                                                title="Toggle preview">
-                                                            👁
-                                                        </button>
-                                                        @if (_previewMapping == inputMapping)
-                                                        {
-                                                            <div class="preview-popover" @ref="_previewPopoverRef">
-                                                                <div class="preview-popover-arrow"></div>
-                                                                <div class="preview-popover-content">
-                                                                    <div class="preview-popover-label">Preview</div>
-                                                                    <div class="preview-popover-value">@GetScribanPreviewValue(inputMapping.From)</div>
-                                                                </div>
+                                        var param = GetParameterInfo(inputMapping.To);
+                                        var formattedType = param != null ? FormatTypeName(param.ParameterType) : "unknown";
+                                        <div class="simple-mapping-item" data-role="input-mapping-row">
+                                            <label class="simple-mapping-label" title="@formattedType">
+                                                @inputMapping.To
+                                                @if (param != null)
+                                                {
+                                                    <span class="param-type-hint">(@formattedType)</span>
+                                                }
+                                            </label>
+                                            <div class="input-with-preview">
+                                                <textarea @bind="inputMapping.From"
+                                                          @bind:event="oninput"
+                                                          class="form-control form-control-sm droppable-input mapping-input"
+                                                          placeholder="e.g. input.name or {{input.name}}"
+                                                          aria-label="Scriban template for @inputMapping.To"
+                                                          @ondragover="@((e) => HandleDragOver(e))"
+                                                          @ondragover:preventDefault="true"
+                                                          @ondrop="@((e) => HandleDrop(e, inputMapping))"
+                                                          style="padding-right: 15px"
+                                                          rows="1"
+                                                          required
+                                                          data-role="payload-path"></textarea>
+                                                <div class="preview-button-container" style="top: -5px;position: absolute;right: -9px;">
+                                                    <button type="button"
+                                                            class="btn-preview"
+                                                            style="background-color: transparent;border: transparent;color: white;"
+                                                            @ref="_previewButtonRef"
+                                                            @onclick="@(() => TogglePreview(inputMapping))"
+                                                            title="Toggle preview">
+                                                        👁
+                                                    </button>
+                                                    @if (_previewMapping == inputMapping)
+                                                    {
+                                                        <div class="preview-popover" @ref="_previewPopoverRef">
+                                                            <div class="preview-popover-arrow"></div>
+                                                            <div class="preview-popover-content">
+                                                                <div class="preview-popover-label">Preview</div>
+                                                                <div class="preview-popover-value">@GetScribanPreviewValue(inputMapping)</div>
                                                             </div>
-                                                        }
-                                                    </div>
+                                                        </div>
+                                                    }
                                                 </div>
                                             </div>
-                                            <div class="mapping-arrow">→</div>
-                                            <div class="mapping-col">
-                                                <label>Parameter</label>
-                                                <InputSelect @bind-Value="inputMapping.To"
-                                                             class="form-select form-select-sm"
-                                                             aria-label="Target parameter for input mapping"
-                                                             data-role="parameter-name">
-                                                    <option value="">Select parameter…</option>
-                                                    @foreach (var param in GetAvailableInputParameters(inputMapping))
-                                                    {
-                                                        <option @key="@param.Name" value="@param.Name">(@param.ParameterType.Name) @param.Name</option>
-                                                    }
-                                                </InputSelect>
-                                            </div>
-                                            <button onclick="@(() => RemoveNodeInputToMethodInputMap(inputMapping))"
-                                                    type="button"
-                                                    class="btn btn-icon btn-xs"
-                                                    aria-label="Remove input mapping"
-                                                    title="Remove this input mapping"
-                                                    data-role="remove-mapping">
-                                                <span aria-hidden="true">✕</span>
-                                            </button>
                                         </div>
                                     }
                                 </div>
@@ -266,65 +256,37 @@ role="dialog"
                             {
                                 <div class="panel-section" data-role="function-output-map">
                                     <div class="panel-section-header">
-                                        <span>Function output map</span>
-                                        <button onclick="@AddOutputMapping" type="button"
-                                                class="btn btn-xs btn-outline-secondary"
-                                                disabled="@(!CanAddOutputMapping())"
-                                                data-role="add-output-mapping">
-                                            Add mapping
-                                        </button>
+                                        <span>Function outputs</span>
                                     </div>
 
-                                    <div class="mapping-list" data-role="output-mapping-list">
+                                    <div class="simple-mapping-list" data-role="output-mapping-list">
                                         @{ var propInfos = GetReturnProperties(); }
                                         @if (propInfos is not null)
                                         {
                                             @foreach (var outputMapping in ViewModel.MethodOutputToNodeOutputMap)
                                             {
-                                                <div class="mapping-row" data-role="output-mapping-row">
-                                                    <div class="mapping-col">
-                                                        <label>Function output</label>
-                                                        <InputSelect @bind-Value="outputMapping.From"
-                                                                     class="form-select form-select-sm"
-                                                                     aria-label="Function output field"
-                                                                     data-role="function-output">
-                                                            <option value="">Select output…</option>
-
-                                                            @if (propInfos.Count() > 0)
-                                                            {
-                                                                @foreach (var property in GetAvailableOutputProperties(outputMapping, propInfos))
-                                                                {
-                                                                    <option value="@property.Name">(@property.Type) @property.Name</option>
-                                                                }
-                                                            }
-                                                            else
-                                                            {
-                                                                @if (IsOutputValueAvailable(outputMapping, "result"))
-                                                                {
-                                                                    <option value="result">(@BackingNode.BackingMethod.ReturnType.Name) result</option>
-                                                                }
-                                                            }
-
-                                                        </InputSelect>
+                                                var propInfo = propInfos.FirstOrDefault(p => p.Name == outputMapping.From);
+                                                var hasProperty = !string.IsNullOrEmpty(propInfo.Name);
+                                                var typeDisplay = hasProperty ? propInfo.Type : TypeHelpers.FormatTypeName(BackingNode.BackingMethod.ReturnType);
+                                                <div class="simple-mapping-item" data-role="output-mapping-row">
+                                                    <div class="simple-mapping-label-row">
+                                                        <label class="simple-mapping-label" title="@typeDisplay">
+                                                            @outputMapping.From
+                                                            <span class="param-type-hint">(@typeDisplay)</span>
+                                                        </label>
+                                                        <label class="workflow-output-checkbox-label" title="Expose this output to workflow.output.*">
+                                                            <InputCheckbox @bind-Value="outputMapping.ExposeAsWorkflowOutput"
+                                                                           class="workflow-output-checkbox"
+                                                                           data-role="expose-workflow-output" />
+                                                            <span class="workflow-output-checkbox-text">Workflow output</span>
+                                                        </label>
                                                     </div>
-                                                    <div class="mapping-arrow">→</div>
-                                                    <div class="mapping-col">
-                                                        <label>Payload path</label>
-                                                        <InputText @bind-Value="outputMapping.To" type="text"
-                                                                   class="form-control form-control-sm"
-                                                                   placeholder="e.g. name"
-                                                                   aria-label="Target payload path for output mapping"
+                                                    <InputTextArea @bind-Value="outputMapping.To"
+                                                                   class="form-control form-control-sm mapping-input"
+                                                                   placeholder="e.g. output.name"
                                                                    required
+                                                                   rows="1"
                                                                    data-role="target-payload-path" />
-                                                    </div>
-                                                    <button onclick="@(() => RemoveMethodOutputToNodeOutputMap(outputMapping))"
-                                                            type="button"
-                                                            class="btn btn-icon btn-xs"
-                                                            aria-label="Remove output mapping"
-                                                            title="Remove this output mapping"
-                                                            data-role="remove-mapping">
-                                                        <span aria-hidden="true">✕</span>
-                                                    </button>
                                                 </div>
                                             }
                                         }
@@ -362,7 +324,7 @@ role="dialog"
                                     var outputString = JsonSerializer.Serialize(OutputPayloadJson, new JsonSerializerOptions() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping, WriteIndented = true });
                                     if (outputString == "null")
                                     {
-                                        outputString = "...";
+                                        outputString = "Execute the node to see the output";
                                     }
                                 }
                                 @(outputString)
@@ -425,6 +387,27 @@ role="dialog"
     private ElementReference _previewButtonRef;
     private ElementReference _previewPopoverRef;
     private bool _errorDismissed = false;
+    private string? _lastErrorMessage = null;
+
+    // JSON preview controls
+    private string _jsonSearchTerm = "";
+    private string _jsonFilterMode = "Input";
+
+    // Filter registry - register filters by name for easy extensibility
+    private readonly Dictionary<string, JsonFilter> _filterRegistry = new();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        // Register all available filters
+        // To add a new filter: _filterRegistry.Add("filtername", FilterMethod);
+        _filterRegistry.Add("search", SearchFilter);
+        _filterRegistry.Add("Input", InputOnlyFilter);
+        _filterRegistry.Add("Values", PrimitivesOnlyFilter);
+        _filterRegistry.Add("Workflow", GlobalOnlyFilter);
+        _filterRegistry.Add("Nodes", NodeOnlyFilter);
+    }
 
     protected override void OnParametersSet()
     {
@@ -438,6 +421,18 @@ role="dialog"
 
         OutputPayloadJson = BackingNode?.Result;
         IncomingPayloadJson = BackingNode?.Input;
+
+        // Reset error dismissed state when a new error occurs
+        if (BackingNode?.HasError == true && BackingNode.ErrorMessage != _lastErrorMessage)
+        {
+            _errorDismissed = false;
+            _lastErrorMessage = BackingNode.ErrorMessage;
+        }
+        else if (BackingNode?.HasError == false)
+        {
+            // Clear tracking when there's no error
+            _lastErrorMessage = null;
+        }
     }
 
     /// <summary>
@@ -658,6 +653,18 @@ role="dialog"
             IncomingPayloadJson = BackingNode?.Input;
             OutputPayloadJson = BackingNode?.Result;
 
+            // Reset error dismissed state after execution if there's an error
+            if (BackingNode?.HasError == true)
+            {
+                _errorDismissed = false;
+                _lastErrorMessage = BackingNode.ErrorMessage;
+            }
+            else if (BackingNode?.HasError == false)
+            {
+                // Clear tracking when there's no error
+                _lastErrorMessage = null;
+            }
+
             StateHasChanged();
 
             await Task.Delay(1000);
@@ -809,6 +816,18 @@ role="dialog"
         // Can add if there are unmapped parameters
         return availableParams.Any(p => !mappedParams.Contains(p.Name ?? string.Empty));
     }
+
+    private ParameterInfo? GetParameterInfo(string parameterName)
+    {
+        if (string.IsNullOrEmpty(parameterName)) return null;
+        var parameters = BackingNode?.BackingMethod?.GetParameters() ?? Array.Empty<ParameterInfo>();
+        return parameters.FirstOrDefault(p => p.Name == parameterName);
+    }
+
+    /// <summary>
+    /// Formats a type name to display properly, handling generics like List<int> instead of List`1
+    /// </summary>
+    private string FormatTypeName(Type? type) => TypeHelpers.FormatTypeName(type);
 
     private IEnumerable<ParameterInfo> GetAvailableInputParameters(PathMapEntry currentMapping)
     {
@@ -1012,34 +1031,19 @@ role="dialog"
         StateHasChanged();
     }
 
-    private string GetScribanPreviewValue(string templateString)
+    private string GetScribanPreviewValue(PathMapEntry pathMapEntry)
     {
-        if (string.IsNullOrWhiteSpace(templateString) || IncomingPayloadJson == null)
+        var templateString = pathMapEntry.From;
+        var expectedType = BackingNode?.BackingMethod?.GetParameters()
+            .FirstOrDefault(p => p.Name == pathMapEntry.To)?.ParameterType;
+
+        if (string.IsNullOrWhiteSpace(templateString) || IncomingPayloadJson is null || expectedType is null)
             return "...";
 
         try
         {
-            // Check if value is a simple path reference (no Scriban template expressions)
-            if (!templateString.Contains("{{") && !templateString.Contains("}}"))
-            {
-                var jsonValue = IncomingPayloadJson.GetByPath(templateString);
-                if (jsonValue != null)
-                {
-                    return jsonValue.ToJsonString();
-                }
-                return "null";
-            }
-
-            // Use Scriban to render the template
-            var modelDict = IncomingPayloadJson.ToPlainObject()!;
-            var scriptObject = new ScriptObject();
-            scriptObject.Import(modelDict);
-            var context = new TemplateContext();
-            context.PushGlobal(scriptObject);
-
-            var template = Template.Parse(templateString);
-            var result = template.Render(context);
-
+            var obj = ScribanHelpers.GetScribanObject(templateString, (JsonObject)IncomingPayloadJson.DeepClone(), null, expectedType);
+            var result = obj?.ToString();
             return string.IsNullOrEmpty(result) ? "null" : result;
         }
         catch (Exception ex)
@@ -1048,79 +1052,347 @@ role="dialog"
         }
     }
 
-    // Render draggable JSON
+    // ==========================================
+    // JSON FILTER SYSTEM
+    // ==========================================
+
+    /// <summary>
+    /// Delegate for JSON filters. Returns true if the node should be included, false to exclude it.
+    /// </summary>
+    private delegate bool JsonFilter(JsonNode? node, string key, int depth);
+
+    /// <summary>
+    /// Gets the filtered JSON based on current filter settings.
+    /// </summary>
+    private JsonNode? GetFilteredJson()
+    {
+        if (IncomingPayloadJson == null)
+            return null;
+
+        // Build filter chain based on active settings
+        var filters = new List<JsonFilter>();
+
+        // Add search filter if there's a search term
+        if (!string.IsNullOrWhiteSpace(_jsonSearchTerm) && _filterRegistry.ContainsKey("search"))
+            filters.Add(_filterRegistry["search"]);
+
+        // Add mode-specific data filters (not display modes like "compact" or "keys")
+        // Display modes (compact, keys) are handled in RenderDraggableJson
+        if (_filterRegistry.ContainsKey(_jsonFilterMode))
+            filters.Add(_filterRegistry[_jsonFilterMode]);
+
+        // If no filters are active, return original JSON
+        if (filters.Count == 0)
+            return IncomingPayloadJson;
+
+        // Apply all registered filters
+        var filtered = ApplyFilters(IncomingPayloadJson.DeepClone(), filters);
+        return filtered;
+    }
+
+    /// <summary>
+    /// Applies a chain of filters to a JsonNode recursively.
+    /// </summary>
+    private JsonNode? ApplyFilters(JsonNode? node, List<JsonFilter> filters, string key = "", int depth = 0, bool includeAllChildren = false)
+    {
+        if (node == null)
+            return null;
+
+        // If we're inside a matched subtree, include everything without filtering
+        if (includeAllChildren)
+            return node.DeepClone();
+
+        if (node is JsonObject obj)
+        {
+            var filtered = new JsonObject();
+
+            foreach (var kvp in obj.AsEnumerable())
+            {
+                // Check if this key matches search (for search filter specifically)
+                bool keyMatchesSearch = !string.IsNullOrWhiteSpace(_jsonSearchTerm) &&
+                                       kvp.Key.Contains(_jsonSearchTerm, StringComparison.OrdinalIgnoreCase);
+
+                // Apply all filters - if any filter returns false, skip this node
+                bool shouldInclude = filters.All(filter => filter(kvp.Value, kvp.Key, depth));
+
+                if (!shouldInclude)
+                    continue;
+
+                // If key matches search, include entire subtree without filtering
+                var filteredValue = ApplyFilters(kvp.Value, filters, kvp.Key, depth + 1, keyMatchesSearch);
+                if (filteredValue != null)
+                {
+                    filtered.Add(kvp.Key, filteredValue);
+                }
+            }
+
+            return filtered.Count > 0 ? filtered : null;
+        }
+        else if (node is JsonArray arr)
+        {
+            // Check if arrays should be filtered out entirely
+            bool shouldInclude = filters.All(filter => filter(node, key, depth));
+            if (!shouldInclude)
+                return null;
+
+            var filtered = new JsonArray();
+
+            foreach (var item in arr)
+            {
+                // Recursively filter nested nodes
+                var filteredItem = ApplyFilters(item, filters, key, depth + 1, false);
+                if (filteredItem != null)
+                {
+                    filtered.Add(filteredItem);
+                }
+            }
+
+            return filtered.Count > 0 ? filtered : null;
+        }
+        else if (node is JsonValue)
+        {
+            // Apply all filters - if any filter returns false, exclude this value
+            bool shouldInclude = filters.All(filter => filter(node, key, depth));
+            return shouldInclude ? node.DeepClone() : null;
+        }
+
+        return node.DeepClone();
+    }
+
+    /// <summary>
+    /// Gets the available filters for the dropdown, excluding "search" which is applied separately.
+    /// </summary>
+    private Dictionary<string, string> GetAvailableFilters()
+    {
+        var filters = new Dictionary<string, string>();
+
+        foreach (var filterKey in _filterRegistry.Keys)
+        {
+            // Exclude "search" - it's applied separately when there's a search term
+            if (filterKey == "search")
+                continue;
+
+            // Format display name: capitalize first letter and add "only" suffix
+            var displayName =  filterKey;
+            filters.Add(filterKey, displayName);
+        }
+
+        return filters;
+    }
+
+    // ==========================================
+    // REGISTERED FILTERS
+    // ==========================================
+    // To add a new DATA filter:
+    // 1. Create a method with signature: bool MyFilter(JsonNode? node, string key, int depth)
+    // 2. Return true to include the node, false to exclude it
+    // 3. Register it in OnInitialized() using: _filterRegistry.Add("filtername", MyFilter);
+
+    /// <summary>
+    /// Filter: Search - shows only nodes matching search term and their parent paths.
+    /// </summary>
+    private bool SearchFilter(JsonNode? node, string key, int depth)
+    {
+        if (string.IsNullOrWhiteSpace(_jsonSearchTerm))
+            return true;
+
+        // Check if key matches
+        if (key.Contains(_jsonSearchTerm, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // Check if value matches (for primitives)
+        if (node is JsonValue val)
+        {
+            var jsonString = val.ToJsonString();
+            return jsonString.Contains(_jsonSearchTerm, StringComparison.OrdinalIgnoreCase);
+        }
+
+        // For objects and arrays, check if they contain matching nested values
+        // If they do, include them (they are parent paths to matches)
+        return JsonNodeContainsSearchTerm(node, _jsonSearchTerm);
+    }
+
+    /// <summary>
+    /// Filter: Primitives only - excludes nested objects and arrays.
+    /// </summary>
+    private bool PrimitivesOnlyFilter(JsonNode? node, string key, int depth)
+    {
+        // At root level (depth 0), allow objects
+        if (depth == 0)
+            return true;
+
+        // Skip nested objects and arrays
+        if (node is JsonObject or JsonArray)
+            return false;
+
+        return true;
+    }
+
+    private bool GlobalOnlyFilter(JsonNode? node, string key, int depth)
+    {
+        if (depth == 0)
+        {
+            // At depth 1, allow only specific global keys
+            var allowedKeys = new HashSet<string> { "workflow" };
+            return allowedKeys.Contains(key.ToLowerInvariant());
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    private bool InputOnlyFilter(JsonNode? node, string key, int depth)
+    {
+        if (depth == 0)
+        {
+            // At depth 1, allow only specific global keys
+            var allowedKeys = new HashSet<string> { "input" };
+            return allowedKeys.Contains(key.ToLowerInvariant());
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    private bool NodeOnlyFilter(JsonNode? node, string key, int depth)
+    {
+        if (depth == 0)
+        {
+            // At depth 1, allow only specific global keys
+            var allowedKeys = new HashSet<string> { "nodes" };
+            return allowedKeys.Contains(key.ToLowerInvariant());
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Renders draggable JSON. Assumes the node is already filtered.
+    /// Only handles display modes (compact, keys).
+    /// </summary>
     private RenderFragment RenderDraggableJson(JsonNode? node, string path, int depth = 0)
     {
         return builder =>
         {
             if (node == null)
             {
-                builder.AddContent(0, "null");
+                builder.AddContent(0, "Execute the previous node to see the input");
                 return;
             }
 
-            var indent = new string(' ', depth * 2);
+            // Display modes only (filtering already done)
+            bool isCompact = _jsonFilterMode == "compact";
+            bool showKeysOnly = _jsonFilterMode == "keys";
+            var indent = isCompact ? "" : new string(' ', depth * 2);
+            var newline = isCompact ? "" : "\n";
 
             if (node is JsonObject obj)
             {
-                builder.AddContent(0, "{\n");
+                builder.AddContent(0, "{" + newline);
                 var properties = obj.AsEnumerable().ToList();
+
                 for (int i = 0; i < properties.Count; i++)
                 {
                     var kvp = properties[i];
                     var propPath = string.IsNullOrEmpty(path) ? kvp.Key : $"{path}.{kvp.Key}";
 
-                    builder.AddContent(1, indent + "  ");
+                    if (!isCompact)
+                    {
+                        builder.AddContent(1, indent + "  ");
+                    }
+
+                    // Determine if this key matches the search term for highlighting
+                    bool keyMatches = !string.IsNullOrWhiteSpace(_jsonSearchTerm) &&
+                                      kvp.Key.Contains(_jsonSearchTerm, StringComparison.OrdinalIgnoreCase);
 
                     // Render key as draggable
                     builder.OpenElement(2, "span");
-                    builder.AddAttribute(3, "class", "json-key draggable");
+                    builder.AddAttribute(3, "class", keyMatches ? "json-key draggable json-highlight" : "json-key draggable");
                     builder.AddAttribute(4, "draggable", "true");
                     builder.AddAttribute(5, "ondragstart", EventCallback.Factory.Create<DragEventArgs>(this, e => HandleDragStart(e, $"{propPath} | object.to_json")));
                     builder.AddContent(6, $"\"{kvp.Key}\"");
                     builder.CloseElement();
 
-                    builder.AddContent(7, ": ");
-                    builder.AddContent(8, RenderDraggableJson(kvp.Value, propPath, depth + 1));
+                    if (!showKeysOnly)
+                    {
+                        builder.AddContent(7, isCompact ? ":" : ": ");
+                        builder.AddContent(8, RenderDraggableJson(kvp.Value, propPath, depth + 1));
+                    }
 
                     if (i < properties.Count - 1)
                     {
-                        builder.AddContent(9, ",");
+                        builder.AddContent(9, isCompact ? "," : ",");
                     }
-                    builder.AddContent(10, "\n");
+                    builder.AddContent(10, newline);
                 }
-                builder.AddContent(11, indent + "}");
+                builder.AddContent(11, (isCompact ? "" : indent) + "}");
             }
             else if (node is JsonArray arr)
             {
-                builder.AddContent(0, "[\n");
+                builder.AddContent(0, "[" + newline);
                 for (int i = 0; i < arr.Count; i++)
                 {
                     var itemPath = $"{path}[{i}]";
-                    builder.AddContent(1, indent + "  ");
+                    if (!isCompact)
+                    {
+                        builder.AddContent(1, indent + "  ");
+                    }
                     builder.AddContent(2, RenderDraggableJson(arr[i], $"{itemPath} | object.to_json", depth + 1));
 
                     if (i < arr.Count - 1)
                     {
-                        builder.AddContent(3, ",");
+                        builder.AddContent(3, isCompact ? "," : ",");
                     }
-                    builder.AddContent(4, "\n");
+                    builder.AddContent(4, newline);
                 }
-                builder.AddContent(5, indent + "]");
+                builder.AddContent(5, (isCompact ? "" : indent) + "]");
             }
             else if (node is JsonValue val)
             {
                 // Render primitive value as draggable
                 var jsonString = val.ToJsonString();
 
+                // Check if value matches search term for highlighting
+                bool valueMatches = !string.IsNullOrWhiteSpace(_jsonSearchTerm) &&
+                                   jsonString.Contains(_jsonSearchTerm, StringComparison.OrdinalIgnoreCase);
+
                 builder.OpenElement(0, "span");
-                builder.AddAttribute(1, "class", "json-value draggable");
+                builder.AddAttribute(1, "class", valueMatches ? "json-value draggable json-highlight" : "json-value draggable");
                 builder.AddAttribute(2, "draggable", "true");
                 builder.AddAttribute(3, "ondragstart", EventCallback.Factory.Create<DragEventArgs>(this, e => HandleDragStart(e, path)));
                 builder.AddContent(4, jsonString);
                 builder.CloseElement();
             }
         };
+    }
+
+    // Helper to check if a JsonNode contains the search term
+    private bool JsonNodeContainsSearchTerm(JsonNode? node, string searchTerm)
+    {
+        if (node == null || string.IsNullOrWhiteSpace(searchTerm))
+            return false;
+
+        if (node is JsonObject obj)
+        {
+            return obj.AsEnumerable().Any(kvp =>
+                kvp.Key.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                JsonNodeContainsSearchTerm(kvp.Value, searchTerm)
+            );
+        }
+        else if (node is JsonArray arr)
+        {
+            return arr.Any(item => JsonNodeContainsSearchTerm(item, searchTerm));
+        }
+        else if (node is JsonValue val)
+        {
+            return val.ToJsonString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase);
+        }
+
+        return false;
     }
 
     // Dictionary parameter methods

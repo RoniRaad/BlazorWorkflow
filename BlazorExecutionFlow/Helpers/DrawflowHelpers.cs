@@ -46,7 +46,9 @@ namespace BlazorExecutionFlow.Helpers
             {
                 Section = section,
                 BackingMethod = method,
-                DeclaredOutputPorts = declaredPorts
+                DeclaredOutputPorts = declaredPorts,
+                PosX = 40,
+                PosY = 40
             };
 
             return node;

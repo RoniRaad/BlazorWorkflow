@@ -27,20 +27,12 @@ namespace BlazorExecutionFlow.Helpers
             {
                 foreach(var node in flowGraph.Nodes.Values)
                 {
-                    if (node.BackingMethod?.Name == "GetInput")
-                    {
-                        var inputNameMapping = node.NodeInputToMethodInputMap
-                            .FirstOrDefault(m => m.To == "inputName");
-                        if (inputNameMapping != null && !string.IsNullOrWhiteSpace(inputNameMapping.From))
-                        {
-                            // Clean up the value - remove quotes and whitespace
-                            var inputValue = inputNameMapping.From.Trim().Trim('"');
-                            if (!string.IsNullOrWhiteSpace(inputValue))
-                            {
-                                inputNames.Add(inputValue);
-                            }
-                        }
-                    }
+                    // Clean up the value - remove quotes and whitespace
+                    node.NodeInputToMethodInputMap
+                        .SelectMany(m => ScribanHelpers.GetWorkflowInputVariables(m.From))
+                        .Select(x => x.Replace("parameters.", ""))
+                        .ToList()
+                        .ForEach(x => inputNames.Add(x));
                 }
 
                 return [.. inputNames.OrderBy(x => x)];

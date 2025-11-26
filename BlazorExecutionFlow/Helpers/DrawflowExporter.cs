@@ -79,6 +79,13 @@ namespace BlazorExecutionFlow.Helpers
                     ["input_1"] = new DrawflowPortDto()
                 };
 
+                // Serialize the node to JSON and store in data
+                var nodeJson = JsonSerializer.Serialize(node, NodeSerializationOptions);
+                var dataObj = new JsonObject
+                {
+                    ["node"] = nodeJson
+                };
+
                 var dto = new DrawflowNodeDto
                 {
                     id = idValue,
@@ -89,7 +96,8 @@ namespace BlazorExecutionFlow.Helpers
                     pos_x = node.PosX,
                     pos_y = node.PosY,
                     inputs = inputs,
-                    outputs = outputs
+                    outputs = outputs,
+                    data = dataObj
                 };
 
                 module.data[nodeKey] = dto;
@@ -225,14 +233,13 @@ namespace BlazorExecutionFlow.Helpers
             return $"""
                     <div class='node-type-id-container'>
                         <h5 class='node-type-id'>
-                            F
+                            ƒ
                         </h5>
                     </div>
                     <div class='title-container'>
-                        <div class='title' style='text-align: center;'>{displayName}</div>
+                        <div class='title' style='text-align: center;'>{TypeHelpers.AddSpacesToPascalCase(node.BackingMethod.Name)}</div>
                     </div>
                     <div class='main-content' style='min-width:300px'>
-
                     </div>
                     """;
         }

@@ -159,6 +159,31 @@ window.DrawflowBlazor = (function () {
         const s = ensureInstance(id);
         const target = s.editor;
         if (!target) throw new Error("Editor missing for id: " + id);
+
+        // Custom method implementations
+        if (methodName === "updateNodePosition") {
+            const [nodeId, x, y] = args || [];
+            const nodeIdStr = String(nodeId);
+            const module = target.module;
+            const nodeData = target.drawflow.drawflow[module].data[nodeIdStr];
+
+            if (nodeData) {
+                nodeData.pos_x = x;
+                nodeData.pos_y = y;
+
+                // Update DOM element position
+                const nodeElement = document.getElementById(`node-${nodeIdStr}`);
+                if (nodeElement) {
+                    nodeElement.style.left = x + 'px';
+                    nodeElement.style.top = y + 'px';
+                }
+
+                // Update connections
+                target.updateConnectionNodes(`node-${nodeIdStr}`);
+            }
+            return null;
+        }
+
         const fn = target[methodName];
         if (typeof fn !== "function") {
             throw new Error("Method not found on Drawflow: " + methodName);
@@ -565,4 +590,49 @@ window.removePopoverClickAway = function() {
         _popoverClickAwayHandler = null;
     }
     _popoverDotNetRef = null;
+}
+
+// Undo/Redo keyboard listener
+let _undoRedoListeners = new Map();
+
+window.setupUndoRedoKeyboard = function(dotNetRef, editorId) {
+    console.log('[UndoRedo] Setting up keyboard listener for editor:', editorId);
+
+    // Remove existing listener if any
+    if (_undoRedoListeners.has(editorId)) {
+        document.removeEventListener('keydown', _undoRedoListeners.get(editorId));
+    }
+
+    const handleKeyDown = function(event) {
+        // Check if Ctrl (or Cmd on Mac) is pressed
+        const isCtrlOrCmd = event.ctrlKey || event.metaKey;
+
+        if (isCtrlOrCmd && event.key === 'z' && !event.shiftKey) {
+            // Ctrl+Z = Undo
+            console.log('[UndoRedo] Ctrl+Z detected - requesting undo');
+            event.preventDefault();
+            dotNetRef.invokeMethodAsync('OnUndoRequested');
+        } else if (isCtrlOrCmd && event.key === 'y') {
+            // Ctrl+Y = Redo
+            console.log('[UndoRedo] Ctrl+Y detected - requesting redo');
+            event.preventDefault();
+            dotNetRef.invokeMethodAsync('OnRedoRequested');
+        } else if (isCtrlOrCmd && event.shiftKey && event.key === 'Z') {
+            // Ctrl+Shift+Z = Redo (alternative)
+            console.log('[UndoRedo] Ctrl+Shift+Z detected - requesting redo');
+            event.preventDefault();
+            dotNetRef.invokeMethodAsync('OnRedoRequested');
+        }
+    };
+
+    _undoRedoListeners.set(editorId, handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    console.log('[UndoRedo] Keyboard listener attached successfully');
+}
+
+window.removeUndoRedoKeyboard = function(editorId) {
+    if (_undoRedoListeners.has(editorId)) {
+        document.removeEventListener('keydown', _undoRedoListeners.get(editorId));
+        _undoRedoListeners.delete(editorId);
+    }
 }

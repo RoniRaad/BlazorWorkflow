@@ -216,56 +216,6 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         }
 
         /// <summary>
-        /// Executes the "body" port a specified number of times.
-        /// Each iteration provides the current counter value in output.counter.
-        /// </summary>
-        [NodeFlowPorts("body", "done")]
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
-        public static async Task<RepeatResult> Repeat(
-            int times,
-            NodeContext context)
-        {
-            if (times < 0)
-                throw new System.ArgumentException("Times must be non-negative", nameof(times));
-
-            // OPTIMIZATION: Cache downstream nodes once
-            var downstreamNodes = context.CurrentNode.GetDownstreamNodes("body");
-            var outputData = new JsonObject();
-            var iterationOutput = new JsonObject { ["output"] = outputData };
-
-            for (int i = 0; i < times; i++)
-            {
-                // Fast clear using cached node list
-                Node.ClearNodes(downstreamNodes);
-
-                // Update iteration info (reuse object)
-                outputData["counter"] = i;
-                outputData["total"] = times;
-                outputData["isFirst"] = i == 0;
-                outputData["isLast"] = i == times - 1;
-
-                var originalResult = context.CurrentNode.Result;
-                context.CurrentNode.Result = iterationOutput;
-
-                try
-                {
-                    await context.ExecutePortAsync("body");
-                }
-                finally
-                {
-                    context.CurrentNode.Result = originalResult;
-                }
-            }
-
-            await context.ExecutePortAsync("done");
-
-            return new RepeatResult
-            {
-                TimesExecuted = times
-            };
-        }
-
-        /// <summary>
         /// Maps each string in a collection through the "transform" port.
         /// Executes the transform port for each item and collects the outputs.
         /// The transformed collection is available in the "done" port output.

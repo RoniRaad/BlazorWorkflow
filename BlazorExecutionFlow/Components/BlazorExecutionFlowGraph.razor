@@ -31,9 +31,9 @@
         <div class="sidebar-panel">
             <div class="control-buttons">
                 <button class="btn btn-sm btn-primary" @onclick="Run" aria-label="Run workflow">Run</button>
+                <button class="btn btn-sm btn-primary" @onclick="Clear" aria-label="Clear workflow">Clear</button>
                 <button class="btn btn-sm btn-success" @onclick="ExportCSharp" aria-label="Export to C# JSON">Export C#</button>
                 <button class="btn btn-sm btn-primary" @onclick="() => showImportModal = true" aria-label="Import from C# JSON">Import C#</button>
-                <button class="btn btn-sm btn-primary" @onclick="Clear" aria-label="Clear workflow">Clear</button>
             </div>
             <div class="node-browser">
                 <div class="node-search">
@@ -468,10 +468,19 @@
 
     private async Task SaveChanges()
     {
+        Console.WriteLine($"[SaveChanges] Saving node: {editNode?.BackingMethod.Name} (DrawflowId: {editNode?.DrawflowNodeId})");
+        Console.WriteLine($"[SaveChanges] Graph has {Graph.Nodes.Count} nodes");
+        Console.WriteLine($"[SaveChanges] editNode is in Graph: {Graph.Nodes.ContainsKey(editNode?.DrawflowNodeId ?? "")}");
+
         var currentUiNode = Graph.Nodes.First(x => x.Key == editNode.DrawflowNodeId);
+        Console.WriteLine($"[SaveChanges] Found currentUiNode: {currentUiNode.Value?.BackingMethod.Name}");
+        Console.WriteLine($"[SaveChanges] currentUiNode == editNode: {ReferenceEquals(currentUiNode.Value, editNode)}");
+
         editNode.PosX = currentUiNode.Value.PosX;
         editNode.PosY = currentUiNode.Value.PosY;
         Graph.Nodes[editNode.DrawflowNodeId] = editNode;
+        Console.WriteLine($"[SaveChanges] Updated Graph.Nodes[{editNode.DrawflowNodeId}]");
+
         var json = DrawflowExporter.ExportToDrawflowJson(Graph.Nodes.Select(x => x.Value));
         await _base.CallAsync("import", json);
 
@@ -479,10 +488,7 @@
 
         foreach (var node in Graph.Nodes)
         {
-            if (node.Value.DeclaredOutputPorts.Count > 0)
-            {
-                await _base.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", _base.Id, node.Value.DrawflowNodeId, new List<List<string>>(), node.Value.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
-            }
+            await _base.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", _base.Id, node.Value.DrawflowNodeId, new List<List<string>>(), node.Value.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
 
             // Set node width based on title
             await _base.JS.InvokeVoidAsync("DrawflowBlazor.setNodeWidthFromTitle", _base.Id, node.Value.DrawflowNodeId);
@@ -494,41 +500,10 @@
 
     private async Task ExecuteInputNodes()
     {
-        if (editNode is null) return;
-
-        // Clear results from all nodes to ensure fresh execution
-        foreach (var node in Graph.Nodes)
+        await Graph.Run(new()
         {
-            node.Value.Result = null;
-            node.Value.HasError = false;
-            node.Value.ErrorMessage = null;
-        }
-
-        // Event handlers are already attached during component initialization
-        // No need to re-attach them here
-
-        // Find all start nodes in the graph
-        var startNodes = Graph.Nodes.Where(x =>
-        {
-            var attributes = x.Value.BackingMethod.GetCustomAttributes(typeof(BlazorFlowNodeMethodAttribute), false);
-            if (attributes.Length > 0 && ((BlazorFlowNodeMethodAttribute)attributes.First()).NodeType == NodeType.Event)
-            {
-                return true;
-            }
-
-            return false;
+            Parameters = WorkflowParameters.ToFrozenDictionary()
         });
-
-        // Execute all start nodes, which will cascade through the graph
-        var tasks = new List<Task>();
-        foreach (var startNode in startNodes)
-        {
-            tasks.Add(startNode.Value.ExecuteNode());
-        }
-
-        await Task.WhenAll(tasks);
-
-        // The editNode.Input should now be populated with fresh data from upstream nodes
     }
 
     async Task SetStatusAsync(string nodeId, bool isRunning, bool hasError = false, string? errorMessage = null, int? outputPos = null, object? value = null)
@@ -708,9 +683,13 @@
         if (returnProps?.Count > 0)
         {
             node.MethodOutputToNodeOutputMap = MappingHelpers.GenerateSmartOutputMappings(node.BackingMethod, returnProps);
-		}
+        }
+
+		var random = new Random();
 
         // Use smart mapping helper to generate intelligent default output mappings
+        node.PosX = PosX + 60 + (30 * random.NextDouble());
+        node.PosY = PosY + 60 + (30 * random.NextDouble());
         node.NodeInputToMethodInputMap = MappingHelpers.GenerateDefaultInputMappings(node.BackingMethod);
         node.DrawflowNodeId = (await _base.CreateNodeV2(node, "ƒ")).ToString();
         Graph.Nodes[node.DrawflowNodeId] = node;
@@ -726,17 +705,42 @@
 
     private async Task DoubleClickedNode(string nodeId)
     {
+        Console.WriteLine($"[DoubleClick] Looking for node with ID: {nodeId}");
         var node = Graph.Nodes.FirstOrDefault(x => x.Key == nodeId.ToString());
-        editNode = node.Value;
-        showModal = true;
+
+        if (node.Value != null)
+        {
+            Console.WriteLine($"[DoubleClick] Found node: {node.Value.BackingMethod.Name} (DrawflowId: {node.Value.DrawflowNodeId}, InternalId: {node.Value.Id})");
+            editNode = node.Value;
+            showModal = true;
+        }
+        else
+        {
+            Console.WriteLine($"[DoubleClick] ERROR: Node not found in Graph.Nodes!");
+            Console.WriteLine($"[DoubleClick] Available node IDs: {string.Join(", ", Graph.Nodes.Keys)}");
+        }
 
         await InvokeAsync(StateHasChanged);
+    }
+
+    private void CloseModalAfterUndoRedo()
+    {
+        Console.WriteLine("[CloseModal] Closing modal after undo/redo to prevent ghost node issues");
+        showModal = false;
+        editNode = null;
     }
 
     protected override void OnInitialized()
     {
         _nodes = DrawflowHelpers.GetNodesObjectsV2();
         _base = this;
+
+        // Set up callback to close modal after undo/redo
+        OnCloseModalAfterUndoRedo = CloseModalAfterUndoRedo;
+
+        // Set up callback to attach node event handlers after undo/redo
+        OnAttachNodeEventHandlers = AttachNodeEventHandlers;
+
         base.OnInitialized();
     }
 
@@ -774,10 +778,7 @@
             // Re-apply port labels for nodes with multiple outputs
             foreach (var node in nodes)
             {
-                if (node.DeclaredOutputPorts.Count > 0)
-                {
-                    await _base.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", _base.Id, node.DrawflowNodeId, new List<List<string>>(), node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
-                }
+                await _base.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", _base.Id, node.DrawflowNodeId, new List<List<string>>(), node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
 
                 // Set node width based on title
                 await _base.JS.InvokeVoidAsync("DrawflowBlazor.setNodeWidthFromTitle", _base.Id, node.DrawflowNodeId);
@@ -837,10 +838,7 @@
             // Re-apply port labels for nodes with multiple outputs
             foreach (var node in nodes)
             {
-                if (node.DeclaredOutputPorts.Count > 0)
-                {
-                    await _base.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", _base.Id, node.DrawflowNodeId, new List<List<string>>(), node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
-                }
+                await _base.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", _base.Id, node.DrawflowNodeId, new List<List<string>>(), node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
 
                 // Set node width based on title
                 await _base.JS.InvokeVoidAsync("DrawflowBlazor.setNodeWidthFromTitle", _base.Id, node.DrawflowNodeId);

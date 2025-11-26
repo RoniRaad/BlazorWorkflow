@@ -272,10 +272,10 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
         private static readonly Random _random = new();
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Random")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility")]
         public static int RandomInteger() => _random.Next();
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Random")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility")]
         public static int RandomIntegerRange([BlazorFlowInputField] int min, [BlazorFlowInputField] int max)
         {
             if (min == max) return min;
@@ -283,10 +283,10 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
             return _random.Next(min, max);
         }
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Random")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility")]
         public static double RandomDouble() => _random.NextDouble();
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Random")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility")]
         public static bool RandomBool() => _random.Next(0, 2) == 1;
 
         // ---------- Date/Time ----------
@@ -334,84 +334,6 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         public static string FormatDateTime(DateTime dateTime, [BlazorFlowInputField] string format = "yyyy-MM-dd HH:mm:ss")
         {
             return dateTime.ToString(format);
-        }
-
-        // ---------- Collections (string arrays) ----------
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Collections")]
-        public static int ArrayLength(JsonArray items) => items?.Count ?? 0;
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Collections")]
-        public static JsonNode? ArrayElementOrDefault(JsonArray items, int index)
-        {
-            if (items == null || items.Count == 0) return null;
-            if (index < 0 || index >= items.Count) return null;
-            return items[index];
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Collections")]
-        public static JsonArray ArrayAppend(JsonArray items, JsonNode? value)
-        {
-            var result = new JsonArray();
-            if (items != null)
-            {
-                foreach (var item in items)
-                {
-                    result.Add(item?.DeepClone());
-                }
-            }
-            result.Add(value?.DeepClone());
-            return result;
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Collections")]
-        public static bool ArrayContains(JsonArray items, string value, [BlazorFlowInputField] bool ignoreCase = false)
-        {
-            if (items == null || items.Count == 0) return false;
-            var comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-            return items.Any(x => string.Equals(x?.ToString() ?? string.Empty, value ?? string.Empty, comparison));
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Array")]
-        public static JsonNode? ArrayFirst(JsonArray items)
-        {
-            return items == null || items.Count == 0 ? null : items[0];
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Array")]
-        public static JsonNode? ArrayLast(JsonArray items)
-        {
-            return items == null || items.Count == 0 ? null : items[items.Count - 1];
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Array")]
-        public static JsonArray ArrayReverse(JsonArray items)
-        {
-            if (items == null || items.Count == 0) return new JsonArray();
-            var reversed = new JsonArray();
-            for (int i = items.Count - 1; i >= 0; i--)
-            {
-                reversed.Add(items[i]?.DeepClone());
-            }
-            return reversed;
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Array")]
-        public static JsonArray ArraySlice(JsonArray items, int start, int count)
-        {
-            if (items == null || items.Count == 0) return new JsonArray();
-            if (start < 0) start = 0;
-            if (start >= items.Count) return new JsonArray();
-
-            int actualCount = Math.Min(count, items.Count - start);
-            if (actualCount <= 0) return new JsonArray();
-
-            var result = new JsonArray();
-            for (int i = start; i < start + actualCount; i++)
-            {
-                result.Add(items[i]?.DeepClone());
-            }
-            return result;
         }
 
         // ---------- JSON helpers (for payload work) ----------

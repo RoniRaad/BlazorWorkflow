@@ -43,107 +43,16 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
             return result ?? defaultValue;
         }
 
-        // ==========================================
-        // CONDITIONALS (CONTROL FLOW)
-        // ==========================================
-
         /// <summary>
         /// Routes execution based on a boolean condition.
         /// Connects to "true" port if condition is true, otherwise "false" port.
         /// </summary>
-        [BlazorFlowNodeMethod(NodeType.BooleanOperation, "Conditionals")]
+        [BlazorFlowNodeMethod(NodeType.BooleanOperation, "Logic")]
         [NodeFlowPorts("true", "false")]
         public static Task If(NodeContext ctx, bool condition)
         {
             var port = condition ? "true" : "false";
             return ctx.ExecutePortAsync(port);
-        }
-
-        /// <summary>
-        /// Routes execution based on a nullable boolean condition.
-        /// Routes to "true", "false", or "error" (if null) ports.
-        /// </summary>
-        [BlazorFlowNodeMethod(NodeType.BooleanOperation, "Conditionals")]
-        [NodeFlowPorts("true", "false", "error")]
-        public static async Task IfNullable(NodeContext ctx, bool? condition)
-        {
-            if (condition is null)
-            {
-                await ctx.ExecutePortAsync("error");
-            }
-            else
-            {
-                await ctx.ExecutePortAsync(condition.Value ? "true" : "false");
-            }
-        }
-
-        /// <summary>
-        /// Routes execution based on an integer value comparison.
-        /// Supports 3 cases + default fallback.
-        /// </summary>
-        [BlazorFlowNodeMethod(NodeType.BooleanOperation, "Conditionals")]
-        [NodeFlowPorts("case1", "case2", "case3", "default")]
-        public static async Task SwitchInt(
-            NodeContext ctx,
-            int value,
-            [BlazorFlowInputField] int case1,
-            [BlazorFlowInputField] int case2,
-            [BlazorFlowInputField] int case3)
-        {
-            if (value == case1)
-            {
-                await ctx.ExecutePortAsync("case1");
-            }
-            else if (value == case2)
-            {
-                await ctx.ExecutePortAsync("case2");
-            }
-            else if (value == case3)
-            {
-                await ctx.ExecutePortAsync("case3");
-            }
-            else
-            {
-                await ctx.ExecutePortAsync("default");
-            }
-        }
-
-        /// <summary>
-        /// Routes execution based on a string value comparison.
-        /// Supports 3 cases + default fallback with optional case-insensitive matching.
-        /// </summary>
-        [BlazorFlowNodeMethod(NodeType.BooleanOperation, "Conditionals")]
-        [NodeFlowPorts("case1", "case2", "case3", "default")]
-        public static async Task SwitchString(
-            NodeContext ctx,
-            string value,
-            [BlazorFlowInputField] string case1,
-            [BlazorFlowInputField] string case2,
-            [BlazorFlowInputField] string case3,
-            [BlazorFlowInputField] bool ignoreCase = false)
-        {
-            var comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-            value ??= string.Empty;
-            case1 ??= string.Empty;
-            case2 ??= string.Empty;
-            case3 ??= string.Empty;
-
-            if (string.Equals(value, case1, comparison))
-            {
-                await ctx.ExecutePortAsync("case1");
-            }
-            else if (string.Equals(value, case2, comparison))
-            {
-                await ctx.ExecutePortAsync("case2");
-            }
-            else if (string.Equals(value, case3, comparison))
-            {
-                await ctx.ExecutePortAsync("case3");
-            }
-            else
-            {
-                await ctx.ExecutePortAsync("default");
-            }
         }
 
         // ==========================================
@@ -227,7 +136,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         public static bool Not(bool value) => !value;
 
         [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
-        public static string Ternary(bool condition, [BlazorFlowInputField] string trueValue, [BlazorFlowInputField] string falseValue)
+        public static object? Ternary(bool condition, object? trueValue, object? falseValue)
         {
             return condition ? trueValue : falseValue;
         }
@@ -236,33 +145,131 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         // COMPARISON
         // ==========================================
 
+        /// <summary>
+        /// Compares two objects for equality. Handles numbers, strings, nulls, and other types intelligently.
+        /// </summary>
         [BlazorFlowNodeMethod(NodeType.Function, "Comparison")]
-        public static bool Equal(int a, int b) => a == b;
+        public static bool Equal(object? a, object? b)
+        {
+            // Handle nulls
+            if (a == null && b == null) return true;
+            if (a == null || b == null) return false;
+
+            // Try direct equality first
+            if (a.Equals(b)) return true;
+
+            // Try converting to comparable types
+            try
+            {
+                // Both numbers - convert to decimal for comparison
+                if (IsNumeric(a) && IsNumeric(b))
+                {
+                    var aDecimal = Convert.ToDecimal(a);
+                    var bDecimal = Convert.ToDecimal(b);
+                    return aDecimal == bDecimal;
+                }
+
+                // String comparison (case-sensitive)
+                var aStr = a.ToString() ?? "";
+                var bStr = b.ToString() ?? "";
+                return aStr.Equals(bStr, StringComparison.Ordinal);
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         [BlazorFlowNodeMethod(NodeType.Function, "Comparison")]
-        public static bool NotEqual(int a, int b) => a != b;
+        public static bool NotEqual(object? a, object? b) => !Equal(a, b);
+
+        /// <summary>
+        /// Checks if first value is greater than second. Works with numbers, dates, and strings.
+        /// </summary>
+        [BlazorFlowNodeMethod(NodeType.Function, "Comparison")]
+        public static bool GreaterThan(object? a, object? b)
+        {
+            if (a == null || b == null) return false;
+
+            try
+            {
+                // Try numeric comparison
+                if (IsNumeric(a) && IsNumeric(b))
+                {
+                    var aDecimal = Convert.ToDecimal(a);
+                    var bDecimal = Convert.ToDecimal(b);
+                    return aDecimal > bDecimal;
+                }
+
+                // Try DateTime comparison
+                if (a is DateTime dtA && b is DateTime dtB)
+                    return dtA > dtB;
+
+                // String comparison
+                var aStr = a.ToString() ?? "";
+                var bStr = b.ToString() ?? "";
+                return string.Compare(aStr, bStr, StringComparison.Ordinal) > 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         [BlazorFlowNodeMethod(NodeType.Function, "Comparison")]
-        public static bool GreaterThan(int a, int b) => a > b;
+        public static bool GreaterOrEqual(object? a, object? b)
+        {
+            return Equal(a, b) || GreaterThan(a, b);
+        }
 
         [BlazorFlowNodeMethod(NodeType.Function, "Comparison")]
-        public static bool GreaterOrEqual(int a, int b) => a >= b;
+        public static bool LessThan(object? a, object? b)
+        {
+            return !GreaterOrEqual(a, b);
+        }
 
         [BlazorFlowNodeMethod(NodeType.Function, "Comparison")]
-        public static bool LessThan(int a, int b) => a < b;
+        public static bool LessOrEqual(object? a, object? b)
+        {
+            return !GreaterThan(a, b);
+        }
 
+        /// <summary>
+        /// Compares two numeric values with a tolerance for floating point precision.
+        /// </summary>
         [BlazorFlowNodeMethod(NodeType.Function, "Comparison")]
-        public static bool LessOrEqual(int a, int b) => a <= b;
-
-        [BlazorFlowNodeMethod(NodeType.Function, "Comparison")]
-        public static bool EqualD(double a, double b, [BlazorFlowInputField] double tolerance = 0.0)
-            => Math.Abs(a - b) <= Math.Max(tolerance, 0.0);
+        public static bool EqualWithTolerance(object? a, object? b, [BlazorFlowInputField] double tolerance = 0.0)
+        {
+            try
+            {
+                if (a != null && b != null && IsNumeric(a) && IsNumeric(b))
+                {
+                    var aDouble = Convert.ToDouble(a);
+                    var bDouble = Convert.ToDouble(b);
+                    return Math.Abs(aDouble - bDouble) <= Math.Max(tolerance, 0.0);
+                }
+                return Equal(a, b);
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         [BlazorFlowNodeMethod(NodeType.Function, "Comparison")]
         public static bool StringEquals(string a, string b, [BlazorFlowInputField] bool ignoreCase = false)
         {
             var comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
             return string.Equals(a ?? string.Empty, b ?? string.Empty, comparison);
+        }
+
+        /// <summary>
+        /// Helper to check if an object is a numeric type
+        /// </summary>
+        private static bool IsNumeric(object? obj)
+        {
+            if (obj == null) return false;
+            return obj is sbyte or byte or short or ushort or int or uint or long or ulong or float or double or decimal;
         }
 
         // ==========================================

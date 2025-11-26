@@ -42,133 +42,12 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
             }
         }
 
-        // ==========================================
-        // GET
-        // ==========================================
-
-        /// <summary>
-        /// Performs an HTTP GET request and returns the response as a string.
-        /// </summary>
-        [BlazorFlowNodeMethod(NodeType.Function, "HTTP")]
-        public static async Task<string> HttpGet(
-            [BlazorFlowInputField] string url,
-            [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,
-            [BlazorFlowInputField] int timeoutMs = 10000)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-                return string.Empty;
-
-            using var cts = timeoutMs > 0
-                ? new CancellationTokenSource(timeoutMs)
-                : new CancellationTokenSource();
-
-            try
-            {
-                using var request = new HttpRequestMessage(HttpMethod.Get, url);
-                ApplyHeaders(request, headers);
-
-                var response = await _httpClient.SendAsync(request, cts.Token);
-                response.EnsureSuccessStatusCode();
-                return await response.Content.ReadAsStringAsync(cts.Token);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"[ERROR] HttpGet failed: {ex.Message}");
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Performs an HTTP GET request with response status tracking.
-        /// Returns the response body and status code.
-        /// </summary>
-        [BlazorFlowNodeMethod(NodeType.Function, "HTTP/Advanced")]
-        public static async Task<HttpResponse> HttpGetWithStatus(
-            [BlazorFlowInputField] string url,
-            [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,
-            [BlazorFlowInputField] int timeoutMs = 10000)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-                return new HttpResponse { Body = string.Empty, StatusCode = 0, Success = false };
-
-            using var cts = timeoutMs > 0
-                ? new CancellationTokenSource(timeoutMs)
-                : new CancellationTokenSource();
-
-            try
-            {
-                using var request = new HttpRequestMessage(HttpMethod.Get, url);
-                ApplyHeaders(request, headers);
-
-                var response = await _httpClient.SendAsync(request, cts.Token);
-                var body = await response.Content.ReadAsStringAsync(cts.Token);
-
-                return new HttpResponse
-                {
-                    Body = body,
-                    StatusCode = (int)response.StatusCode,
-                    Success = response.IsSuccessStatusCode
-                };
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"[ERROR] HttpGetWithStatus failed: {ex.Message}");
-                return new HttpResponse
-                {
-                    Body = ex.Message,
-                    StatusCode = 0,
-                    Success = false
-                };
-            }
-        }
-
-        // ==========================================
-        // POST
-        // ==========================================
-
-        /// <summary>
-        /// Performs an HTTP POST request with a string body.
-        /// </summary>
-        [BlazorFlowNodeMethod(NodeType.Function, "HTTP")]
-        public static async Task<string> HttpPost(
-            [BlazorFlowInputField] string url,
-            string body,
-            [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,
-            [BlazorFlowInputField] string contentType = "application/json",
-            [BlazorFlowInputField] int timeoutMs = 10000)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-                return string.Empty;
-
-            body ??= string.Empty;
-            contentType ??= "application/json";
-
-            using var cts = timeoutMs > 0
-                ? new CancellationTokenSource(timeoutMs)
-                : new CancellationTokenSource();
-
-            try
-            {
-                using var request = new HttpRequestMessage(HttpMethod.Post, url);
-                request.Content = new StringContent(body, Encoding.UTF8, contentType);
-                ApplyHeaders(request, headers);
-
-                var response = await _httpClient.SendAsync(request, cts.Token);
-                response.EnsureSuccessStatusCode();
-                return await response.Content.ReadAsStringAsync(cts.Token);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"[ERROR] HttpPost failed: {ex.Message}");
-                throw;
-            }
-        }
-
+        
         /// <summary>
         /// Performs an HTTP POST request with response status tracking.
         /// </summary>
-        [BlazorFlowNodeMethod(NodeType.Function, "HTTP/Advanced")]
-        public static async Task<HttpResponse> HttpPostWithStatus(
+        [BlazorFlowNodeMethod(NodeType.Function, "HTTP")]
+        public static async Task<HttpResponse> HttpPost(
             [BlazorFlowInputField] string url,
             string body,
             [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,
@@ -203,63 +82,21 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[ERROR] HttpPostWithStatus failed: {ex.Message}");
+                Console.Error.WriteLine($"[ERROR] HttpPost failed: {ex.Message}");
                 return new HttpResponse
                 {
                     Body = ex.Message,
                     StatusCode = 0,
                     Success = false
                 };
-            }
-        }
-
-        // ==========================================
-        // PUT
-        // ==========================================
-
-        /// <summary>
-        /// Performs an HTTP PUT request for updating resources.
-        /// </summary>
-        [BlazorFlowNodeMethod(NodeType.Function, "HTTP")]
-        public static async Task<string> HttpPut(
-            [BlazorFlowInputField] string url,
-            string body,
-            [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,
-            [BlazorFlowInputField] string contentType = "application/json",
-            [BlazorFlowInputField] int timeoutMs = 10000)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-                return string.Empty;
-
-            body ??= string.Empty;
-            contentType ??= "application/json";
-
-            using var cts = timeoutMs > 0
-                ? new CancellationTokenSource(timeoutMs)
-                : new CancellationTokenSource();
-
-            try
-            {
-                using var request = new HttpRequestMessage(HttpMethod.Put, url);
-                request.Content = new StringContent(body, Encoding.UTF8, contentType);
-                ApplyHeaders(request, headers);
-
-                var response = await _httpClient.SendAsync(request, cts.Token);
-                response.EnsureSuccessStatusCode();
-                return await response.Content.ReadAsStringAsync(cts.Token);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"[ERROR] HttpPut failed: {ex.Message}");
-                throw;
             }
         }
 
         /// <summary>
         /// Performs an HTTP PUT request with response status tracking.
         /// </summary>
-        [BlazorFlowNodeMethod(NodeType.Function, "HTTP/Advanced")]
-        public static async Task<HttpResponse> HttpPutWithStatus(
+        [BlazorFlowNodeMethod(NodeType.Function, "HTTP")]
+        public static async Task<HttpResponse> HttpPut(
             [BlazorFlowInputField] string url,
             string body,
             [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,
@@ -294,7 +131,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[ERROR] HttpPutWithStatus failed: {ex.Message}");
+                Console.Error.WriteLine($"[ERROR] HttpPut failed: {ex.Message}");
                 return new HttpResponse
                 {
                     Body = ex.Message,
@@ -304,47 +141,11 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
             }
         }
 
-        // ==========================================
-        // DELETE
-        // ==========================================
-
-        /// <summary>
-        /// Performs an HTTP DELETE request for removing resources.
-        /// </summary>
-        [BlazorFlowNodeMethod(NodeType.Function, "HTTP")]
-        public static async Task<string> HttpDelete(
-            [BlazorFlowInputField] string url,
-            [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,
-            [BlazorFlowInputField] int timeoutMs = 10000)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-                return string.Empty;
-
-            using var cts = timeoutMs > 0
-                ? new CancellationTokenSource(timeoutMs)
-                : new CancellationTokenSource();
-
-            try
-            {
-                using var request = new HttpRequestMessage(HttpMethod.Delete, url);
-                ApplyHeaders(request, headers);
-
-                var response = await _httpClient.SendAsync(request, cts.Token);
-                response.EnsureSuccessStatusCode();
-                return await response.Content.ReadAsStringAsync(cts.Token);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"[ERROR] HttpDelete failed: {ex.Message}");
-                throw;
-            }
-        }
-
         /// <summary>
         /// Performs an HTTP DELETE request with response status tracking.
         /// </summary>
-        [BlazorFlowNodeMethod(NodeType.Function, "HTTP/Advanced")]
-        public static async Task<HttpResponse> HttpDeleteWithStatus(
+        [BlazorFlowNodeMethod(NodeType.Function, "HTTP")]
+        public static async Task<HttpResponse> HttpDelete(
             [BlazorFlowInputField] string url,
             [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,
             [BlazorFlowInputField] int timeoutMs = 10000)
@@ -373,7 +174,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[ERROR] HttpDeleteWithStatus failed: {ex.Message}");
+                Console.Error.WriteLine($"[ERROR] HttpDelete failed: {ex.Message}");
                 return new HttpResponse
                 {
                     Body = ex.Message,
@@ -383,53 +184,12 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
             }
         }
 
-        // ==========================================
-        // PATCH
-        // ==========================================
-
-        /// <summary>
-        /// Performs an HTTP PATCH request for partial resource updates.
-        /// </summary>
-        [BlazorFlowNodeMethod(NodeType.Function, "HTTP")]
-        public static async Task<string> HttpPatch(
-            [BlazorFlowInputField] string url,
-            string body,
-            [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,
-            [BlazorFlowInputField] string contentType = "application/json",
-            [BlazorFlowInputField] int timeoutMs = 10000)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-                return string.Empty;
-
-            body ??= string.Empty;
-            contentType ??= "application/json";
-
-            using var cts = timeoutMs > 0
-                ? new CancellationTokenSource(timeoutMs)
-                : new CancellationTokenSource();
-
-            try
-            {
-                using var request = new HttpRequestMessage(HttpMethod.Patch, url);
-                request.Content = new StringContent(body, Encoding.UTF8, contentType);
-                ApplyHeaders(request, headers);
-
-                var response = await _httpClient.SendAsync(request, cts.Token);
-                response.EnsureSuccessStatusCode();
-                return await response.Content.ReadAsStringAsync(cts.Token);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"[ERROR] HttpPatch failed: {ex.Message}");
-                throw;
-            }
-        }
 
         /// <summary>
         /// Performs an HTTP PATCH request with response status tracking.
         /// </summary>
-        [BlazorFlowNodeMethod(NodeType.Function, "HTTP/Advanced")]
-        public static async Task<HttpResponse> HttpPatchWithStatus(
+        [BlazorFlowNodeMethod(NodeType.Function, "HTTP")]
+        public static async Task<HttpResponse> HttpPatch(
             [BlazorFlowInputField] string url,
             string body,
             [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,
@@ -464,7 +224,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[ERROR] HttpPatchWithStatus failed: {ex.Message}");
+                Console.Error.WriteLine($"[ERROR] HttpPatch failed: {ex.Message}");
                 return new HttpResponse
                 {
                     Body = ex.Message,
@@ -482,7 +242,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         /// Performs an HTTP HEAD request to retrieve headers without body.
         /// Useful for checking resource existence or metadata.
         /// </summary>
-        [BlazorFlowNodeMethod(NodeType.Function, "HTTP/Advanced")]
+        [BlazorFlowNodeMethod(NodeType.Function, "HTTP")]
         public static async Task<HttpResponse> HttpHead(
             [BlazorFlowInputField] string url,
             [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,
@@ -528,7 +288,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         /// <summary>
         /// Performs an HTTP OPTIONS request to discover allowed methods.
         /// </summary>
-        [BlazorFlowNodeMethod(NodeType.Function, "HTTP/Advanced")]
+        [BlazorFlowNodeMethod(NodeType.Function, "HTTP")]
         public static async Task<HttpResponse> HttpOptions(
             [BlazorFlowInputField] string url,
             [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,

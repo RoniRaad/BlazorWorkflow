@@ -40,7 +40,7 @@ namespace BlazorExecutionFlow.Helpers
             // Treat single-value types (primitives, strings, collections, enums, nullables) as a single "result"
             if (ShouldTreatAsSingleValue(methodReturnType))
             {
-                return [new() { Name = "result", Type = methodReturnType?.Name }];
+                return [new() { Name = "result", Type = FormatTypeName(methodReturnType) }];
             }
 
             // For special types with curated properties (DateTime, Guid, etc.)
@@ -52,7 +52,7 @@ namespace BlazorExecutionFlow.Helpers
 
             // For complex objects, return all public instance properties
             var returnProperties = methodReturnType?.GetProperties(BindingFlags.Instance | BindingFlags.Public) ?? [];
-            return [.. returnProperties.Select<PropertyInfo, (string? Type, string? Name)>(x => new() { Name = x.Name, Type = methodReturnType?.Name })];
+            return [.. returnProperties.Select<PropertyInfo, (string? Type, string? Name)>(x => new() { Name = x.Name, Type = FormatTypeName(x.PropertyType) })];
         }
 
         /// <summary>
@@ -163,39 +163,41 @@ namespace BlazorExecutionFlow.Helpers
             // DateTime - provide useful date/time components (only actual properties)
             if (type == typeof(DateTime) || type == typeof(DateTimeOffset))
             {
+                var typeName = FormatTypeName(type);
                 return
                 [
-                    new() { Name = "Year", Type = type.Name },
-                    new() { Name = "Month", Type = type.Name },
-                    new() { Name = "Day", Type = type.Name },
-                    new() { Name = "Hour", Type = type.Name },
-                    new() { Name = "Minute", Type = type.Name },
-                    new() { Name = "Second", Type = type.Name },
-                    new() { Name = "Millisecond", Type = type.Name },
-                    new() { Name = "DayOfWeek", Type = type.Name },
-                    new() { Name = "DayOfYear", Type = type.Name },
-                    new() { Name = "Date", Type = type.Name },            // Date part only (DateTime)
-                    new() { Name = "TimeOfDay", Type = type.Name },       // Time part only (TimeSpan)
-                    new() { Name = "Ticks", Type = type.Name }            // For precise calculations
+                    new() { Name = "Year", Type = typeName },
+                    new() { Name = "Month", Type = typeName },
+                    new() { Name = "Day", Type = typeName },
+                    new() { Name = "Hour", Type = typeName },
+                    new() { Name = "Minute", Type = typeName },
+                    new() { Name = "Second", Type = typeName },
+                    new() { Name = "Millisecond", Type = typeName },
+                    new() { Name = "DayOfWeek", Type = typeName },
+                    new() { Name = "DayOfYear", Type = typeName },
+                    new() { Name = "Date", Type = typeName },            // Date part only (DateTime)
+                    new() { Name = "TimeOfDay", Type = typeName },       // Time part only (TimeSpan)
+                    new() { Name = "Ticks", Type = typeName }            // For precise calculations
                 ];
             }
 
             // TimeSpan - provide useful duration components (only actual properties)
             if (type == typeof(TimeSpan))
             {
+                var typeName = FormatTypeName(type);
                 return
                 [
-                    new() { Name = "TotalDays", Type = type.Name },
-                    new() { Name = "TotalHours", Type = type.Name },
-                    new() { Name = "TotalMinutes", Type = type.Name },
-                    new() { Name = "TotalSeconds", Type = type.Name },
-                    new() { Name = "TotalMilliseconds", Type = type.Name },
-                    new() { Name = "Days", Type = type.Name },
-                    new() { Name = "Hours", Type = type.Name },
-                    new() { Name = "Minutes", Type = type.Name },
-                    new() { Name = "Seconds", Type = type.Name },
-                    new() { Name = "Milliseconds", Type = type.Name },
-                    new() { Name = "Ticks", Type = type.Name }
+                    new() { Name = "TotalDays", Type = typeName },
+                    new() { Name = "TotalHours", Type = typeName },
+                    new() { Name = "TotalMinutes", Type = typeName },
+                    new() { Name = "TotalSeconds", Type = typeName },
+                    new() { Name = "TotalMilliseconds", Type = typeName },
+                    new() { Name = "Days", Type = typeName },
+                    new() { Name = "Hours", Type = typeName },
+                    new() { Name = "Minutes", Type = typeName },
+                    new() { Name = "Seconds", Type = typeName },
+                    new() { Name = "Milliseconds", Type = typeName },
+                    new() { Name = "Ticks", Type = typeName }
                 ];
             }
 
@@ -310,6 +312,65 @@ namespace BlazorExecutionFlow.Helpers
             }
 
             return result.ToString();
+        }
+
+        /// <summary>
+        /// Formats a type name to display properly, handling generics like List&lt;int&gt; instead of List`1
+        /// </summary>
+        public static string FormatTypeName(Type? type)
+        {
+            if (type == null)
+                return "unknown";
+
+            // Handle generic types
+            if (type.IsGenericType)
+            {
+                var genericTypeDef = type.GetGenericTypeDefinition();
+                var genericTypeName = genericTypeDef.Name;
+
+                // Remove the `1, `2, etc. suffix
+                var backtickIndex = genericTypeName.IndexOf('`');
+                if (backtickIndex > 0)
+                {
+                    genericTypeName = genericTypeName.Substring(0, backtickIndex);
+                }
+
+                // Get the generic arguments
+                var genericArgs = type.GetGenericArguments();
+                var argNames = string.Join(", ", genericArgs.Select(FormatTypeName));
+
+                return $"{genericTypeName}<{argNames}>";
+            }
+
+            // Handle arrays
+            if (type.IsArray)
+            {
+                var elementType = type.GetElementType();
+                return $"{FormatTypeName(elementType)}[]";
+            }
+
+            // Handle nullable types
+            if (Nullable.GetUnderlyingType(type) != null)
+            {
+                var underlyingType = Nullable.GetUnderlyingType(type);
+                return $"{FormatTypeName(underlyingType)}?";
+            }
+
+            // Use friendly names for common types
+            return type.Name switch
+            {
+                "Int32" => "int",
+                "Int64" => "long",
+                "Int16" => "short",
+                "Byte" => "byte",
+                "Double" => "double",
+                "Single" => "float",
+                "Decimal" => "decimal",
+                "Boolean" => "bool",
+                "String" => "string",
+                "Object" => "object",
+                _ => type.Name
+            };
         }
     }
 }
