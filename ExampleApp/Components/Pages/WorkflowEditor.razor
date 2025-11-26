@@ -12,7 +12,26 @@
 <div class="page-container">
     <div class="page-header">
         <div>
-            <h1 class="page-title">@GetWorkflowTitle()</h1>
+            @if (isEditingWorkflowName)
+            {
+                <input type="text"
+                       class="workflow-name-input-editor"
+                       value="@editingWorkflowName"
+                       @oninput="@(e => editingWorkflowName = e.Value?.ToString() ?? string.Empty)"
+                       @onblur="HandleWorkflowNameBlur"
+                       @onkeydown="HandleWorkflowNameKeyDown"
+                       @ref="workflowNameInput"
+                       placeholder="Workflow name..." />
+            }
+            else
+            {
+                <div class="workflow-name-display-editor">
+                    <h1 class="page-title">@GetWorkflowTitle()</h1>
+                    <button class="btn-icon-edit-small" @onclick="StartEditingWorkflowName" title="Edit workflow name">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                </div>
+            }
             <p class="page-description">@GetWorkflowDescription()</p>
         </div>
         <div style="display: flex; gap: 0.5rem;">
@@ -55,6 +74,9 @@
     private Graph? _graph;
 	private WorkflowInfo? _workflowInfo;
     private bool _isLoaded = false;
+    private bool isEditingWorkflowName = false;
+    private string editingWorkflowName = string.Empty;
+    private ElementReference workflowNameInput;
 
     protected override void OnInitialized()
     {
@@ -114,5 +136,62 @@
     private void BackToWorkflows()
     {
         Navigation.NavigateTo("/workflows");
+    }
+
+    private async Task StartEditingWorkflowName()
+    {
+        var workflow = WorkflowService.GetWorkflow(WorkflowId);
+        if (workflow == null) return;
+
+        isEditingWorkflowName = true;
+        editingWorkflowName = workflow.Name;
+        StateHasChanged();
+
+        // Focus the input after it's rendered
+        await Task.Delay(10);
+        await workflowNameInput.FocusAsync();
+    }
+
+    private async Task HandleWorkflowNameBlur()
+    {
+        await SaveWorkflowName();
+    }
+
+    private async Task HandleWorkflowNameKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SaveWorkflowName();
+        }
+        else if (e.Key == "Escape")
+        {
+            CancelEditingWorkflowName();
+        }
+    }
+
+    private async Task SaveWorkflowName()
+    {
+        var workflow = WorkflowService.GetWorkflow(WorkflowId);
+        if (workflow == null) return;
+
+        var trimmedName = editingWorkflowName.Trim();
+
+        // Only update if the name has changed and is not empty
+        if (!string.IsNullOrWhiteSpace(trimmedName) && trimmedName != workflow.Name)
+        {
+            workflow.Name = trimmedName;
+            workflow.ModifiedAt = DateTime.Now;
+            WorkflowService.UpdateWorkflow(workflow);
+        }
+
+        isEditingWorkflowName = false;
+        StateHasChanged();
+    }
+
+    private void CancelEditingWorkflowName()
+    {
+        isEditingWorkflowName = false;
+        editingWorkflowName = string.Empty;
+        StateHasChanged();
     }
 }

@@ -84,7 +84,7 @@
 .environment-dropdown {
     flex: 1;
     padding: 0.625rem 0.875rem;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgb(24, 32, 44);
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
     color: var(--text-primary);
@@ -316,6 +316,63 @@
 .detail-header p {
     margin: 0;
     color: var(--text-secondary);
+}
+
+/* Workflow Name Editing */
+.workflow-name-display {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.15s ease;
+}
+
+.workflow-name-display h2 {
+    margin: 0;
+}
+
+.btn-icon-edit {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    padding: 0.5rem;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    opacity: 0.6;
+}
+
+.btn-icon-edit:hover {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--primary-color);
+    border-color: rgba(99, 102, 241, 0.3);
+    opacity: 1;
+}
+
+.workflow-name-input {
+    font-size: 2rem;
+    font-weight: 700;
+    padding: 0.5rem 0.75rem;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    color: var(--text-primary);
+    transition: all 0.15s ease;
+    width: 100%;
+    max-width: 600px;
+}
+
+.workflow-name-input:hover {
+    border-color: var(--primary-color);
+}
+
+.workflow-name-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .environment-name-container {

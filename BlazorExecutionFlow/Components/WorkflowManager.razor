@@ -118,7 +118,26 @@
             {
                 <div class="detail-header">
                 <div>
-                    <h2>@SelectedWorkflow.Name</h2>
+                    @if (isEditingWorkflowName)
+                    {
+                        <input type="text"
+                               class="workflow-name-input"
+                               value="@editingWorkflowName"
+                               @oninput="@(e => editingWorkflowName = e.Value?.ToString() ?? string.Empty)"
+                               @onblur="HandleWorkflowNameBlur"
+                               @onkeydown="HandleWorkflowNameKeyDown"
+                               @ref="workflowNameInput"
+                               placeholder="Workflow name..." />
+                    }
+                    else
+                    {
+                        <div class="workflow-name-display">
+                            <h2>@SelectedWorkflow.Name</h2>
+                            <button class="btn-icon-edit" @onclick="StartEditingWorkflowName" title="Edit workflow name">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                        </div>
+                    }
                     @if (!string.IsNullOrWhiteSpace(SelectedWorkflow.Description))
                     {
                         <p>@SelectedWorkflow.Description</p>
@@ -382,6 +401,9 @@
     private string searchQuery = string.Empty;
     private string? selectedWorkflowId = null;
     private string activeTab = "workflows";
+    private bool isEditingWorkflowName = false;
+    private string editingWorkflowName = string.Empty;
+    private ElementReference workflowNameInput;
 
     private WorkflowInfo? SelectedWorkflow => Workflows.FirstOrDefault(w => w.Id == selectedWorkflowId);
 
@@ -562,5 +584,59 @@
         {
             return new List<string>();
         }
+    }
+
+    private async Task StartEditingWorkflowName()
+    {
+        if (SelectedWorkflow == null) return;
+
+        isEditingWorkflowName = true;
+        editingWorkflowName = SelectedWorkflow.Name;
+        StateHasChanged();
+
+        // Focus the input after it's rendered
+        await Task.Delay(10);
+        await workflowNameInput.FocusAsync();
+    }
+
+    private async Task HandleWorkflowNameBlur()
+    {
+        await SaveWorkflowName();
+    }
+
+    private async Task HandleWorkflowNameKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SaveWorkflowName();
+        }
+        else if (e.Key == "Escape")
+        {
+            CancelEditingWorkflowName();
+        }
+    }
+
+    private async Task SaveWorkflowName()
+    {
+        if (SelectedWorkflow == null) return;
+
+        var trimmedName = editingWorkflowName.Trim();
+
+        // Only update if the name has changed and is not empty
+        if (!string.IsNullOrWhiteSpace(trimmedName) && trimmedName != SelectedWorkflow.Name)
+        {
+            SelectedWorkflow.Name = trimmedName;
+            await OnUpdateWorkflow.InvokeAsync(SelectedWorkflow);
+        }
+
+        isEditingWorkflowName = false;
+        StateHasChanged();
+    }
+
+    private void CancelEditingWorkflowName()
+    {
+        isEditingWorkflowName = false;
+        editingWorkflowName = string.Empty;
+        StateHasChanged();
     }
 }
