@@ -1,16 +1,10 @@
-﻿using System.Data.Common;
-using System.Reflection;
-using System.Reflection.Metadata;
-using System.Text;
+﻿using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using System.Threading;
 using BlazorExecutionFlow.Flow.Attributes;
+using BlazorExecutionFlow.Flow.BaseNodes;
 using BlazorExecutionFlow.Helpers;
-using Newtonsoft.Json.Linq;
-using Scriban;
-using Scriban.Runtime;
 
 namespace BlazorExecutionFlow.Models.NodeV2
 {
@@ -41,6 +35,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
         [JsonConverter(typeof(MethodInfoJsonConverter))]
         public required MethodInfo BackingMethod { get; set; }
+        public string? NameOverride { get; set; }
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Section { get; set; } = string.Empty;
         public string DrawflowNodeId { get; set; } = string.Empty;
@@ -55,7 +50,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
         [JsonIgnore] public JsonObject? Input { get; set; }
         [JsonIgnore] public JsonObject? Result { get; set; }
-
+        public string ParentWorkflowId { get; set; }
         public bool MergeOutputWithInput { get; set; } = false;
 
         public List<string> DeclaredOutputPorts { get; set; } = [];
@@ -268,7 +263,15 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 Input = formattedJsonObjectResult;
 
                 var filledMethodParameters = GetMethodParametersFromInputResult(formattedJsonObjectResult);
-                Result = await InvokeBackingMethod(filledMethodParameters);
+                if (BackingMethod.Name == nameof(WorkflowNodes.ExecuteWorkflow) 
+                    && BackingMethod == typeof(WorkflowNodes).GetMethod(nameof(WorkflowNodes.ExecuteWorkflow)))
+                {
+                    WorkflowHelpers.ExecuteWorkflow();
+                }
+                else
+                {
+                    Result = await InvokeBackingMethod(filledMethodParameters);
+                }
 
                 var outputResults = Result.GetByPath("output.workflow.output");
                 var outputResultsAsObject = outputResults as JsonObject;
