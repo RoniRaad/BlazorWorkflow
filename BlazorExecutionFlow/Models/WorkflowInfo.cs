@@ -17,7 +17,7 @@ namespace BlazorExecutionFlow.Models
         public DateTime CreatedAt { get; set; }
         public DateTime ModifiedAt { get; set; }
         public required Graph FlowGraph { get; set; }
-        public bool IncludeAsNode { get; set; } = true;
+        public bool IncludeAsNode { get; set; }
     }
 
     /// <summary>

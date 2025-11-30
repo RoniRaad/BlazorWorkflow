@@ -427,6 +427,39 @@
     gap: 0.5rem;
 }
 
+.detail-meta .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s ease;
+    margin-left: auto;
+    padding-left: 1rem;
+}
+
+.detail-meta .checkbox-label:hover {
+    color: var(--bef-primary-color);
+}
+
+.detail-meta .checkbox-label input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    cursor: pointer;
+    accent-color: var(--bef-primary-color);
+}
+
+.detail-meta .checkbox-label span {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--bef-text-secondary);
+    white-space: nowrap;
+}
+
+.detail-meta .checkbox-label:hover span {
+    color: var(--bef-primary-color);
+}
+
 .detail-body {
     flex: 1;
     overflow-y: auto;

@@ -159,6 +159,12 @@
             <div class="detail-meta">
                 <span><i class="bi bi-calendar"></i> Created @SelectedWorkflow.CreatedAt.ToString("MMM d, yyyy")</span>
                 <span><i class="bi bi-clock"></i> Modified @SelectedWorkflow.ModifiedAt.ToString("MMM d, yyyy 'at' h:mm tt")</span>
+                <label class="checkbox-label">
+                    <input type="checkbox"
+                           checked="@SelectedWorkflow.IncludeAsNode"
+                           @onchange="@(e => HandleIncludeAsNodeChange(e.Value))" />
+                    <span>Include as node in editor</span>
+                </label>
             </div>
 
             <div class="detail-body">
@@ -638,5 +644,13 @@
         isEditingWorkflowName = false;
         editingWorkflowName = string.Empty;
         StateHasChanged();
+    }
+
+    private async Task HandleIncludeAsNodeChange(object? value)
+    {
+        if (SelectedWorkflow == null || value == null) return;
+
+        SelectedWorkflow.IncludeAsNode = (bool)value;
+        await OnUpdateWorkflow.InvokeAsync(SelectedWorkflow);
     }
 }
