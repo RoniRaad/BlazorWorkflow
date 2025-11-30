@@ -132,8 +132,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
                     NameOverride = serNode.NameOverride
                 };
 
-                if (node.BackingMethod.Name == nameof(WorkflowHelpers.ExecuteWorkflow)
-                    && node.BackingMethod == typeof(WorkflowHelpers).GetMethod(nameof(WorkflowHelpers.ExecuteWorkflow)))
+                if (node.IsWorkflowNode)
                 {
                     var workflowService = Helpers.NodeServiceProvider.Instance.GetService<IWorkflowService>();
                     var workflow = workflowService.GetWorkflow(node.ParentWorkflowId);
@@ -145,6 +144,10 @@ namespace BlazorExecutionFlow.Models.NodeV2
                         if (currentMap == null)
                         {
                             newInputMap.Add(new PathMapEntry() { To = input });
+                        }
+                        else
+                        {
+                            newInputMap.Add(currentMap);
                         }
                     }
 

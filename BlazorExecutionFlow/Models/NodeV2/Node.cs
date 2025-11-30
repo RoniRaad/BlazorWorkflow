@@ -41,6 +41,8 @@ namespace BlazorExecutionFlow.Models.NodeV2
         public required MethodInfo BackingMethod { get; set; }
         [JsonIgnore]
         public string Name => NameOverride ?? BackingMethod.Name;
+        public bool IsWorkflowNode => BackingMethod.Name == nameof(WorkflowHelpers.ExecuteWorkflow)
+            && BackingMethod == typeof(WorkflowHelpers).GetMethod(nameof(WorkflowHelpers.ExecuteWorkflow));
         public string? NameOverride { get; set; }
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Section { get; set; } = string.Empty;
@@ -268,8 +270,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
                 Input = formattedJsonObjectResult;
 
-                if (BackingMethod.Name == nameof(WorkflowHelpers.ExecuteWorkflow) 
-                    && BackingMethod == typeof(WorkflowHelpers).GetMethod(nameof(WorkflowHelpers.ExecuteWorkflow)))
+                if (IsWorkflowNode)
                 {
                     var workflowService = NodeServiceProvider.Instance?.GetService<IWorkflowService>();
                     var workflow = workflowService?.GetWorkflow(ParentWorkflowId);

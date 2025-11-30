@@ -1,0 +1,37 @@
+{
+  "id": "sample-3",
+  "name": "Example: Report Generator",
+  "description": "Example workflow that generates weekly analytics reports and uploads to cloud storage",
+  "inputs": {
+    "reportType": "weekly",
+    "includeCharts": "true"
+  },
+  "previousExecutions": [],
+  "createdAt": "2025-11-14T02:01:20.8946776-05:00",
+  "modifiedAt": "2025-11-14T02:01:20.8946778-05:00",
+  "flowGraph": {
+    "Version": "1.0",
+    "FlowName": "Untitled Flow",
+    "CreatedAt": "2025-11-29T07:01:20.9167476Z",
+    "Metadata": {},
+    "Nodes": [
+      {
+        "Id": "91202f92-6178-425b-934b-213f8c21f5d9",
+        "Section": "Events",
+        "DrawflowNodeId": "0",
+        "PosX": 40,
+        "PosY": 40,
+        "MethodSignature": "BlazorExecutionFlow.Flow.BaseNodes.CoreNodes, BlazorExecutionFlow, Version=1.0.1.0, Culture=neutral, PublicKeyToken=null|Start|",
+        "NodeInputToMethodInputMap": [],
+        "MethodOutputToNodeOutputMap": [],
+        "DictionaryParameterMappings": {},
+        "MergeOutputWithInput": false,
+        "DeclaredOutputPorts": [],
+        "InputNodeIds": [],
+        "OutputNodeIds": [],
+        "OutputPortConnections": {}
+      }
+    ]
+  },
+  "includeAsNode": true
+}

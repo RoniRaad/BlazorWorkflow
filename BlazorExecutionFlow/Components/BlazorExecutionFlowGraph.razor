@@ -698,8 +698,7 @@
         node.PosX = PosX + 60 + (30 * random.NextDouble());
         node.PosY = PosY + 60 + (30 * random.NextDouble());
         if (node.ParentWorkflowId is not null &&
-            node.BackingMethod.Name == nameof(WorkflowHelpers.ExecuteWorkflow)
-            && node.BackingMethod == typeof(WorkflowHelpers).GetMethod(nameof(WorkflowHelpers.ExecuteWorkflow)))
+            node.IsWorkflowNode)
         {
             var workflow = _workflowService.GetWorkflow(node.ParentWorkflowId);
             node.NodeInputToMethodInputMap = WorkflowInputDiscovery.DiscoverInputs(workflow.FlowGraph)

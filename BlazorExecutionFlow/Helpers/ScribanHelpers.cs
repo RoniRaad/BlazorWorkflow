@@ -74,9 +74,16 @@ namespace BlazorExecutionFlow.Helpers
                 // Fix arrays/objects rendered by Scriban without proper JSON quoting
                 // e.g., [a,b,c] should be ["a","b","c"]
                 result = EnsureValidJson(result);
+                try
+                {
+                    var parsedResult = ParseLiteral(result);
+                    return parsedResult.CoerceToType(parameterType);
+                }
+                catch
+                {
+                    return result;
+                }
 
-                var parsedResult = ParseLiteral(result);
-                return parsedResult.CoerceToType(parameterType);
             }
         }
 
