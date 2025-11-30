@@ -68,6 +68,11 @@ namespace BlazorExecutionFlow.Helpers
             if (IsPrimitiveOrString(type))
                 return true;
 
+            // object type should be treated as a single value (used by Ternary, comparison nodes, etc.)
+            // Otherwise it would try to expose object's properties like GetType(), ToString(), etc.
+            if (type == typeof(object))
+                return true;
+
             // Enums should be treated as single values
             if (type.IsEnum)
                 return true;

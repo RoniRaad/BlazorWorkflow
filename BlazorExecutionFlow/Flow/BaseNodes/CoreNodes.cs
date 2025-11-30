@@ -170,9 +170,14 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
                 }
 
                 // String comparison (case-sensitive)
-                var aStr = a.ToString() ?? "";
-                var bStr = b.ToString() ?? "";
-                return aStr.Equals(bStr, StringComparison.Ordinal);
+                var aString = a.ToString() ?? "";
+                var bString = b.ToString() ?? "";
+                // Try one last time to parse as numbers
+                if (decimal.TryParse(aString, out var aFinal) && decimal.TryParse(bString, out var bFinal))
+                {
+                    return aFinal == bFinal;
+                }
+                return aString.Equals(bString, StringComparison.Ordinal);
             }
             catch
             {
@@ -201,14 +206,28 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
                     return aDecimal > bDecimal;
                 }
 
+                // Try parsing both as numbers if they're strings
+                if (a is string aString && b is string bString)
+                {
+                    if (decimal.TryParse(aString, out var aNum) && decimal.TryParse(bString, out var bNum))
+                    {
+                        return aNum > bNum;
+                    }
+                }
+
                 // Try DateTime comparison
                 if (a is DateTime dtA && b is DateTime dtB)
                     return dtA > dtB;
 
                 // String comparison
-                var aStr = a.ToString() ?? "";
-                var bStr = b.ToString() ?? "";
-                return string.Compare(aStr, bStr, StringComparison.Ordinal) > 0;
+                var aToString = a.ToString() ?? "";
+                var bToString = b.ToString() ?? "";
+                // Try one last time to parse as numbers
+                if (decimal.TryParse(aToString, out var aFinal) && decimal.TryParse(bToString, out var bFinal))
+                {
+                    return aFinal > bFinal;
+                }
+                return string.Compare(aToString, bToString, StringComparison.Ordinal) > 0;
             }
             catch
             {

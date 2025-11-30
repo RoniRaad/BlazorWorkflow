@@ -133,7 +133,34 @@ namespace BlazorExecutionFlow.Helpers
             try
             {
                 // Uses System.Text.Json to deserialize node into the given Type
-                return JsonSerializer.Deserialize(node, targetType, options);
+                var result = JsonSerializer.Deserialize(node, targetType, options);
+
+                // If result is still a JsonElement but we expected a primitive type, unwrap it
+                // This handles cases where JsonSerializer.Deserialize returns a JsonElement for object? parameters
+                if (result is JsonElement element)
+                {
+                    result = element.ValueKind switch
+                    {
+                        // For object? type (common in comparison/ternary nodes), extract the actual value
+                        JsonValueKind.True when targetType == typeof(object) => (object)true,
+                        JsonValueKind.False when targetType == typeof(object) => (object)false,
+                        JsonValueKind.Number when targetType == typeof(object) => element.TryGetInt32(out var i) ? (object)i : (object)element.GetDouble(),
+                        JsonValueKind.String when targetType == typeof(object) => (object?)element.GetString(),
+                        // For specific types, unwrap to that type
+                        JsonValueKind.True => true,
+                        JsonValueKind.False => false,
+                        JsonValueKind.Number when targetType == typeof(int) && element.TryGetInt32(out var intVal) => intVal,
+                        JsonValueKind.Number when targetType == typeof(long) && element.TryGetInt64(out var longVal) => longVal,
+                        JsonValueKind.Number when targetType == typeof(double) && element.TryGetDouble(out var doubleVal) => doubleVal,
+                        JsonValueKind.Number when targetType == typeof(decimal) && element.TryGetDecimal(out var decimalVal) => decimalVal,
+                        JsonValueKind.Number when targetType == typeof(float) && element.TryGetSingle(out var floatVal) => floatVal,
+                        JsonValueKind.String when targetType == typeof(string) => element.GetString(),
+                        JsonValueKind.Null => null,
+                        _ => result
+                    };
+                }
+
+                return result;
             }
             catch
             {
@@ -142,7 +169,7 @@ namespace BlazorExecutionFlow.Helpers
                     return node.ToJsonString();
                 }
 
-                throw new InvalidCastException($"Unable to cast {node.GetValueKind()} to {targetType}"); 
+                throw new InvalidCastException($"Unable to cast {node.GetValueKind()} to {targetType}");
             }
         }
 
