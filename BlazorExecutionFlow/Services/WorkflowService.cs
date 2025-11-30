@@ -1,176 +1,72 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Xml.Linq;
 using BlazorExecutionFlow.Helpers;
 using BlazorExecutionFlow.Models;
 using BlazorExecutionFlow.Models.NodeV2;
+using BlazorExecutionFlow.Repositories;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorExecutionFlow.Services
 {
     /// <summary>
-    /// File-based implementation of IWorkflowService.
-    /// Stores workflows as JSON files in a specified directory.
+    /// Default implementation of IWorkflowService.
+    /// Provides business logic for workflow management using a repository for data access.
     /// </summary>
-    public class FileBasedWorkflowService : IWorkflowService
+    public class WorkflowService : IWorkflowService
     {
-        private readonly string _storageDirectory;
-        private readonly ILogger<FileBasedWorkflowService>? _logger;
-        private readonly JsonSerializerOptions _jsonOptions;
-        private readonly object _lock = new();
+        private readonly IWorkflowRepository _repository;
+        private readonly ILogger<WorkflowService>? _logger;
 
-        public FileBasedWorkflowService(string storageDirectory, ILogger<FileBasedWorkflowService>? logger = null)
+        public WorkflowService(IWorkflowRepository repository, ILogger<WorkflowService>? logger = null)
         {
-            _storageDirectory = storageDirectory;
+            _repository = repository;
             _logger = logger;
-            _jsonOptions = new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-                ReferenceHandler = ReferenceHandler.IgnoreCycles,
-                Converters = { new MethodInfoJsonConverter(), new GraphJsonConverter() }
-            };
+        }
 
-            // Ensure storage directory exists
-            if (!Directory.Exists(_storageDirectory))
+        public List<WorkflowInfo> GetAllWorkflows()
+        {
+            var workflows = _repository.GetAll();
+            foreach (var workflow in workflows)
             {
-                Directory.CreateDirectory(_storageDirectory);
-                _logger?.LogInformation("Created workflow storage directory: {Directory}", _storageDirectory);
+                PopulateInputData(workflow);
             }
+            return workflows;
+        }
 
-            // Seed sample workflows if directory is empty
-            if (!GetAllWorkflows().Any())
+        public WorkflowInfo? GetWorkflow(string id)
+        {
+            var workflow = _repository.GetById(id);
+            if (workflow != null)
+            {
+                PopulateInputData(workflow);
+            }
+            return workflow;
+        }
+
+        public void AddWorkflow(WorkflowInfo workflow)
+        {
+            _repository.Add(workflow);
+        }
+
+        public void UpdateWorkflow(WorkflowInfo workflow)
+        {
+            _repository.Update(workflow);
+        }
+
+        public void DeleteWorkflow(string id)
+        {
+            _repository.Delete(id);
+        }
+
+        public void SeedSampleWorkflowsIfEmpty()
+        {
+            if (!_repository.GetAll().Any())
             {
                 SeedSampleWorkflows();
             }
         }
 
-        public List<WorkflowInfo> GetAllWorkflows()
-        {
-            lock (_lock)
-            {
-                try
-                {
-                    var workflows = new List<WorkflowInfo>();
-                    var files = Directory.GetFiles(_storageDirectory, "*.json");
-
-                    foreach (var file in files)
-                    {
-                        try
-                        {
-                            var json = File.ReadAllText(file);
-                            var workflow = JsonSerializer.Deserialize<WorkflowInfo>(json, _jsonOptions);
-                            if (workflow != null)
-                            {
-                                PopulateInputData(workflow);
-                                workflows.Add(workflow);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger?.LogError(ex, "Failed to deserialize workflow from file: {File}", file);
-                        }
-                    }
-
-                    return workflows;
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogError(ex, "Failed to get all workflows");
-                    return new List<WorkflowInfo>();
-                }
-            }
-        }
-
-        public WorkflowInfo? GetWorkflow(string id)
-        {
-            lock (_lock)
-            {
-                try
-                {
-                    var filePath = GetWorkflowFilePath(id);
-                    if (!File.Exists(filePath))
-                    {
-                        return null;
-                    }
-
-                    var json = File.ReadAllText(filePath);
-                    var workflow = JsonSerializer.Deserialize<WorkflowInfo>(json, _jsonOptions);
-                    if (workflow != null)
-                    {
-                        PopulateInputData(workflow);
-                    }
-
-                    return workflow;
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogError(ex, "Failed to get workflow: {Id}", id);
-                    return null;
-                }
-            }
-        }
-
-        public void AddWorkflow(WorkflowInfo workflow)
-        {
-            lock (_lock)
-            {
-                try
-                {
-                    var filePath = GetWorkflowFilePath(workflow.Id);
-                    var json = JsonSerializer.Serialize(workflow, _jsonOptions);
-                    File.WriteAllText(filePath, json);
-                    _logger?.LogInformation("Added workflow: {Id} - {Name}", workflow.Id, workflow.Name);
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogError(ex, "Failed to add workflow: {Id}", workflow.Id);
-                    throw;
-                }
-            }
-        }
-
-        public void UpdateWorkflow(WorkflowInfo workflow)
-        {
-            lock (_lock)
-            {
-                try
-                {
-                    var filePath = GetWorkflowFilePath(workflow.Id);
-                    var json = JsonSerializer.Serialize(workflow, _jsonOptions);
-                    File.WriteAllText(filePath, json);
-                    _logger?.LogInformation("Updated workflow: {Id} - {Name}", workflow.Id, workflow.Name);
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogError(ex, "Failed to update workflow: {Id}", workflow.Id);
-                    throw;
-                }
-            }
-        }
-
-        public void DeleteWorkflow(string id)
-        {
-            lock (_lock)
-            {
-                try
-                {
-                    var filePath = GetWorkflowFilePath(id);
-                    if (File.Exists(filePath))
-                    {
-                        File.Delete(filePath);
-                        _logger?.LogInformation("Deleted workflow: {Id}", id);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogError(ex, "Failed to delete workflow: {Id}", id);
-                    throw;
-                }
-            }
-        }
-
+        /// <summary>
+        /// Populates input data for workflow nodes, particularly for workflow-as-node scenarios.
+        /// </summary>
         private void PopulateInputData(WorkflowInfo workflow)
         {
             foreach (var nodeKvp in workflow.FlowGraph.Nodes)
@@ -198,13 +94,6 @@ namespace BlazorExecutionFlow.Services
                     node.NodeInputToMethodInputMap = newInputMap;
                 }
             }
-        }
-
-        private string GetWorkflowFilePath(string id)
-        {
-            // Sanitize ID to ensure it's a valid filename
-            var safeId = string.Join("_", id.Split(Path.GetInvalidFileNameChars()));
-            return Path.Combine(_storageDirectory, $"{safeId}.json");
         }
 
         private void SeedSampleWorkflows()

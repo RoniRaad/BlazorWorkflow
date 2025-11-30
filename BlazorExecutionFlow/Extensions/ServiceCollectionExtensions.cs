@@ -1,3 +1,4 @@
+using BlazorExecutionFlow.Repositories;
 using BlazorExecutionFlow.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -26,19 +27,37 @@ namespace BlazorExecutionFlow.Extensions
             services.AddSingleton<IUserPromptService, UserPromptService>();
             services.AddSingleton<UserPromptService>(sp => (UserPromptService)sp.GetRequiredService<IUserPromptService>());
 
-            // Register WorkflowService
+            // Register WorkflowRepository and WorkflowService
+            if (options.WorkflowRepositoryFactory != null)
+            {
+                // Custom repository implementation provided
+                services.AddSingleton(options.WorkflowRepositoryFactory);
+            }
+            else
+            {
+                // Use file-based repository implementation
+                services.AddSingleton<IWorkflowRepository>(sp =>
+                {
+                    var logger = sp.GetService<Microsoft.Extensions.Logging.ILogger<FileBasedWorkflowRepository>>();
+                    return new FileBasedWorkflowRepository(options.WorkflowStorageDirectory, logger);
+                });
+            }
+
             if (options.WorkflowServiceFactory != null)
             {
-                // Custom implementation provided
+                // Custom service implementation provided
                 services.AddSingleton(options.WorkflowServiceFactory);
             }
             else
             {
-                // Use file-based implementation
+                // Use default service implementation
                 services.AddSingleton<IWorkflowService>(sp =>
                 {
-                    var logger = sp.GetService<Microsoft.Extensions.Logging.ILogger<FileBasedWorkflowService>>();
-                    return new FileBasedWorkflowService(options.WorkflowStorageDirectory, logger);
+                    var repository = sp.GetRequiredService<IWorkflowRepository>();
+                    var logger = sp.GetService<Microsoft.Extensions.Logging.ILogger<WorkflowService>>();
+                    var service = new WorkflowService(repository, logger);
+                    service.SeedSampleWorkflowsIfEmpty();
+                    return service;
                 });
             }
 
@@ -64,13 +83,15 @@ namespace BlazorExecutionFlow.Extensions
         /// <summary>
         /// Adds BlazorExecutionFlow services with custom service implementations.
         /// </summary>
-        public static IServiceCollection AddBlazorExecutionFlow<TWorkflowService, TEnvironmentService>(
+        public static IServiceCollection AddBlazorExecutionFlow<TWorkflowRepository, TWorkflowService, TEnvironmentService>(
             this IServiceCollection services)
+            where TWorkflowRepository : class, IWorkflowRepository
             where TWorkflowService : class, IWorkflowService
             where TEnvironmentService : class, IEnvironmentVariablesService
         {
             services.AddSingleton<IUserPromptService, UserPromptService>();
             services.AddSingleton<UserPromptService>(sp => (UserPromptService)sp.GetRequiredService<IUserPromptService>());
+            services.AddSingleton<IWorkflowRepository, TWorkflowRepository>();
             services.AddSingleton<IWorkflowService, TWorkflowService>();
             services.AddSingleton<IEnvironmentVariablesService, TEnvironmentService>();
 
@@ -96,8 +117,14 @@ namespace BlazorExecutionFlow.Extensions
         public string EnvironmentVariablesFilePath { get; set; } = Path.Combine("Data", "environment-variables.json");
 
         /// <summary>
+        /// Optional factory for providing a custom IWorkflowRepository implementation.
+        /// If null, FileBasedWorkflowRepository will be used.
+        /// </summary>
+        public Func<IServiceProvider, IWorkflowRepository>? WorkflowRepositoryFactory { get; set; }
+
+        /// <summary>
         /// Optional factory for providing a custom IWorkflowService implementation.
-        /// If null, FileBasedWorkflowService will be used.
+        /// If null, WorkflowService will be used.
         /// </summary>
         public Func<IServiceProvider, IWorkflowService>? WorkflowServiceFactory { get; set; }
 
