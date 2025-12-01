@@ -46,15 +46,6 @@ namespace BlazorExecutionFlow.Helpers
             var context = new TemplateContext();
             context.PushGlobal(scriptObject);
 
-            if (parameterType == typeof(string) &&
-                value is not null &&
-                !value.StartsWith("\"") &&
-                !value.EndsWith("\"") &&
-                !value.Contains("{{"))
-            {
-                value = $"\"{value}\"";
-            }
-
             var template = Template.Parse(value);
             var result = template.Render(context);
 

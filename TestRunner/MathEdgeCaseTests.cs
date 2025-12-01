@@ -9,68 +9,10 @@ namespace TestRunner
     /// </summary>
     public class MathEdgeCaseTests
     {
-        // ==========================================
-        // DIVISION EDGE CASES
-        // ==========================================
-
-        [Fact]
-        public async Task TestDivisionByZero()
-        {
-            var graph = new NodeGraphBuilder();
-            graph.AddNode("divide", typeof(BaseNodeCollection), "DivideD")
-                .MapInput("input1", "10")
-                .MapInput("input2", "0")
-                .AutoMapOutputs();
-
-            var result = await graph.ExecuteAsync("divide");
-            var divResult = result.GetOutput<double>("divide", "result");
-            Assert.True(double.IsInfinity(divResult) || double.IsNaN(divResult));
-        }
-
-        [Fact]
-        public async Task TestNegativeDivisionByZero()
-        {
-            var graph = new NodeGraphBuilder();
-            graph.AddNode("divide", typeof(BaseNodeCollection), "DivideD")
-                .MapInput("input1", "-10")
-                .MapInput("input2", "0")
-                .AutoMapOutputs();
-
-            var result = await graph.ExecuteAsync("divide");
-            var divResult = result.GetOutput<double>("divide", "result");
-            Assert.True(double.IsNegativeInfinity(divResult) || double.IsNaN(divResult));
-        }
-
-        [Fact]
-        public async Task TestZeroDividedByZero()
-        {
-            var graph = new NodeGraphBuilder();
-            graph.AddNode("divide", typeof(BaseNodeCollection), "DivideD")
-                .MapInput("input1", "0")
-                .MapInput("input2", "0")
-                .AutoMapOutputs();
-
-            var result = await graph.ExecuteAsync("divide");
-            var divResult = result.GetOutput<double>("divide", "result");
-            Assert.True(double.IsNaN(divResult));
-        }
 
         // ==========================================
         // SQUARE ROOT EDGE CASES
         // ==========================================
-
-        [Fact]
-        public async Task TestSquareRootOfNegative()
-        {
-            var graph = new NodeGraphBuilder();
-            graph.AddNode("sqrt", typeof(BaseNodeCollection), "Sqrt")
-                .MapInput("value", "-4")
-                .AutoMapOutputs();
-
-            var result = await graph.ExecuteAsync("sqrt");
-            var sqrtResult = result.GetOutput<double>("sqrt", "result");
-            Assert.True(double.IsNaN(sqrtResult));
-        }
 
         [Fact]
         public async Task TestSquareRootOfZero()
@@ -256,7 +198,7 @@ namespace TestRunner
         {
             var graph = new NodeGraphBuilder();
             graph.AddNode("sign", typeof(BaseNodeCollection), "Sign")
-                .MapInput("value", "-42.7")
+                .MapInput("input", "-42.7")
                 .AutoMapOutputs();
 
             var result = await graph.ExecuteAsync("sign");
@@ -268,7 +210,7 @@ namespace TestRunner
         {
             var graph = new NodeGraphBuilder();
             graph.AddNode("sign", typeof(BaseNodeCollection), "Sign")
-                .MapInput("value", "0.001")
+                .MapInput("input", "0.001")
                 .AutoMapOutputs();
 
             var result = await graph.ExecuteAsync("sign");

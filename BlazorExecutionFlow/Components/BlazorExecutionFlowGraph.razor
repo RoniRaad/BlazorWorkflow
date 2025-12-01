@@ -207,11 +207,11 @@
 
 
 @code {
-        [Parameter] public EventCallback<string> OnNodeDoubleClicked { get; set; }
-        [Parameter] public bool IncludeControlPanel { get; set; } = true;
-        [Parameter] public bool EnableStatusAnimations { get; set; } = true;
-        [Parameter] public Dictionary<string, string> WorkflowParameters { get; set; } = new();
-        [Parameter] public Dictionary<string, string> EnvironmentVariables { get; set; } = new();
+    [Parameter] public EventCallback<string> OnNodeDoubleClicked { get; set; }
+    [Parameter] public bool IncludeControlPanel { get; set; } = true;
+    [Parameter] public bool EnableStatusAnimations { get; set; } = true;
+    [Parameter] public Dictionary<string, string> WorkflowParameters { get; set; } = new();
+    [Parameter] public Dictionary<string, string> EnvironmentVariables { get; set; } = new();
 
     private Dictionary<string, object> options = new Dictionary<string, object>() { ["reroute"] = true };
     private BlazorExecutionFlowGraphBase? _base;

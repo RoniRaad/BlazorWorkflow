@@ -210,7 +210,6 @@
                                         }
                                     </div>
                                     <input type="text"
-                                           style="margin-left: 10px;"
                                            value="@displayValue"
                                            @oninput="@(e => HandleInputValueChange(inputName, e.Value?.ToString() ?? string.Empty))"
                                            placeholder="@(hasValue ? "" : "Enter value...")" />
@@ -231,8 +230,8 @@
                                     <div class="param-row input-unused">
                                         <div class="param-key">
                                             <input type="text"
-                                                   class="input-name-input"
-                                                   value="@inputName"
+                                                    class="input-name-input"
+                                                    value="@inputName"
                                                    @onchange="@(e => HandleInputNameChange(inputName, e.Value?.ToString() ?? string.Empty, isRequired: false))"
                                                    placeholder="Input name..." />
                                             <span class="input-badge unused">Unused</span>
@@ -242,7 +241,8 @@
                                         </div>
                                         <input type="text"
                                                value="@value"
-                                               @oninput="@(e => HandleInputValueChange(inputName, e.Value?.ToString() ?? string.Empty))" />
+                                                style="margin-left: 10px;"
+                                                @oninput="@(e => HandleInputValueChange(inputName, e.Value?.ToString() ?? string.Empty))" />
                                     </div>
                                 }
                             }

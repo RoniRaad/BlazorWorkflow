@@ -98,6 +98,8 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
                 {
                     await JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", Id, node.DrawflowNodeId, new List<List<string>>(), node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
                 }
+
+                await JS.InvokeVoidAsync("DrawflowBlazor.setNodeWidthFromTitle", Id, node.DrawflowNodeId);
             }
 
             // Update connection positions after initial import to prevent glitches

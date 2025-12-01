@@ -35,6 +35,8 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
             var startNodes = Nodes.Where(x => x.Value.BackingMethod == startMethod);
             var tasks = new List<Task>();
+            executionContext.StartTime = DateTime.Now;
+
             foreach (var startNode in startNodes)
             {
                 tasks.Add(startNode.Value.ExecuteNode());
@@ -47,6 +49,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
     public class GraphExecutionContext
     {
         private JsonObject _sharedContext = new JsonObject();
+        public DateTimeOffset StartTime { get; set; } = DateTimeOffset.Now;
         public FrozenDictionary<string, string> Parameters { get; set; } = new Dictionary<string, string>().ToFrozenDictionary();
         public FrozenDictionary<string, string> EnvironmentVariables { get; set; } = new Dictionary<string, string>().ToFrozenDictionary();
         public JsonObject SharedContext {

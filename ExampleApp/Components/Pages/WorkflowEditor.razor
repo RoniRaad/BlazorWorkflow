@@ -37,14 +37,6 @@
             <p class="page-description">@GetWorkflowDescription()</p>
         </div>
         <div style="display: flex; gap: 0.5rem;">
-            <button class="btn btn-sm btn-primary" @onclick="SaveWorkflow">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 1rem; height: 1rem;">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                    <polyline points="7 3 7 8 15 8"></polyline>
-                </svg>
-                Save
-            </button>
             <button class="btn btn-sm btn-outline-secondary" @onclick="BackToWorkflows">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 1rem; height: 1rem;">
                     <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -63,7 +55,8 @@
                                           Options="@options"
                                           Graph="_graph"
                                           WorkflowParameters="_workflowInfo.Inputs"
-                                          EnvironmentVariables="_environmentVariables"/>
+                                          EnvironmentVariables="_environmentVariables"
+                                          OnEvent="SaveWorkflow"/>
             }
         </div>
     </div>

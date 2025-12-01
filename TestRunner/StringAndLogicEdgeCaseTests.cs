@@ -43,7 +43,7 @@ namespace TestRunner
         public async Task TestStringLengthOfEmptyString()
         {
             var graph = new NodeGraphBuilder();
-            graph.AddNode("length", typeof(BaseNodeCollection), "StringLength")
+            graph.AddNode("length", typeof(BaseNodeCollection), "Length")
                 .MapInput("input", "")
                 .AutoMapOutputs();
 
@@ -55,7 +55,7 @@ namespace TestRunner
         public async Task TestStringLengthOfWhitespace()
         {
             var graph = new NodeGraphBuilder();
-            graph.AddNode("length", typeof(BaseNodeCollection), "StringLength")
+            graph.AddNode("length", typeof(BaseNodeCollection), "Length")
                 .MapInput("input", "   ")
                 .AutoMapOutputs();
 
@@ -69,7 +69,7 @@ namespace TestRunner
             var graph = new NodeGraphBuilder();
             graph.AddNode("substring", typeof(BaseNodeCollection), "Substring")
                 .MapInput("input", "hello")
-                .MapInput("start", "3")
+                .MapInput("startIndex", "3")
                 .MapInput("length", "10")
                 .AutoMapOutputs();
 
@@ -84,7 +84,7 @@ namespace TestRunner
             var graph = new NodeGraphBuilder();
             graph.AddNode("substring", typeof(BaseNodeCollection), "Substring")
                 .MapInput("input", "hello")
-                .MapInput("start", "4")
+                .MapInput("startIndex", "4")
                 .MapInput("length", "1")
                 .AutoMapOutputs();
 
@@ -98,7 +98,7 @@ namespace TestRunner
             var graph = new NodeGraphBuilder();
             graph.AddNode("substring", typeof(BaseNodeCollection), "Substring")
                 .MapInput("input", "hello")
-                .MapInput("start", "0")
+                .MapInput("startIndex", "0")
                 .MapInput("length", "5")
                 .AutoMapOutputs();
 
@@ -110,7 +110,7 @@ namespace TestRunner
         public async Task TestStringContainsWithEmptyString()
         {
             var graph = new NodeGraphBuilder();
-            graph.AddNode("contains", typeof(BaseNodeCollection), "StringContains")
+            graph.AddNode("contains", typeof(BaseNodeCollection), "Contains")
                 .MapInput("input", "hello")
                 .MapInput("value", "")
                 .AutoMapOutputs();
@@ -124,7 +124,7 @@ namespace TestRunner
         public async Task TestStringContainsCaseSensitive()
         {
             var graph = new NodeGraphBuilder();
-            graph.AddNode("contains", typeof(BaseNodeCollection), "StringContains")
+            graph.AddNode("contains", typeof(BaseNodeCollection), "Contains")
                 .MapInput("input", "Hello World")
                 .MapInput("value", "hello")
                 .AutoMapOutputs();
@@ -463,32 +463,42 @@ namespace TestRunner
             // !(A && B) == (!A || !B)
             var graph = new NodeGraphBuilder();
 
-            // Left side: !(A && B) with A=true, B=false
+            // A = true, B = false
+            // Left side: !(A && B)
             graph.AddNode("and", typeof(CoreNodes), "And")
                 .MapInput("a", "true")
                 .MapInput("b", "false")
                 .AutoMapOutputs();
+
             graph.AddNode("notAnd", typeof(CoreNodes), "Not")
                 .MapInput("value", "input.result")
                 .AutoMapOutputs();
+
             graph.Connect("and", "notAnd");
 
             // Right side: (!A || !B)
             graph.AddNode("notA", typeof(CoreNodes), "Not")
                 .MapInput("value", "true")
                 .AutoMapOutputs();
+
             graph.AddNode("notB", typeof(CoreNodes), "Not")
                 .MapInput("value", "false")
                 .AutoMapOutputs();
+
             graph.AddNode("orNots", typeof(CoreNodes), "Or")
-                .MapInput("a", "input.result")
-                .MapInput("b", "true")  // notB is always true
+                .MapInput("a", "input.result") // will be fed by notA
+                .MapInput("b", "input.result") // will be fed by notB
                 .AutoMapOutputs();
+
+            // Connect both negated inputs to the OR
             graph.Connect("notA", "orNots");
+            graph.Connect("notB", "orNots");
 
             var result = await graph.ExecuteAsync("and");
-            var leftSide = result.GetOutput<bool>("notAnd", "result");
-            var rightSide = result.GetOutput<bool>("orNots", "result");
+
+            var leftSide = result.GetOutput<bool>("notAnd", "result");   // !(A && B)
+            var rightSide = result.GetOutput<bool>("orNots", "result");  // (!A || !B)
+
             Assert.Equal(leftSide, rightSide);
         }
 

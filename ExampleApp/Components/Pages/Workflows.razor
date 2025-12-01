@@ -1,9 +1,12 @@
 @page "/"
 @page "/workflows"
 @using BlazorExecutionFlow.Components
+@using BlazorExecutionFlow.Helpers
 @using BlazorExecutionFlow.Models
+@using BlazorExecutionFlow.Models.NodeV2
 @using BlazorExecutionFlow.Services
 @using ExampleApp.Components.Layout
+@using System.Collections.Frozen
 @layout EmptyLayout
 @inject NavigationManager Navigation
 @inject IWorkflowService WorkflowService
@@ -112,19 +115,24 @@
         var workflow = WorkflowService.GetWorkflow(workflowId);
         if (workflow == null) return;
 
-        // TODO: Implement actual workflow execution
-        // For now, just create a mock execution record
+        var context = new GraphExecutionContext()
+        {
+            Parameters = workflow.Inputs.ToFrozenDictionary(),
+            EnvironmentVariables = environmentVariables.ToFrozenDictionary()
+        };
+
+        await workflow.FlowGraph.Run(context);
+
+        var output = context?.SharedContext.GetByPath("workflow.output");
+        var jsonObject = output?.AsObject().ToDictionary(x => x.Key, x => (object)x.Value);
+
         var execution = new WorkflowExecution
         {
             Id = Guid.NewGuid().ToString(),
             ExecutedAt = DateTime.Now,
-            Success = true,
-            Duration = TimeSpan.FromSeconds(2.5),
-            Output = new Dictionary<string, object>
-            {
-                ["status"] = "completed",
-                ["itemsProcessed"] = 42
-            }
+            Success = !workflow.FlowGraph.Nodes.Any(x => x.Value.LastException is not null),
+            Duration = DateTimeOffset.Now - context!.StartTime,
+            Output = jsonObject ?? []
         };
 
         workflow.PreviousExecutions.Add(execution);
