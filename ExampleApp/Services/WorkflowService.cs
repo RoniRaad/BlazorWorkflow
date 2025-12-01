@@ -12,8 +12,6 @@ public class WorkflowService
 
     public WorkflowService()
     {
-        // Seed with some sample workflows
-        SeedSampleWorkflows();
     }
 
     public List<WorkflowInfo> GetAllWorkflows()

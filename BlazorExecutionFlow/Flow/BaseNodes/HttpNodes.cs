@@ -93,6 +93,48 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         }
 
         /// <summary>
+        /// Performs an HTTP Get request with response status tracking.
+        /// </summary>
+        [BlazorFlowNodeMethod(NodeType.Function, "HTTP")]
+        public static async Task<HttpResponse> HttpGet(
+            [BlazorFlowInputField] string url,
+            [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,
+            [BlazorFlowInputField] int timeoutMs = 10000)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+                return new HttpResponse { StatusCode = 0, Success = false };
+
+            using var cts = timeoutMs > 0
+                ? new CancellationTokenSource(timeoutMs)
+                : new CancellationTokenSource();
+
+            try
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Get, url);
+                ApplyHeaders(request, headers);
+
+                var response = await _httpClient.SendAsync(request, cts.Token);
+                var responseBody = await response.Content.ReadAsStringAsync(cts.Token);
+
+                return new HttpResponse
+                {
+                    StatusCode = (int)response.StatusCode,
+                    Success = response.IsSuccessStatusCode
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[ERROR] HttpPost failed: {ex.Message}");
+                return new HttpResponse
+                {
+                    Body = ex.Message,
+                    StatusCode = 0,
+                    Success = false
+                };
+            }
+        }
+
+        /// <summary>
         /// Performs an HTTP PUT request with response status tracking.
         /// </summary>
         [BlazorFlowNodeMethod(NodeType.Function, "HTTP")]

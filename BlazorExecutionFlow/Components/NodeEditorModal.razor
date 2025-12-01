@@ -1035,9 +1035,9 @@ role="dialog"
     {
         var templateString = pathMapEntry.From;
         var expectedType = BackingNode?.BackingMethod?.GetParameters()
-            .FirstOrDefault(p => p.Name == pathMapEntry.To)?.ParameterType;
+            .FirstOrDefault(p => p.Name == pathMapEntry.To)?.ParameterType ?? typeof(string);
 
-        if (string.IsNullOrWhiteSpace(templateString) || IncomingPayloadJson is null || expectedType is null)
+        if (string.IsNullOrWhiteSpace(templateString) || IncomingPayloadJson is null)
             return "...";
 
         try
