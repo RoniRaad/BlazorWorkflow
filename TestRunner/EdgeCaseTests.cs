@@ -455,7 +455,7 @@ namespace TestRunner
             var graph = new NodeGraphBuilder();
 
             graph.AddNode("parse", typeof(BaseNodeCollection), "ParseInt")
-                .MapInput("input", "12345")
+                .MapInput("text", "12345")
                 .AutoMapOutputs();
 
             var result = await graph.ExecuteAsync("parse");
@@ -468,7 +468,7 @@ namespace TestRunner
             var graph = new NodeGraphBuilder();
 
             graph.AddNode("parse", typeof(BaseNodeCollection), "ParseDouble")
-                .MapInput("input", "42")
+                .MapInput("text", "42")
                 .AutoMapOutputs();
 
             var result = await graph.ExecuteAsync("parse");
@@ -481,7 +481,7 @@ namespace TestRunner
             var graph = new NodeGraphBuilder();
 
             graph.AddNode("parse", typeof(BaseNodeCollection), "ParseDouble")
-                .MapInput("input", "1.5e10")
+                .MapInput("text", "1.5e10")
                 .AutoMapOutputs();
 
             var result = await graph.ExecuteAsync("parse");
@@ -494,7 +494,7 @@ namespace TestRunner
             var graph = new NodeGraphBuilder();
 
             graph.AddNode("parse", typeof(BaseNodeCollection), "ParseBool")
-                .MapInput("input", "True")
+                .MapInput("text", "True")
                 .AutoMapOutputs();
 
             var result = await graph.ExecuteAsync("parse");
@@ -507,7 +507,7 @@ namespace TestRunner
             var graph = new NodeGraphBuilder();
 
             graph.AddNode("parse", typeof(BaseNodeCollection), "ParseBool")
-                .MapInput("input", "true")
+                .MapInput("text", "true")
                 .AutoMapOutputs();
 
             var result = await graph.ExecuteAsync("parse");

@@ -168,8 +168,8 @@ namespace TestRunner
                 .AutoMapOutputs();
 
             graph.AddNode("L3", typeof(BaseNodeCollection), "Divide")
-                .MapInput("input1", "input.result")
-                .MapInput("input2", "2")
+                .MapInput("numerator", "input.result")
+                .MapInput("denominator", "2")
                 .AutoMapOutputs();
 
             // Right branch level 2
@@ -253,7 +253,7 @@ namespace TestRunner
                 .AutoMapOutputs();
 
             graph.AddNode("parseInt", typeof(BaseNodeCollection), "ParseInt")
-                .MapInput("input", "input.result")
+                .MapInput("text", "input.result")
                 .AutoMapOutputs();
 
             graph.AddNode("add", typeof(BaseNodeCollection), "Add")
@@ -297,6 +297,7 @@ namespace TestRunner
                 .AutoMapOutputs();
 
             graph.Connect("greater", "and");
+            graph.Connect("greater", "less");
 
             var result = await graph.ExecuteAsync("greater");
 
@@ -326,6 +327,7 @@ namespace TestRunner
                 .AutoMapOutputs();
 
             graph.Connect("and", "or");
+            graph.Connect("and", "not");
 
             var result = await graph.ExecuteAsync("and");
 
@@ -523,6 +525,7 @@ namespace TestRunner
                 .AutoMapOutputs();
 
             graph.Connect("ageAtLeast18", "isWorkingAge");
+            graph.Connect("ageAtLeast18", "ageLess65");
 
             var result = await graph.ExecuteAsync("ageAtLeast18");
 
