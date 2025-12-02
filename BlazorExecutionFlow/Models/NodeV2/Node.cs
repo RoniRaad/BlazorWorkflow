@@ -639,11 +639,12 @@ namespace BlazorExecutionFlow.Models.NodeV2
                     // Complex object - expose entire object to mapped outputs
                     foreach (var methodOutputMap in MethodOutputToNodeOutputMap)
                     {
-                        resultObject.SetByPath($"output.{methodOutputMap.To}", methodOutputJsonObject);
+                        var value = methodOutputJsonObject?.DeepClone().GetByPath($"{methodOutputMap.From}");
+                        resultObject.SetByPath($"output.{methodOutputMap.To}", value);
 
                         SharedExecutionContext?.SharedContext.SetByPath(
                             $"nodes.node_{DrawflowNodeId}.output",
-                            methodOutputJsonObject?.DeepClone());
+                            value);
 
                         SharedExecutionContext?.SharedContext.SetByPath(
                             $"nodes.node_{DrawflowNodeId}.name",
@@ -654,7 +655,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
                         {
                             SharedExecutionContext?.SharedContext.SetByPath(
                                 $"workflow.output.{methodOutputMap.To}",
-                                methodOutputJsonObject?.DeepClone());
+                                value);
                         }
                     }
                 }
