@@ -94,9 +94,86 @@
 }
 
 .node-editor-header {
-    border-bottom: 1px solid rgba(31, 41, 55, 0.9);
+    border-bottom: 1px solid rgba(100, 116, 139, 0.4);
     padding: 0.85rem 1.25rem;
     align-items: flex-start;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.node-title-container {
+    flex: 1;
+    min-width: 0;
+    margin-right: 40px;
+}
+
+.node-name-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    padding: 0.25rem 0;
+    border-radius: var(--radius-sm);
+    transition: background-color var(--transition-fast);
+}
+
+.node-name-display:hover {
+    background-color: rgba(100, 116, 139, 0.1);
+}
+
+.node-name-display .modal-title {
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.btn-edit-node-name {
+    background: transparent;
+    border: none;
+    padding: 0.25rem;
+    color: #9ca3af;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: color var(--transition-fast);
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.btn-edit-node-name:hover {
+    color: #e5e7eb;
+}
+
+.btn-edit-node-name svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.node-name-input {
+    width: 100%;
+    font-size: 1.25rem;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    background: rgba(51, 65, 85, 0.4);
+    border: 1px solid rgba(100, 116, 139, 0.6);
+    border-radius: var(--radius-sm);
+    color: #f3f4f6;
+    transition: border-color var(--transition-fast);
+}
+
+.node-name-input:focus {
+    outline: none;
+    border-color: var(--bef-primary-color);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.node-type-subtitle {
+    margin: 0.375rem 0 0;
+    font-size: 0.75rem;
+    color: #9ca3af;
+    font-weight: 400;
 }
 
 .node-editor-header .modal-title {
@@ -1324,6 +1401,18 @@ textarea.mapping-input {
 /* Draggable JSON Styles */
 .draggable-json {
     user-select: none;
+}
+
+/* Selectable JSON Styles */
+.selectable-json {
+    user-select: text !important;
+    cursor: text;
+}
+
+.selectable-json .json-key,
+.selectable-json .json-value {
+    user-select: text !important;
+    cursor: text;
 }
 
 .json-key.draggable,
