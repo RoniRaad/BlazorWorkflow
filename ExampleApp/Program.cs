@@ -9,12 +9,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 // Register BlazorExecutionFlow services with file-based storage
-builder.Services.AddBlazorExecutionFlow(options =>
-{
-    // Optional: customize storage paths
-    options.WorkflowStorageDirectory = Path.Combine(builder.Environment.ContentRootPath, "Data", "Workflows");
-    options.EnvironmentVariablesFilePath = Path.Combine(builder.Environment.ContentRootPath, "Data", "environment-variables.json");
-});
+builder.Services.AddBlazorExecutionFlow();
 
 
 var app = builder.Build();
