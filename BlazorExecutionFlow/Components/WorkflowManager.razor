@@ -119,31 +119,17 @@
             @if (SelectedWorkflow != null)
             {
                 <div class="detail-header">
-                <div>
-                    @if (isEditingWorkflowName)
-                    {
-                        <input type="text"
-                               class="workflow-name-input"
-                               value="@editingWorkflowName"
-                               @oninput="@(e => editingWorkflowName = e.Value?.ToString() ?? string.Empty)"
-                               @onblur="HandleWorkflowNameBlur"
-                               @onkeydown="HandleWorkflowNameKeyDown"
-                               @ref="workflowNameInput"
-                               placeholder="Workflow name..." />
-                    }
-                    else
-                    {
-                        <div class="workflow-name-display">
-                            <h2>@SelectedWorkflow.Name</h2>
-                            <button class="btn-icon-edit" @onclick="StartEditingWorkflowName" title="Edit workflow name">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                        </div>
-                    }
-                    @if (!string.IsNullOrWhiteSpace(SelectedWorkflow.Description))
-                    {
-                        <p>@SelectedWorkflow.Description</p>
-                    }
+                <div class="workflow-name-container">
+                    <input type="text"
+                           class="workflow-name-input"
+                           value="@SelectedWorkflow.Name"
+                           @onchange="@(e => HandleWorkflowNameChange(e.Value?.ToString() ?? string.Empty))"
+                           placeholder="Workflow name..." />
+                    <textarea class="workflow-description-input"
+                              value="@SelectedWorkflow.Description"
+                              @onchange="@(e => HandleWorkflowDescriptionChange(e.Value?.ToString() ?? string.Empty))"
+                              placeholder="Add a description..."
+                              rows="2"></textarea>
                 </div>
                 <div class="detail-actions">
                     <button class="btn-success-custom" @onclick="@(() => OnExecuteWorkflow.InvokeAsync((SelectedWorkflow.Id, selectedEnvironment)))">
@@ -397,9 +383,6 @@
     private string searchQuery = string.Empty;
     private string? selectedWorkflowId = null;
     private string activeTab = "workflows";
-    private bool isEditingWorkflowName = false;
-    private string editingWorkflowName = string.Empty;
-    private ElementReference workflowNameInput;
     private string selectedEnvironment = "Development";
 
     private List<WorkflowInfo> Workflows => WorkflowService.GetAllWorkflows();
@@ -636,58 +619,30 @@
         }
     }
 
-    private async Task StartEditingWorkflowName()
+    private void HandleWorkflowNameChange(string newName)
     {
         if (SelectedWorkflow == null) return;
 
-        isEditingWorkflowName = true;
-        editingWorkflowName = SelectedWorkflow.Name;
-        StateHasChanged();
-
-        // Focus the input after it's rendered
-        await Task.Delay(10);
-        await workflowNameInput.FocusAsync();
-    }
-
-    private void HandleWorkflowNameBlur()
-    {
-        SaveWorkflowName();
-    }
-
-    private void HandleWorkflowNameKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            SaveWorkflowName();
-        }
-        else if (e.Key == "Escape")
-        {
-            CancelEditingWorkflowName();
-        }
-    }
-
-    private void SaveWorkflowName()
-    {
-        if (SelectedWorkflow == null) return;
-
-        var trimmedName = editingWorkflowName.Trim();
-
-        // Only update if the name has changed and is not empty
+        var trimmedName = newName.Trim();
         if (!string.IsNullOrWhiteSpace(trimmedName) && trimmedName != SelectedWorkflow.Name)
         {
             SelectedWorkflow.Name = trimmedName;
             WorkflowService.UpdateWorkflow(SelectedWorkflow);
+            StateHasChanged();
         }
-
-        isEditingWorkflowName = false;
-        StateHasChanged();
     }
 
-    private void CancelEditingWorkflowName()
+    private void HandleWorkflowDescriptionChange(string newDescription)
     {
-        isEditingWorkflowName = false;
-        editingWorkflowName = string.Empty;
-        StateHasChanged();
+        if (SelectedWorkflow == null) return;
+
+        var trimmedDescription = newDescription.Trim();
+        if (trimmedDescription != SelectedWorkflow.Description)
+        {
+            SelectedWorkflow.Description = trimmedDescription;
+            WorkflowService.UpdateWorkflow(SelectedWorkflow);
+            StateHasChanged();
+        }
     }
 
     private void HandleIncludeAsNodeChange(object? value)
