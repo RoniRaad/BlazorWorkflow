@@ -438,8 +438,15 @@ role="dialog"
     {
         if (firstRender)
         {
-            // Add event listener for tab key in textareas
+            // Add event listener for tab key and auto-resize for textareas
             await JSRuntime.InvokeVoidAsync("eval", @"
+                // Auto-resize function
+                function autoResizeTextarea(textarea) {
+                    textarea.style.height = 'auto';
+                    textarea.style.height = textarea.scrollHeight + 'px';
+                }
+
+                // Tab key handler
                 document.addEventListener('keydown', function(e) {
                     if (e.key === 'Tab' && e.target.tagName === 'TEXTAREA' && e.target.closest('.node-editor-modal')) {
                         e.preventDefault();
@@ -458,8 +465,46 @@ role="dialog"
                         }
 
                         textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                        autoResizeTextarea(textarea);
                     }
                 }, true);
+
+                // Input handler for auto-resize
+                document.addEventListener('input', function(e) {
+                    if (e.target.tagName === 'TEXTAREA' && e.target.closest('.node-editor-modal')) {
+                        autoResizeTextarea(e.target);
+                    }
+                }, true);
+
+                // Initial resize for all textareas in modal
+                var textareas = document.querySelectorAll('.node-editor-modal textarea');
+                textareas.forEach(function(textarea) {
+                    autoResizeTextarea(textarea);
+                });
+
+                // Also observe for new textareas being added (for dynamic content)
+                var observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        mutation.addedNodes.forEach(function(node) {
+                            if (node.nodeType === 1) {
+                                if (node.tagName === 'TEXTAREA' && node.closest('.node-editor-modal')) {
+                                    autoResizeTextarea(node);
+                                }
+                                var textareas = node.querySelectorAll ? node.querySelectorAll('textarea') : [];
+                                textareas.forEach(function(textarea) {
+                                    if (textarea.closest('.node-editor-modal')) {
+                                        autoResizeTextarea(textarea);
+                                    }
+                                });
+                            }
+                        });
+                    });
+                });
+
+                var modalContainer = document.querySelector('.node-editor-modal');
+                if (modalContainer) {
+                    observer.observe(modalContainer, { childList: true, subtree: true });
+                }
             ");
         }
     }
