@@ -104,17 +104,29 @@ namespace BlazorExecutionFlow.Extensions
     /// </summary>
     public class BlazorExecutionFlowOptions
     {
+        private static string GetDefaultWorkflowDirectory()
+        {
+            var userFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            return Path.Combine(userFolder, "BlazorExecutionFlow", "Workflows");
+        }
+
+        private static string GetDefaultEnvironmentVariablesPath()
+        {
+            var userFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            return Path.Combine(userFolder, "BlazorExecutionFlow", "environment-variables.json");
+        }
+
         /// <summary>
         /// Directory where workflow JSON files will be stored.
-        /// Default: "./Data/Workflows"
+        /// Default: "%AppData%/BlazorExecutionFlow/Workflows" (Windows) or "~/.config/BlazorExecutionFlow/Workflows" (Linux/Mac)
         /// </summary>
-        public string WorkflowStorageDirectory { get; set; } = Path.Combine("Data", "Workflows");
+        public string WorkflowStorageDirectory { get; set; } = GetDefaultWorkflowDirectory();
 
         /// <summary>
         /// File path where environment variables will be stored.
-        /// Default: "./Data/environment-variables.json"
+        /// Default: "%AppData%/BlazorExecutionFlow/environment-variables.json" (Windows) or "~/.config/BlazorExecutionFlow/environment-variables.json" (Linux/Mac)
         /// </summary>
-        public string EnvironmentVariablesFilePath { get; set; } = Path.Combine("Data", "environment-variables.json");
+        public string EnvironmentVariablesFilePath { get; set; } = GetDefaultEnvironmentVariablesPath();
 
         /// <summary>
         /// Optional factory for providing a custom IWorkflowRepository implementation.

@@ -90,11 +90,6 @@ namespace BlazorExecutionFlow.Helpers
 
             try
             {
-                // Optional gate: uncomment if you only want to parse JSON-looking strings.
-                // var trimmed = str.TrimStart();
-                // if (trimmed.Length == 0 || (trimmed[0] != '{' && trimmed[0] != '['))
-                //     return false;
-
                 parsed = JsonNode.Parse(str);
                 return parsed is not null;
             }

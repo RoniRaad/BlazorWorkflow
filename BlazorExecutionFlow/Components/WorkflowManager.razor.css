@@ -355,6 +355,15 @@
     opacity: 1;
 }
 
+.workflow-name-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
+    margin-right: 20px;
+}
+
 .workflow-name-input {
     font-size: 2rem;
     font-weight: 700;
@@ -365,7 +374,6 @@
     color: var(--bef-text-primary);
     transition: all 0.15s ease;
     width: 100%;
-    max-width: 600px;
 }
 
 .workflow-name-input:hover {
@@ -376,6 +384,30 @@
     outline: none;
     border-color: var(--bef-primary-color);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.workflow-description-input {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--bef-border-color);
+    border-radius: var(--bef-radius);
+    color: var(--bef-text-secondary);
+    transition: all 0.15s ease;
+    width: 100%;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.workflow-description-input:hover {
+    border-color: var(--bef-primary-color);
+}
+
+.workflow-description-input:focus {
+    outline: none;
+    border-color: var(--bef-primary-color);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    color: var(--bef-text-primary);
 }
 
 .environment-name-container {

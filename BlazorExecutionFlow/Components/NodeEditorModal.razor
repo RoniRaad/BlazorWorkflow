@@ -29,8 +29,45 @@ role="dialog"
     <div class="modal-dialog node-editor-dialog">
         <div class="modal-content node-editor-content">
             <div class="modal-header node-editor-header">
-                <div>
-                    <h5 class="modal-title" id="nodeEditorLabel">Edit node: @(BackingNode?.Name ?? "Unknown")</h5>
+                <button type="button"
+                        class="btn-close-modal"
+                        @onclick="HandleClose"
+                        title="Close modal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                <div class="node-title-container">
+                    @if (_isEditingNodeName)
+                    {
+                        <input type="text"
+                               class="node-name-input"
+                               @bind="_editingNodeName"
+                               @bind:event="oninput"
+                               @onblur="SaveNodeName"
+                               @onkeydown="HandleNodeNameKeyDown"
+                               @ref="_nodeNameInputRef"
+                               placeholder="Node name..." />
+                    }
+                    else
+                    {
+                        <div class="node-name-display">
+                            <h5 class="modal-title" id="nodeEditorLabel" @onclick="StartEditingNodeName">
+                                @(BackingNode?.NameOverride ?? BackingNode?.Name ?? "Unknown")
+                            </h5>
+                            <button type="button" class="btn-edit-node-name" @onclick="StartEditingNodeName" title="Edit node name">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        @if (!string.IsNullOrEmpty(BackingNode?.NameOverride))
+                        {
+                            <p class="node-type-subtitle">Type: @(BackingNode?.BackingMethod?.Name ?? BackingNode?.Name ?? "Unknown")</p>
+                        }
+                    }
                 </div>
                 <button type="button"
                 class="btn-execute-flow"
@@ -105,7 +142,7 @@ role="dialog"
                                 </select>
                             </div>
 
-                            <div class="payload-preview draggable-json" data-role="payload-preview">
+                            <div class="payload-preview draggable-json selectable-json" data-role="payload-preview">
                                 @RenderDraggableJson(GetFilteredJson(), "")
                             </div>
                         </div>
@@ -155,14 +192,14 @@ role="dialog"
                                                     <button type="button"
                                                             class="btn-preview"
                                                             style="background-color: transparent;border: transparent;color: white;"
-                                                            @ref="_previewButtonRef"
-                                                            @onclick="@(() => TogglePreview(inputMapping))"
+                                                            @onclick="@((e) => TogglePreview(inputMapping, e))"
+                                                            @onclick:stopPropagation="true"
                                                             title="Toggle preview">
                                                         👁
                                                     </button>
                                                     @if (_previewMapping == inputMapping)
                                                     {
-                                                        <div class="preview-popover" @ref="_previewPopoverRef">
+                                                        <div class="preview-popover">
                                                             <div class="preview-popover-arrow"></div>
                                                             <div class="preview-popover-content">
                                                                 <div class="preview-popover-label">Preview</div>
@@ -191,8 +228,12 @@ role="dialog"
                                         <div class="panel-section-header">
                                             <span>@dictParam.Name</span>
                                             <button onclick="@(() => AddDictionaryEntry(dictParam.Name ?? string.Empty))" type="button"
-                                                    class="btn btn-xs btn-outline-secondary"
+                                                    class="btn-add-entry"
                                                     data-role="add-dictionary-entry">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                                </svg>
                                                 Add entry
                                             </button>
                                         </div>
@@ -211,18 +252,18 @@ role="dialog"
                                             {
                                                 <div class="mapping-row" data-role="dictionary-entry-row">
                                                     <div class="mapping-col">
-                                                        <label>Dictionary key</label>
+                                                        <label>Header name</label>
                                                         <input @bind="entry.To"
                                                                @bind:event="oninput"
                                                                type="text"
                                                                class="form-control form-control-sm"
                                                                placeholder="e.g. Authorization, Content-Type"
-                                                               aria-label="Dictionary key"
+                                                               aria-label="Header name"
                                                                data-role="dictionary-key" />
                                                     </div>
                                                     <div class="mapping-arrow">→</div>
                                                     <div class="mapping-col">
-                                                        <label>Value (payload path or template)</label>
+                                                        <label>Value</label>
                                                         <input @bind="entry.From"
                                                                @bind:event="oninput"
                                                                type="text"
@@ -318,16 +359,9 @@ role="dialog"
                             <p class="panel-caption">See what leaves this node after mappings.</p>
                         </header>
                         <div class="panel-body">
-                            <div class="payload-preview payload-preview--output"
+                            <div class="payload-preview payload-preview--output selectable-json"
                                  data-role="output-preview">
-                                @{
-                                    var outputString = JsonSerializer.Serialize(OutputPayloadJson, new JsonSerializerOptions() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping, WriteIndented = true });
-                                    if (outputString == "null")
-                                    {
-                                        outputString = "Execute the node to see the output";
-                                    }
-                                }
-                                @(outputString)
+                                @RenderSelectableJson(OutputPayloadJson, "")
                             </div>
                         </div>
                     </section>
@@ -395,6 +429,11 @@ role="dialog"
 
     // Filter registry - register filters by name for easy extensibility
     private readonly Dictionary<string, JsonFilter> _filterRegistry = new();
+
+    // Node name editing
+    private bool _isEditingNodeName = false;
+    private string _editingNodeName = "";
+    private ElementReference _nodeNameInputRef;
 
     protected override void OnInitialized()
     {
@@ -958,26 +997,48 @@ role="dialog"
     }
 
     // Preview methods
-    private async Task TogglePreview(PathMapEntry mapping)
+    private void TogglePreview(PathMapEntry mapping, MouseEventArgs e)
     {
+        // If clicking the same mapping, just close it
         if (_previewMapping == mapping)
         {
             _previewMapping = null;
-            await RemoveClickAwayListener();
+            return;
         }
-        else
+
+        // Check if we have valid data to preview
+        if (string.IsNullOrWhiteSpace(mapping.From) || IncomingPayloadJson is null)
         {
-            _previewMapping = mapping;
+            // Don't show preview if there's no template or no incoming payload
+            _previewMapping = null;
+            return;
+        }
 
-            // Wait for the popover to render
-            await InvokeAsync(StateHasChanged);
-            await Task.Delay(10);
+        // Set the new preview mapping - this will show the popover
+        _previewMapping = mapping;
+    }
 
-            // Position the popover using JavaScript
-            await PositionPopover();
+    private async Task PositionPopoverByElement()
+    {
+        if (_previewPopoverRef.Id == null)
+        {
+            Console.WriteLine("Popover element reference is null");
+            return;
+        }
 
-            // Set up click-away listener
-            await SetupClickAwayListener();
+        try
+        {
+            // Use JavaScript to find the button and position relative to it
+            var previewId = _previewMapping?.GetHashCode() ?? 0;
+            await JSRuntime.InvokeVoidAsync("positionPopoverById", previewId);
+        }
+        catch (JSException jsEx)
+        {
+            Console.WriteLine($"JS error positioning popover: {jsEx.Message}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error positioning popover: {ex.Message}");
         }
     }
 
@@ -985,11 +1046,18 @@ role="dialog"
     {
         try
         {
+            // Verify the popover element exists before trying to position it
             await JSRuntime.InvokeVoidAsync("positionPopover", _previewButtonRef, _previewPopoverRef);
         }
-        catch (Exception)
+        catch (JSException jsEx)
         {
-            // Ignore errors if JS isn't loaded yet
+            // Log JS errors but don't crash
+            Console.WriteLine($"JS error positioning popover: {jsEx.Message}");
+        }
+        catch (Exception ex)
+        {
+            // Ignore other errors (e.g., if JS isn't loaded yet or element not found)
+            Console.WriteLine($"Error positioning popover: {ex.Message}");
         }
     }
 
@@ -1434,5 +1502,141 @@ role="dialog"
             entries.Remove(entry);
             StateHasChanged();
         }
+    }
+
+    // Node name editing methods
+    private void StartEditingNodeName()
+    {
+        _editingNodeName = BackingNode?.NameOverride ?? BackingNode?.Name ?? "";
+        _isEditingNodeName = true;
+        StateHasChanged();
+
+        // Focus the input after render
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(50);
+            await JSRuntime.InvokeVoidAsync("eval", $"document.querySelector('.node-name-input')?.focus()");
+        });
+    }
+
+    private void SaveNodeName()
+    {
+        if (BackingNode != null)
+        {
+            if (!string.IsNullOrWhiteSpace(_editingNodeName))
+            {
+                // Only set NameOverride if it's different from the backing name
+                if (_editingNodeName.Trim() != BackingNode.BackingMethod.Name)
+                {
+                    BackingNode.NameOverride = _editingNodeName.Trim();
+                }
+                else
+                {
+                    BackingNode.NameOverride = null;
+                }
+            }
+            // If empty, keep the existing override (don't clear it)
+        }
+        _isEditingNodeName = false;
+        StateHasChanged();
+    }
+
+    private void HandleNodeNameKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            SaveNodeName();
+        }
+        else if (e.Key == "Escape")
+        {
+            _isEditingNodeName = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Renders selectable JSON (non-draggable, for output display).
+    /// </summary>
+    private RenderFragment RenderSelectableJson(JsonNode? node, string path, int depth = 0)
+    {
+        return builder =>
+        {
+            if (node == null)
+            {
+                builder.AddContent(0, "Execute the node to see the output");
+                return;
+            }
+
+            var indent = new string(' ', depth * 2);
+            const string newline = "\n";
+
+            if (node is JsonObject obj)
+            {
+                builder.AddContent(0, "{" + newline);
+                var properties = obj.AsEnumerable().ToList();
+
+                for (int i = 0; i < properties.Count; i++)
+                {
+                    var kvp = properties[i];
+                    builder.AddContent(1, indent + "  ");
+
+                    // Render key (styled but not draggable)
+                    builder.OpenElement(2, "span");
+                    builder.AddAttribute(3, "class", "json-key");
+                    builder.AddAttribute(4, "style", "color: #93c5fd; font-weight: 600;");
+                    builder.AddContent(5, $"\"{kvp.Key}\"");
+                    builder.CloseElement();
+
+                    builder.AddContent(6, ": ");
+
+                    string propPath;
+                    if (kvp.Key.Contains("-"))
+                    {
+                        propPath = string.IsNullOrEmpty(path) ? kvp.Key : $"{path}[\"{kvp.Key}\"]";
+                    }
+                    else
+                    {
+                        propPath = string.IsNullOrEmpty(path) ? kvp.Key : $"{path}.{kvp.Key}";
+                    }
+
+                    builder.AddContent(7, RenderSelectableJson(kvp.Value, propPath, depth + 1));
+
+                    if (i < properties.Count - 1)
+                    {
+                        builder.AddContent(8, ",");
+                    }
+                    builder.AddContent(9, newline);
+                }
+                builder.AddContent(10, indent + "}");
+            }
+            else if (node is JsonArray arr)
+            {
+                builder.AddContent(0, "[" + newline);
+                for (int i = 0; i < arr.Count; i++)
+                {
+                    var itemPath = $"{path}[{i}]";
+                    builder.AddContent(1, indent + "  ");
+                    builder.AddContent(2, RenderSelectableJson(arr[i], itemPath, depth + 1));
+
+                    if (i < arr.Count - 1)
+                    {
+                        builder.AddContent(3, ",");
+                    }
+                    builder.AddContent(4, newline);
+                }
+                builder.AddContent(5, indent + "]");
+            }
+            else if (node is JsonValue val)
+            {
+                // Render value (styled)
+                builder.OpenElement(0, "span");
+                builder.AddAttribute(1, "class", "json-value");
+                builder.AddAttribute(2, "style", "color: #a78bfa;");
+
+                var jsonString = val.ToJsonString();
+                builder.AddContent(3, jsonString);
+                builder.CloseElement();
+            }
+        };
     }
 }

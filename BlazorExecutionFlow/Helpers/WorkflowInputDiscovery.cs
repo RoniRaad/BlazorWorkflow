@@ -25,10 +25,19 @@ namespace BlazorExecutionFlow.Helpers
 
             try
             {
-                foreach(var node in flowGraph.Nodes.Values)
+                foreach (var node in flowGraph.Nodes.Values)
                 {
                     // Clean up the value - remove quotes and whitespace
                     node.NodeInputToMethodInputMap
+                        .SelectMany(m => ScribanHelpers.GetWorkflowInputVariables(m.From))
+                        .Select(x => x.Replace("parameters.", ""))
+                        .ToList()
+                        .ForEach(x => inputNames.Add(x));
+
+                    // Clean up the value - remove quotes and whitespace
+                    node.DictionaryParameterMappings
+                        .Select(x => x.Value)
+                        .SelectMany(x => x)
                         .SelectMany(m => ScribanHelpers.GetWorkflowInputVariables(m.From))
                         .Select(x => x.Replace("parameters.", ""))
                         .ToList()

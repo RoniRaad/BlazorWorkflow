@@ -604,6 +604,22 @@ window.setupUndoRedoKeyboard = function(dotNetRef, editorId) {
     }
 
     const handleKeyDown = function(event) {
+        // Don't handle keyboard shortcuts if user is typing in an input/textarea
+        const activeElement = document.activeElement;
+        const isEditableElement = activeElement && (
+            activeElement.tagName === 'INPUT' ||
+            activeElement.tagName === 'TEXTAREA' ||
+            activeElement.isContentEditable
+        );
+
+        // Don't handle keyboard shortcuts if a modal is open
+        const isModalOpen = document.querySelector('.node-editor-modal.show') !== null;
+
+        // Skip undo/redo if user is typing or modal is open
+        if (isEditableElement || isModalOpen) {
+            return;
+        }
+
         // Check if Ctrl (or Cmd on Mac) is pressed
         const isCtrlOrCmd = event.ctrlKey || event.metaKey;
 

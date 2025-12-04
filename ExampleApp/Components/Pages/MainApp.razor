@@ -1,0 +1,115 @@
+@page "/"
+@page "/workflows"
+@page "/workflow/{WorkflowId}"
+@using BlazorExecutionFlow.Components
+@using BlazorExecutionFlow.Helpers
+@using BlazorExecutionFlow.Models
+@using BlazorExecutionFlow.Models.NodeV2
+@using BlazorExecutionFlow.Services
+@using ExampleApp.Components.Layout
+@using System.Collections.Frozen
+@layout EmptyLayout
+@inject IWorkflowService WorkflowService
+@inject IEnvironmentVariablesService EnvVarService
+
+<PageTitle>@GetPageTitle()</PageTitle>
+
+<div style="height: 100vh; overflow: hidden; background: var(--background); color: var(--bef--text-primary, #f1f5f9);">
+    @if (currentView == ViewState.WorkflowList)
+    {
+        <WorkflowManager
+            @rendermode="InteractiveServer"
+            OnEditWorkflow="HandleEditWorkflow"
+            OnExecuteWorkflow="HandleExecuteWorkflow" />
+    }
+    else if (currentView == ViewState.WorkflowEditor && !string.IsNullOrEmpty(currentWorkflowId))
+    {
+        <BlazorExecutionFlow.Components.WorkflowEditor
+            @rendermode="InteractiveServer"
+            WorkflowId="@currentWorkflowId"
+            OnBackToWorkflows="HandleBackToWorkflows" />
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string? WorkflowId { get; set; }
+
+    private enum ViewState
+    {
+        WorkflowList,
+        WorkflowEditor
+    }
+
+    private ViewState currentView = ViewState.WorkflowList;
+    private string? currentWorkflowId = null;
+
+    protected override void OnParametersSet()
+    {
+        // Determine the view based on the route parameter
+        if (!string.IsNullOrEmpty(WorkflowId))
+        {
+            currentView = ViewState.WorkflowEditor;
+            currentWorkflowId = WorkflowId;
+        }
+        else
+        {
+            currentView = ViewState.WorkflowList;
+            currentWorkflowId = null;
+        }
+    }
+
+    private string GetPageTitle()
+    {
+        return currentView switch
+        {
+            ViewState.WorkflowEditor => "Workflow Editor",
+            _ => "Workflows"
+        };
+    }
+
+    private void HandleEditWorkflow(string workflowId)
+    {
+        currentView = ViewState.WorkflowEditor;
+        currentWorkflowId = workflowId;
+        StateHasChanged();
+    }
+
+    private void HandleBackToWorkflows()
+    {
+        currentView = ViewState.WorkflowList;
+        currentWorkflowId = null;
+        StateHasChanged();
+    }
+
+    private async Task HandleExecuteWorkflow((string WorkflowId, string Environment) executionRequest)
+    {
+        var workflow = WorkflowService.GetWorkflow(executionRequest.WorkflowId);
+        if (workflow == null) return;
+
+        var environmentVariables = EnvVarService.GetAllVariables(executionRequest.Environment);
+        var context = new GraphExecutionContext()
+        {
+            Parameters = workflow.Inputs.ToFrozenDictionary(),
+            EnvironmentVariables = environmentVariables.ToFrozenDictionary()
+        };
+
+        await workflow.FlowGraph.Run(context);
+
+        var output = context?.SharedContext.GetByPath("workflow.output");
+        var jsonObject = output?.AsObject().ToDictionary(x => x.Key, x => (object)x.Value);
+
+        var execution = new WorkflowExecution
+        {
+            Id = Guid.NewGuid().ToString(),
+            ExecutedAt = DateTime.Now,
+            Success = !workflow.FlowGraph.Nodes.Any(x => x.Value.LastException is not null),
+            Duration = DateTimeOffset.Now - context!.StartTime,
+            Output = jsonObject ?? []
+        };
+
+        workflow.PreviousExecutions.Add(execution);
+        workflow.ModifiedAt = DateTime.Now;
+        WorkflowService.UpdateWorkflow(workflow);
+    }
+}
