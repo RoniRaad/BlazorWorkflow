@@ -294,6 +294,26 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
             {
                 targetNode.InputNodes.Add(sourceNode);
             }
+
+            // Auto-populate target node input with source node result if available
+            if (sourceNode.Result != null)
+            {
+                var jsonObject = sourceNode.Result.Deserialize<JsonObject>();
+                jsonObject?.SetByPath("input", jsonObject["output"]);
+                jsonObject?.Remove("output");
+
+                if (targetNode.Input is not null)
+                {
+                    targetNode.Input.Merge(jsonObject);
+                }
+                else
+                {
+                    targetNode.Input = jsonObject;
+                }
+
+
+                targetNode.Input = jsonObject;
+            }
         }
 
         return Task.CompletedTask;

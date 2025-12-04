@@ -612,6 +612,31 @@
         }
 
         ScheduleBatchUpdate();
+
+        // Update port status with computed results
+        if (node.Result != null && !node.HasError)
+        {
+            _ = InvokeAsync(async () =>
+            {
+                var status = new NodeStatus
+                {
+                    IsRunning = false,
+                    HasError = false
+                };
+
+
+                if (!node.IsPortDriven)
+                {
+                    for (int i = 0; i < Math.Max(node.DeclaredOutputPorts.Count, 1); i++)
+                    {
+                        status.OutputPortResults[i] = node.Result.ToJsonString();
+                    }
+                    
+                }
+
+                await this.SetNodeStatus(node.DrawflowNodeId, status);
+            });
+        }
     }
 
     private void ScheduleBatchUpdate()
@@ -727,7 +752,7 @@
         Console.WriteLine($"[DoubleClick] Looking for node with ID: {nodeId}");
         var node = Graph.Nodes.FirstOrDefault(x => x.Key == nodeId.ToString());
 
-        if (node.Value != null)
+        if (node.Value != null && node.Value.Section != "Events")
         {
             Console.WriteLine($"[DoubleClick] Found node: {node.Value.Name} (DrawflowId: {node.Value.DrawflowNodeId}, InternalId: {node.Value.Id})");
             editNode = node.Value;
