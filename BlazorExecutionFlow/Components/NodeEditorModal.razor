@@ -228,8 +228,12 @@ role="dialog"
                                         <div class="panel-section-header">
                                             <span>@dictParam.Name</span>
                                             <button onclick="@(() => AddDictionaryEntry(dictParam.Name ?? string.Empty))" type="button"
-                                                    class="btn btn-xs btn-outline-secondary"
+                                                    class="btn-add-entry"
                                                     data-role="add-dictionary-entry">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                                </svg>
                                                 Add entry
                                             </button>
                                         </div>
@@ -248,18 +252,18 @@ role="dialog"
                                             {
                                                 <div class="mapping-row" data-role="dictionary-entry-row">
                                                     <div class="mapping-col">
-                                                        <label>Dictionary key</label>
+                                                        <label>Header name</label>
                                                         <input @bind="entry.To"
                                                                @bind:event="oninput"
                                                                type="text"
                                                                class="form-control form-control-sm"
                                                                placeholder="e.g. Authorization, Content-Type"
-                                                               aria-label="Dictionary key"
+                                                               aria-label="Header name"
                                                                data-role="dictionary-key" />
                                                     </div>
                                                     <div class="mapping-arrow">→</div>
                                                     <div class="mapping-col">
-                                                        <label>Value (payload path or template)</label>
+                                                        <label>Value</label>
                                                         <input @bind="entry.From"
                                                                @bind:event="oninput"
                                                                type="text"

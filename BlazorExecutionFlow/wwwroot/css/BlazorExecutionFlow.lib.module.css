@@ -593,6 +593,39 @@ textarea.mapping-input {
     border-radius: 999px;
 }
 
+.btn-add-entry {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--bef-primary-color);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-add-entry:hover {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.5);
+    color: var(--bef-primary-light);
+}
+
+.btn-add-entry:active {
+    background: rgba(99, 102, 241, 0.2);
+    transform: translateY(1px);
+}
+
+.btn-add-entry svg {
+    width: 0.75rem;
+    height: 0.75rem;
+}
+
 .btn-icon {
     border-radius: 999px;
     border: 1px solid rgba(55, 65, 81, 0.9);

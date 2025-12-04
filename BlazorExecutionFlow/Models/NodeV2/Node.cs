@@ -7,6 +7,7 @@ using BlazorExecutionFlow.Flow.BaseNodes;
 using BlazorExecutionFlow.Helpers;
 using BlazorExecutionFlow.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json.Linq;
 
 namespace BlazorExecutionFlow.Models.NodeV2
 {
@@ -519,23 +520,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
             foreach (var methodOutputMap in MethodOutputToNodeOutputMap)
             {
                 var methodOutputValue = methodOutputJsonObject.GetByPath(methodOutputMap.From);
-                resultObject.SetByPath($"output.{methodOutputMap.To}", methodOutputValue);
-
-                SharedExecutionContext?.SharedContext.SetByPath(
-                    $"nodes.node_{DrawflowNodeId}.output",
-                    methodOutputValue?.DeepClone());
-
-                SharedExecutionContext?.SharedContext.SetByPath(
-                    $"nodes.node_{DrawflowNodeId}.name",
-                    BackingMethod.Name);
-
-                // Also expose to workflow.output.* if flagged
-                if (methodOutputMap.ExposeAsWorkflowOutput)
-                {
-                    SharedExecutionContext?.SharedContext.SetByPath(
-                        $"workflow.output.{methodOutputMap.To}",
-                        methodOutputValue?.DeepClone());
-                }
+                MapOutputValues(methodOutputValue, resultObject, methodOutputMap);
             }
         }
 
@@ -587,23 +572,31 @@ namespace BlazorExecutionFlow.Models.NodeV2
                     value = fullResponseAsNode?.DeepClone().GetByPath($"{methodOutputMap.From}");
                 }
 
-                resultObject.SetByPath($"output.{methodOutputMap.To}", value);
+                MapOutputValues(value, resultObject, methodOutputMap);
+            }
+        }
 
+        private void MapOutputValues(JsonNode? value, JsonNode resultObject, 
+            PathMapEntry methodOutputMap) 
+        {
+            resultObject.SetByPath($"output.{methodOutputMap.To}", value);
+
+            SharedExecutionContext?.SharedContext.SetByPath(
+                $"nodes.byId.node_{DrawflowNodeId}.{methodOutputMap.To}",
+                value);
+
+
+            string name = $"{NameOverride ?? Name}_{DrawflowNodeId}";
+
+            SharedExecutionContext?.SharedContext.SetByPath(
+                $"nodes.byName.{name}.{methodOutputMap.To}",
+                value);
+
+            if (methodOutputMap.ExposeAsWorkflowOutput)
+            {
                 SharedExecutionContext?.SharedContext.SetByPath(
-                    $"nodes.node_{DrawflowNodeId}.output",
+                    $"workflow.output.{methodOutputMap.To}",
                     value);
-
-                SharedExecutionContext?.SharedContext.SetByPath(
-                    $"nodes.node_{DrawflowNodeId}.name",
-                    BackingMethod.Name);
-
-                // Also expose to workflow.output.* if flagged
-                if (methodOutputMap.ExposeAsWorkflowOutput)
-                {
-                    SharedExecutionContext?.SharedContext.SetByPath(
-                        $"workflow.output.{methodOutputMap.To}",
-                        value);
-                }
             }
         }
 
