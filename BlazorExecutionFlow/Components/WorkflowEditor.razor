@@ -93,7 +93,6 @@
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to load workflow: {ex.Message}");
             }
         }
 
@@ -132,13 +131,10 @@
                 workflow.FlowGraph = _graph;
                 workflow.ModifiedAt = DateTime.Now;
                 WorkflowService.UpdateWorkflow(workflow);
-
-                Console.WriteLine("Workflow saved successfully!");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to save workflow: {ex.Message}");
         }
     }
 

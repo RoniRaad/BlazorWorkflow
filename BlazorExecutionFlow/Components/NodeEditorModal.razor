@@ -14,6 +14,7 @@
 @using Scriban
 @using Scriban.Runtime
 @inject IJSRuntime JSRuntime
+@implements IDisposable
 
 <!-- Modal Backdrop -->
 <div class="modal-backdrop fade show" @onclick="HandleBackdropClick"></div>
@@ -176,8 +177,8 @@ role="dialog"
                                                 }
                                             </label>
                                             <div class="input-with-preview">
-                                                <textarea @bind="inputMapping.From"
-                                                          @bind:event="oninput"
+                                                <textarea value="@inputMapping.From"
+                                                          @oninput="@((e) => { inputMapping.From = e.Value?.ToString() ?? ""; TriggerAutoSave(); })"
                                                           class="form-control form-control-sm droppable-input mapping-input"
                                                           placeholder="e.g. input.name or {{input.name}}"
                                                           aria-label="Scriban template for @inputMapping.To"
@@ -253,8 +254,8 @@ role="dialog"
                                                 <div class="mapping-row" data-role="dictionary-entry-row">
                                                     <div class="mapping-col">
                                                         <label>Key</label>
-                                                        <input @bind="entry.To"
-                                                               @bind:event="oninput"
+                                                        <input value="@entry.To"
+                                                               @oninput="@((e) => { entry.To = e.Value?.ToString() ?? ""; TriggerAutoSave(); })"
                                                                type="text"
                                                                class="form-control mapping-input"
                                                                placeholder="e.g. Authorization, Content-Type"
@@ -264,8 +265,8 @@ role="dialog"
                                                     <div class="mapping-arrow">→</div>
                                                     <div class="mapping-col">
                                                         <label>Value</label>
-                                                        <input @bind="entry.From"
-                                                               @bind:event="oninput"
+                                                        <input value="@entry.From"
+                                                               @oninput="@((e) => { entry.From = e.Value?.ToString() ?? ""; TriggerAutoSave(); })"
                                                                type="text"
                                                                class="form-control mapping-input droppable-input"
                                                                placeholder="e.g. input.token or {{input.token}}"
@@ -316,13 +317,16 @@ role="dialog"
                                                             <span class="param-type-hint">(@typeDisplay)</span>
                                                         </label>
                                                         <label class="workflow-output-checkbox-label" title="Expose this output to workflow.output.*">
-                                                            <InputCheckbox @bind-Value="outputMapping.ExposeAsWorkflowOutput"
+                                                            <InputCheckbox Value="@outputMapping.ExposeAsWorkflowOutput"
+                                                                           ValueChanged="@((bool value) => { outputMapping.ExposeAsWorkflowOutput = value; TriggerAutoSave(); })"
+                                                                           ValueExpression="@(() => outputMapping.ExposeAsWorkflowOutput)"
                                                                            class="workflow-output-checkbox"
                                                                            data-role="expose-workflow-output" />
                                                             <span class="workflow-output-checkbox-text">Workflow output</span>
                                                         </label>
                                                     </div>
                                                     <InputTextArea @bind-Value="outputMapping.To"
+                                                                   @oninput="@(() => TriggerAutoSave())"
                                                                    class="form-control form-control-sm mapping-input"
                                                                    placeholder="e.g. output.name"
                                                                    required
@@ -367,28 +371,6 @@ role="dialog"
                     </section>
                 </div>
             </div>
-
-            <div class="modal-footer node-editor-footer">
-                <button onclick="@HandleClose"
-                        type="button"
-                        class="btn btn-outline-secondary"
-                        disabled="@isSaving"
-                        aria-label="Cancel and close modal">
-                    Cancel
-                </button>
-                <button onclick="@SaveMappings"
-                        type="button"
-                        class="btn btn-primary @(saveSuccess ? "save-success" : "")"
-                        disabled="@isSaving"
-                        aria-label="Save node mappings"
-                        data-role="save-node">
-                    @if (isSaving)
-                    {
-                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    }
-                    @(isSaving ? "Saving..." : "Save mappings")
-                </button>
-            </div>
         </div>
     </div>
 </div>
@@ -423,6 +405,10 @@ role="dialog"
     private bool _errorDismissed = false;
     private string? _lastErrorMessage = null;
 
+    // Auto-save debouncing
+    private System.Threading.Timer? _autoSaveTimer;
+    private readonly int _autoSaveDelayMs = 500; // 500ms debounce
+
     // JSON preview controls
     private string _jsonSearchTerm = "";
     private string _jsonFilterMode = "Input";
@@ -446,6 +432,36 @@ role="dialog"
         _filterRegistry.Add("Values", PrimitivesOnlyFilter);
         _filterRegistry.Add("Workflow", GlobalOnlyFilter);
         _filterRegistry.Add("Nodes", NodeOnlyFilter);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Add event listener for tab key in textareas
+            await JSRuntime.InvokeVoidAsync("eval", @"
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Tab' && e.target.tagName === 'TEXTAREA' && e.target.closest('.node-editor-modal')) {
+                        e.preventDefault();
+                        var textarea = e.target;
+
+                        // Use execCommand if available (preserves undo history), otherwise fallback
+                        if (document.execCommand) {
+                            document.execCommand('insertText', false, '\t');
+                        } else {
+                            // Fallback for browsers that don't support execCommand
+                            var start = textarea.selectionStart;
+                            var end = textarea.selectionEnd;
+                            var value = textarea.value;
+                            textarea.value = value.substring(0, start) + '\t' + value.substring(end);
+                            textarea.selectionStart = textarea.selectionEnd = start + 1;
+                        }
+
+                        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }, true);
+            ");
+        }
     }
 
     protected override void OnParametersSet()
@@ -711,6 +727,18 @@ role="dialog"
         }
     }
 
+    private void TriggerAutoSave()
+    {
+        // Cancel previous timer if exists
+        _autoSaveTimer?.Dispose();
+
+        // Start new timer that will save after the debounce delay
+        _autoSaveTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () => await SaveMappings());
+        }, null, _autoSaveDelayMs, System.Threading.Timeout.Infinite);
+    }
+
     private async Task SaveMappings()
     {
         if (isSaving) return;
@@ -720,19 +748,15 @@ role="dialog"
 
         try
         {
-            // Filter out any blank entries before saving (keep only if BOTH From and To have values)
             BackingNode.MethodOutputToNodeOutputMap = ViewModel.MethodOutputToNodeOutputMap
-                .Where(m => !string.IsNullOrWhiteSpace(m.From) && !string.IsNullOrWhiteSpace(m.To))
                 .ToList();
             BackingNode.NodeInputToMethodInputMap = ViewModel.NodeInputToMethodInputMap
-                .Where(m => !string.IsNullOrWhiteSpace(m.From) && !string.IsNullOrWhiteSpace(m.To))
                 .ToList();
 
-            // Save dictionary parameter mappings (filter out blank entries)
             BackingNode.DictionaryParameterMappings = ViewModel.DictionaryParameterMappings
                 .ToDictionary(
                     kvp => kvp.Key,
-                    kvp => kvp.Value.Where(m => !string.IsNullOrWhiteSpace(m.To)).ToList()
+                    kvp => kvp.Value.ToList()
                 );
 
             await SaveRequested.InvokeAsync();
@@ -985,6 +1009,7 @@ role="dialog"
             // Wrap the path in Scriban template syntax
             mapping.From = $"{{{{{_draggedFieldPath}}}}}";
             _draggedFieldPath = null;
+            TriggerAutoSave();
             StateHasChanged();
         }
     }
@@ -1015,7 +1040,6 @@ role="dialog"
     {
         if (_previewPopoverRef.Id == null)
         {
-            Console.WriteLine("Popover element reference is null");
             return;
         }
 
@@ -1027,11 +1051,9 @@ role="dialog"
         }
         catch (JSException jsEx)
         {
-            Console.WriteLine($"JS error positioning popover: {jsEx.Message}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error positioning popover: {ex.Message}");
         }
     }
 
@@ -1044,13 +1066,9 @@ role="dialog"
         }
         catch (JSException jsEx)
         {
-            // Log JS errors but don't crash
-            Console.WriteLine($"JS error positioning popover: {jsEx.Message}");
         }
         catch (Exception ex)
         {
-            // Ignore other errors (e.g., if JS isn't loaded yet or element not found)
-            Console.WriteLine($"Error positioning popover: {ex.Message}");
         }
     }
 
@@ -1485,6 +1503,7 @@ role="dialog"
             To = ""     // Dictionary key
         });
 
+        TriggerAutoSave();
         StateHasChanged();
     }
 
@@ -1493,6 +1512,7 @@ role="dialog"
         if (ViewModel.DictionaryParameterMappings.TryGetValue(parameterName, out var entries))
         {
             entries.Remove(entry);
+            TriggerAutoSave();
             StateHasChanged();
         }
     }
@@ -1529,6 +1549,9 @@ role="dialog"
                 }
             }
             // If empty, keep the existing override (don't clear it)
+
+            // Trigger auto-save to persist the name change immediately
+            TriggerAutoSave();
         }
         _isEditingNodeName = false;
         StateHasChanged();
@@ -1631,5 +1654,10 @@ role="dialog"
                 builder.CloseElement();
             }
         };
+    }
+
+    public void Dispose()
+    {
+        _autoSaveTimer?.Dispose();
     }
 }

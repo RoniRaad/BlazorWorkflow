@@ -784,7 +784,7 @@
 .empty-message {
     text-align: center;
     color: var(--bef-text-secondary);
-    padding: 2rem;
+    padding: 0 2rem;
     margin: 0;
 }
 
