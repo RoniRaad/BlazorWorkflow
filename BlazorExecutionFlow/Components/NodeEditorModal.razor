@@ -252,13 +252,13 @@ role="dialog"
                                             {
                                                 <div class="mapping-row" data-role="dictionary-entry-row">
                                                     <div class="mapping-col">
-                                                        <label>Header name</label>
+                                                        <label>Key</label>
                                                         <input @bind="entry.To"
                                                                @bind:event="oninput"
                                                                type="text"
-                                                               class="form-control form-control-sm"
+                                                               class="form-control mapping-input"
                                                                placeholder="e.g. Authorization, Content-Type"
-                                                               aria-label="Header name"
+                                                               aria-label="Key"
                                                                data-role="dictionary-key" />
                                                     </div>
                                                     <div class="mapping-arrow">→</div>
@@ -267,7 +267,7 @@ role="dialog"
                                                         <input @bind="entry.From"
                                                                @bind:event="oninput"
                                                                type="text"
-                                                               class="form-control form-control-sm droppable-input"
+                                                               class="form-control mapping-input droppable-input"
                                                                placeholder="e.g. input.token or {{input.token}}"
                                                                aria-label="Dictionary value"
                                                                @ondragover="@((e) => HandleDragOver(e))"
