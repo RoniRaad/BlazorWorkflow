@@ -1,5 +1,8 @@
-@page "/workflow/{WorkflowId}"
-@using BlazorExecutionFlow.Components
+@namespace BlazorExecutionFlow.Components
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
 @using BlazorExecutionFlow.Flow.BaseNodes
 @using BlazorExecutionFlow.Helpers
 @using BlazorExecutionFlow.Models
@@ -7,7 +10,6 @@
 @using BlazorExecutionFlow.Services
 @using System.Text.Json
 @using static BlazorExecutionFlow.Helpers.DrawflowHelpers
-@inject NavigationManager Navigation
 @inject IWorkflowService WorkflowService
 @inject IEnvironmentVariablesService EnvVarService
 
@@ -66,10 +68,12 @@
     [Parameter]
     public string WorkflowId { get; set; } = string.Empty;
 
+    [Parameter]
+    public EventCallback OnBackToWorkflows { get; set; }
+
     private Dictionary<string, object> options = new Dictionary<string, object>() { ["reroute"] = true };
     private Graph? _graph;
 	private WorkflowInfo? _workflowInfo;
-    private bool _isLoaded = false;
     private bool isEditingWorkflowName = false;
     private string editingWorkflowName = string.Empty;
     private ElementReference workflowNameInput;
@@ -100,8 +104,6 @@
             _selectedEnvironment = environments.First();
             _environmentVariables = EnvVarService.GetAllVariables(_selectedEnvironment);
         }
-
-		_isLoaded = true;
 	}
 
     private string GetWorkflowTitle()
@@ -140,9 +142,12 @@
         }
     }
 
-    private void BackToWorkflows()
+    private async Task BackToWorkflows()
     {
-        Navigation.NavigateTo("/workflows");
+        if (OnBackToWorkflows.HasDelegate)
+        {
+            await OnBackToWorkflows.InvokeAsync();
+        }
     }
 
     private async Task StartEditingWorkflowName()

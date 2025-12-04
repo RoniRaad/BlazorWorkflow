@@ -5,7 +5,9 @@
 @using Microsoft.AspNetCore.Components.Web.Virtualization
 @using Microsoft.JSInterop
 @using BlazorExecutionFlow.Models
+@using BlazorExecutionFlow.Models.NodeV2
 @using BlazorExecutionFlow.Helpers
+@using BlazorExecutionFlow.Services
 
 <div class="workflow-manager">
     <div class="workflow-sidebar">
@@ -144,7 +146,7 @@
                     }
                 </div>
                 <div class="detail-actions">
-                    <button class="btn-success-custom" @onclick="@(() => OnExecuteWorkflow.InvokeAsync(SelectedWorkflow.Id))">
+                    <button class="btn-success-custom" @onclick="@(() => OnExecuteWorkflow.InvokeAsync((SelectedWorkflow.Id, selectedEnvironment)))">
                         <i class="bi bi-play-fill"></i> Execute
                     </button>
                     <button class="btn-primary-custom" @onclick="@(() => OnEditWorkflow.InvokeAsync(SelectedWorkflow.Id))">
@@ -385,24 +387,12 @@
     </div>
 </div>
 
+@inject IWorkflowService WorkflowService
+@inject IEnvironmentVariablesService EnvVarService
+
 @code {
-    [Parameter] public List<WorkflowInfo> Workflows { get; set; } = new();
-    [Parameter] public Dictionary<string, string> EnvironmentVariables { get; set; } = new();
-    [Parameter] public List<string> Environments { get; set; } = new();
-    [Parameter] public string SelectedEnvironment { get; set; } = "Development";
-    [Parameter] public EventCallback<CreateWorkflowRequest> OnCreateWorkflow { get; set; }
-    [Parameter] public EventCallback<WorkflowInfo> OnUpdateWorkflow { get; set; }
-    [Parameter] public EventCallback<string> OnDeleteWorkflow { get; set; }
     [Parameter] public EventCallback<string> OnEditWorkflow { get; set; }
-    [Parameter] public EventCallback<string> OnExecuteWorkflow { get; set; }
-    [Parameter] public EventCallback<string> OnEnvironmentChanged { get; set; }
-    [Parameter] public EventCallback OnAddEnvironment { get; set; }
-    [Parameter] public EventCallback OnDeleteEnvironment { get; set; }
-    [Parameter] public EventCallback<string> OnEnvironmentRenamed { get; set; }
-    [Parameter] public EventCallback<string> OnAddEnvVar { get; set; }
-    [Parameter] public EventCallback<string> OnRemoveEnvVar { get; set; }
-    [Parameter] public EventCallback<(string OldKey, string NewKey)> OnEnvVarKeyChanged { get; set; }
-    [Parameter] public EventCallback<(string Key, string Value)> OnEnvVarChanged { get; set; }
+    [Parameter] public EventCallback<(string WorkflowId, string Environment)> OnExecuteWorkflow { get; set; }
 
     private string searchQuery = string.Empty;
     private string? selectedWorkflowId = null;
@@ -410,6 +400,12 @@
     private bool isEditingWorkflowName = false;
     private string editingWorkflowName = string.Empty;
     private ElementReference workflowNameInput;
+    private string selectedEnvironment = "Development";
+
+    private List<WorkflowInfo> Workflows => WorkflowService.GetAllWorkflows();
+    private Dictionary<string, string> EnvironmentVariables => EnvVarService.GetAllVariables(selectedEnvironment);
+    private List<string> Environments => EnvVarService.GetAllEnvironments();
+    private string SelectedEnvironment => selectedEnvironment;
 
     private WorkflowInfo? SelectedWorkflow => Workflows.FirstOrDefault(w => w.Id == selectedWorkflowId);
 
@@ -428,8 +424,20 @@
         }
     }
 
-    protected override void OnParametersSet()
+    protected override void OnInitialized()
     {
+        // Ensure there's a default environment
+        if (!Environments.Any())
+        {
+            EnvVarService.AddEnvironment("Development");
+            selectedEnvironment = "Development";
+        }
+        else
+        {
+            selectedEnvironment = Environments.First();
+        }
+
+        // Select the most recently modified workflow if none is selected
         if (selectedWorkflowId == null && Workflows.Any())
         {
             selectedWorkflowId = Workflows.OrderByDescending(w => w.ModifiedAt).First().Id;
@@ -441,43 +449,62 @@
         selectedWorkflowId = workflowId;
     }
 
-    private async Task HandleCreateWorkflow()
+    private void HandleCreateWorkflow()
     {
-        await OnCreateWorkflow.InvokeAsync(new CreateWorkflowRequest());
+        var newWorkflow = new WorkflowInfo
+        {
+            Id = Guid.NewGuid().ToString(),
+            Name = "New Workflow",
+            Description = string.Empty,
+            CreatedAt = DateTime.Now,
+            ModifiedAt = DateTime.Now,
+            Inputs = new Dictionary<string, string>(),
+            FlowGraph = new Graph { Nodes = new System.Collections.Concurrent.ConcurrentDictionary<string, Node>() },
+            PreviousExecutions = new List<WorkflowExecution>(),
+            IncludeAsNode = false
+        };
+
+        WorkflowService.AddWorkflow(newWorkflow);
+        selectedWorkflowId = newWorkflow.Id;
+        StateHasChanged();
     }
 
-    private async Task HandleDeleteWorkflow()
+    private void HandleDeleteWorkflow()
     {
         if (selectedWorkflowId != null)
         {
-            await OnDeleteWorkflow.InvokeAsync(selectedWorkflowId);
+            WorkflowService.DeleteWorkflow(selectedWorkflowId);
             selectedWorkflowId = null;
+            StateHasChanged();
         }
     }
 
-    private async Task HandleAddInput()
+    private void HandleAddInput()
     {
         if (SelectedWorkflow == null) return;
         var key = $"input_{SelectedWorkflow.Inputs.Count + 1}";
         SelectedWorkflow.Inputs[key] = string.Empty;
-        await OnUpdateWorkflow.InvokeAsync(SelectedWorkflow);
+        WorkflowService.UpdateWorkflow(SelectedWorkflow);
+        StateHasChanged();
     }
 
-    private async Task HandleRemoveInput(string key)
+    private void HandleRemoveInput(string key)
     {
         if (SelectedWorkflow == null) return;
         SelectedWorkflow.Inputs.Remove(key);
-        await OnUpdateWorkflow.InvokeAsync(SelectedWorkflow);
+        WorkflowService.UpdateWorkflow(SelectedWorkflow);
+        StateHasChanged();
     }
 
-    private async Task HandleInputValueChange(string key, string value)
+    private void HandleInputValueChange(string key, string value)
     {
         if (SelectedWorkflow == null) return;
         SelectedWorkflow.Inputs[key] = value;
-        await OnUpdateWorkflow.InvokeAsync(SelectedWorkflow);
+        WorkflowService.UpdateWorkflow(SelectedWorkflow);
+        StateHasChanged();
     }
 
-    private async Task HandleInputNameChange(string oldName, string newName, bool isRequired)
+    private void HandleInputNameChange(string oldName, string newName, bool isRequired)
     {
         if (SelectedWorkflow == null || string.IsNullOrWhiteSpace(newName) || oldName == newName)
             return;
@@ -506,7 +533,8 @@
             SelectedWorkflow.Inputs[newName] = value;
         }
 
-        await OnUpdateWorkflow.InvokeAsync(SelectedWorkflow);
+        WorkflowService.UpdateWorkflow(SelectedWorkflow);
+        StateHasChanged();
     }
 
     private string FormatDuration(TimeSpan duration)
@@ -526,55 +554,71 @@
         StateHasChanged();
     }
 
-    private async Task HandleAddEnvVar()
+    private void HandleAddEnvVar()
     {
         var key = $"VAR_{EnvironmentVariables.Count + 1}";
-        await OnAddEnvVar.InvokeAsync(key);
+        EnvVarService.SetVariable(selectedEnvironment, key, string.Empty);
+        StateHasChanged();
     }
 
-    private async Task HandleRemoveEnvVar(string key)
+    private void HandleRemoveEnvVar(string key)
     {
-        await OnRemoveEnvVar.InvokeAsync(key);
+        EnvVarService.RemoveVariable(selectedEnvironment, key);
+        StateHasChanged();
     }
 
-    private async Task HandleEnvVarValueChange(string key, string value)
+    private void HandleEnvVarValueChange(string key, string value)
     {
-        await OnEnvVarChanged.InvokeAsync((key, value));
+        EnvVarService.SetVariable(selectedEnvironment, key, value);
+        StateHasChanged();
     }
 
-    private async Task HandleEnvVarKeyChange(string oldKey, string newKey)
+    private void HandleEnvVarKeyChange(string oldKey, string newKey)
     {
         if (string.IsNullOrWhiteSpace(newKey) || oldKey == newKey)
             return;
 
-        await OnEnvVarKeyChanged.InvokeAsync((oldKey, newKey));
+        var value = EnvVarService.GetVariable(selectedEnvironment, oldKey);
+        EnvVarService.RemoveVariable(selectedEnvironment, oldKey);
+        EnvVarService.SetVariable(selectedEnvironment, newKey, value ?? string.Empty);
+        StateHasChanged();
     }
 
-    private async Task HandleEnvironmentChange(ChangeEventArgs e)
+    private void HandleEnvironmentChange(ChangeEventArgs e)
     {
         var newEnvironment = e.Value?.ToString();
         if (!string.IsNullOrEmpty(newEnvironment))
         {
-            await OnEnvironmentChanged.InvokeAsync(newEnvironment);
+            selectedEnvironment = newEnvironment;
+            StateHasChanged();
         }
     }
 
-    private async Task HandleAddEnvironment()
+    private void HandleAddEnvironment()
     {
-        await OnAddEnvironment.InvokeAsync();
+        var newEnvName = $"Environment {Environments.Count + 1}";
+        EnvVarService.AddEnvironment(newEnvName);
+        selectedEnvironment = newEnvName;
+        StateHasChanged();
     }
 
-    private async Task HandleDeleteEnvironment()
+    private void HandleDeleteEnvironment()
     {
-        await OnDeleteEnvironment.InvokeAsync();
+        if (Environments.Count <= 1) return;
+
+        EnvVarService.RemoveEnvironment(selectedEnvironment);
+        selectedEnvironment = Environments.FirstOrDefault() ?? "Development";
+        StateHasChanged();
     }
 
-    private async Task HandleEnvironmentNameChange(string newName)
+    private void HandleEnvironmentNameChange(string newName)
     {
-        if (string.IsNullOrWhiteSpace(newName) || newName == SelectedEnvironment)
+        if (string.IsNullOrWhiteSpace(newName) || newName == selectedEnvironment)
             return;
 
-        await OnEnvironmentRenamed.InvokeAsync(newName);
+        EnvVarService.RenameEnvironment(selectedEnvironment, newName);
+        selectedEnvironment = newName;
+        StateHasChanged();
     }
 
     private List<string> GetDiscoveredInputs()
@@ -605,16 +649,16 @@
         await workflowNameInput.FocusAsync();
     }
 
-    private async Task HandleWorkflowNameBlur()
+    private void HandleWorkflowNameBlur()
     {
-        await SaveWorkflowName();
+        SaveWorkflowName();
     }
 
-    private async Task HandleWorkflowNameKeyDown(KeyboardEventArgs e)
+    private void HandleWorkflowNameKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
-            await SaveWorkflowName();
+            SaveWorkflowName();
         }
         else if (e.Key == "Escape")
         {
@@ -622,7 +666,7 @@
         }
     }
 
-    private async Task SaveWorkflowName()
+    private void SaveWorkflowName()
     {
         if (SelectedWorkflow == null) return;
 
@@ -632,7 +676,7 @@
         if (!string.IsNullOrWhiteSpace(trimmedName) && trimmedName != SelectedWorkflow.Name)
         {
             SelectedWorkflow.Name = trimmedName;
-            await OnUpdateWorkflow.InvokeAsync(SelectedWorkflow);
+            WorkflowService.UpdateWorkflow(SelectedWorkflow);
         }
 
         isEditingWorkflowName = false;
@@ -646,11 +690,12 @@
         StateHasChanged();
     }
 
-    private async Task HandleIncludeAsNodeChange(object? value)
+    private void HandleIncludeAsNodeChange(object? value)
     {
         if (SelectedWorkflow == null || value == null) return;
 
         SelectedWorkflow.IncludeAsNode = (bool)value;
-        await OnUpdateWorkflow.InvokeAsync(SelectedWorkflow);
+        WorkflowService.UpdateWorkflow(SelectedWorkflow);
+        StateHasChanged();
     }
 }
