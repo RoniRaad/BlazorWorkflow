@@ -17,7 +17,7 @@ namespace BlazorExecutionFlow.Helpers
                 Parameters = inputParams.ToFrozenDictionary(),
                 EnvironmentVariables = envVariables.ToFrozenDictionary()
             };
-            await workflow.FlowGraph.Run(context);
+            await workflow.FlowGraph.Run(context).ConfigureAwait(false);
 
             return context.SharedContext;
         }

@@ -58,6 +58,7 @@
                                           Graph="_graph"
                                           WorkflowParameters="_workflowInfo.Inputs"
                                           EnvironmentVariables="_environmentVariables"
+                                          EnableStatusAnimations="EnableStatusAnimations"
                                           OnEvent="SaveWorkflow"/>
             }
         </div>
@@ -70,6 +71,7 @@
 
     [Parameter]
     public EventCallback OnBackToWorkflows { get; set; }
+    [Parameter] public bool EnableStatusAnimations { get; set; } = true;
 
     private Dictionary<string, object> options = new Dictionary<string, object>() { ["reroute"] = true };
     private Graph? _graph;

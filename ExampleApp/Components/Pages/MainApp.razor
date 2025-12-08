@@ -94,7 +94,7 @@
             EnvironmentVariables = environmentVariables.ToFrozenDictionary()
         };
 
-        await workflow.FlowGraph.Run(context);
+        await workflow.FlowGraph.Run(context).ConfigureAwait(false);
 
         var output = context?.SharedContext.GetByPath("workflow.output");
         var jsonObject = output?.AsObject().ToDictionary(x => x.Key, x => (object)x.Value);

@@ -500,7 +500,7 @@
         {
             Parameters = WorkflowParameters.ToFrozenDictionary(),
             EnvironmentVariables = EnvironmentVariables.ToFrozenDictionary()
-        });
+        }).ConfigureAwait(false);
     }
 
     async Task SetStatusAsync(string nodeId, bool isRunning, bool hasError = false, string? errorMessage = null, int? outputPos = null, object? value = null)
@@ -694,7 +694,7 @@
         {
             Parameters = WorkflowParameters.ToFrozenDictionary(),
             EnvironmentVariables = EnvironmentVariables.ToFrozenDictionary()
-        });
+        }).ConfigureAwait(false);
     }
 
     private async Task CreateNode(Node nodeTemplate)
