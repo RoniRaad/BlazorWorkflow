@@ -29,7 +29,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
             if (collection == null || collection.Count == 0)
             {
-                await context.ExecutePortAsync("done");
+                await context.ExecutePortAsync("done").ConfigureAwait(false);
                 return new ForEachResult
                 {
                     Results = results,
@@ -65,7 +65,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
                 try
                 {
                     // Execute the "item" port with the current item
-                    await context.ExecutePortAsync("item");
+                    await context.ExecutePortAsync("item").ConfigureAwait(false);
 
                     // Collect results from the executed subgraph if needed
                     results.Add(JsonSerializer.SerializeToNode(new
@@ -106,7 +106,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
             if (collection == null || collection.Count == 0)
             {
-                await context.ExecutePortAsync("done");
+                await context.ExecutePortAsync("done").ConfigureAwait(false);
                 return new ForEachResult
                 {
                     Results = results,
@@ -138,7 +138,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
                 try
                 {
-                    await context.ExecutePortAsync("item");
+                    await context.ExecutePortAsync("item").ConfigureAwait(false);
 
                     results.Add(JsonSerializer.SerializeToNode(new
                     {
@@ -195,7 +195,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
                 try
                 {
-                    await context.ExecutePortAsync("loop");
+                    await context.ExecutePortAsync("loop").ConfigureAwait(false);
 
                     iterations++;
                     // TODO: Add mechanism to check condition from downstream nodes
@@ -230,7 +230,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
             if (collection == null || collection.Count == 0)
             {
-                await context.ExecutePortAsync("done");
+                await context.ExecutePortAsync("done").ConfigureAwait(false);
                 return new MapResult { TransformedItems = results };
             }
 
@@ -255,7 +255,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
                 try
                 {
-                    await context.ExecutePortAsync("transform");
+                    await context.ExecutePortAsync("transform").ConfigureAwait(false);
 
                     results.Add(JsonSerializer.SerializeToNode(item));
                 }
@@ -285,7 +285,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
             if (collection == null || collection.Count == 0)
             {
-                await context.ExecutePortAsync("done");
+                await context.ExecutePortAsync("done").ConfigureAwait(false);
                 return new MapResult { TransformedItems = results };
             }
 
@@ -310,7 +310,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
                 try
                 {
-                    await context.ExecutePortAsync("transform");
+                    await context.ExecutePortAsync("transform").ConfigureAwait(false);
 
                     results.Add(JsonSerializer.SerializeToNode(item));
                 }
@@ -340,7 +340,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
             if (collection == null || collection.Count == 0)
             {
-                await context.ExecutePortAsync("done");
+                await context.ExecutePortAsync("done").ConfigureAwait(false);
                 return new ForEachResult
                 {
                     Results = results,
@@ -372,7 +372,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
                 try
                 {
-                    await context.ExecutePortAsync("item");
+                    await context.ExecutePortAsync("item").ConfigureAwait(false);
 
                     results.Add(JsonSerializer.SerializeToNode(new
                     {
@@ -411,7 +411,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
             if (collection == null || collection.Count == 0)
             {
-                await context.ExecutePortAsync("done");
+                await context.ExecutePortAsync("done").ConfigureAwait(false);
                 return new MapResult { TransformedItems = results };
             }
 
@@ -436,7 +436,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
                 try
                 {
-                    await context.ExecutePortAsync("transform");
+                    await context.ExecutePortAsync("transform").ConfigureAwait(false);
 
                     results.Add(item);
                 }

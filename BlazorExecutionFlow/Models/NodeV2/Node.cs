@@ -243,14 +243,14 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
         public async Task ExecuteNode(Node? caller = null)
         {
-            await GetResult(caller ?? this);
+            await GetResult(caller ?? this).ConfigureAwait(false);
 
             // Non-port-driven nodes keep the old linear fan-out behavior
             if (!IsPortDriven)
             {
                 foreach (var outputNode in OutputNodes)
                 {
-                    await outputNode.ExecuteNode(this);
+                    await outputNode.ExecuteNode(this).ConfigureAwait(false);
                 }
             }
         }
@@ -260,7 +260,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
             if (Result != null)
                 return Result;
 
-            await _executionSemaphore.WaitAsync();
+            await _executionSemaphore.WaitAsync().ConfigureAwait(false);
 
             try
             {
@@ -271,7 +271,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 ResetErrorState();
 
                 // Merge of all input data
-                var inputNodesData = await BuildInputNodesDataAsync();
+                var inputNodesData = await BuildInputNodesDataAsync().ConfigureAwait(false);
 
                 // Input nodes output data is our input data
                 var formattedInput = BuildFormattedInput(inputNodesData);
@@ -279,12 +279,12 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
                 if (IsWorkflowNode)
                 {
-                    Result = await ExecuteAsWorkflowNodeAsync(formattedInput);
+                    Result = await ExecuteAsWorkflowNodeAsync(formattedInput).ConfigureAwait(false);
                 }
                 else
                 {
                     var filledMethodParameters = GetMethodParametersFromInputResult(formattedInput);
-                    Result = await InvokeBackingMethod(filledMethodParameters);
+                    Result = await InvokeBackingMethod(filledMethodParameters).ConfigureAwait(false);
                 }
 
                 PropagateWorkflowOutputToSharedContext(Result);
@@ -295,7 +295,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 }
 
                 // Now that Result is set, it's safe to execute any queued port triggers
-                await FlushPendingPortsAsync();
+                await FlushPendingPortsAsync().ConfigureAwait(false);
 
                 return Result ?? [];
             }
@@ -327,7 +327,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
             foreach (var inputNode in InputNodes)
             {
-                var res = await inputNode.GetResult(this);
+                var res = await inputNode.GetResult(this).ConfigureAwait(false);
                 inputNodesData.Merge(res);
             }
 
@@ -366,7 +366,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
             }
 
             var environment = SharedExecutionContext?.EnvironmentVariables?.ToDictionary() ?? [];
-            var result = await WorkflowHelpers.ExecuteWorkflow(workflow, mappedValues, environment);
+            var result = await WorkflowHelpers.ExecuteWorkflow(workflow, mappedValues, environment).ConfigureAwait(false);
 
             result.Remove("environment");
             jsonObject.SetByPath($"output.external_workflows.{workflow.Id}", result);
@@ -460,7 +460,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
             foreach (var port in ports)
             {
-                await ExecutePortNowAsync(port);
+                await ExecutePortNowAsync(port).ConfigureAwait(false);
             }
         }
 
@@ -473,7 +473,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
             {
                 foreach (var output in OutputNodes)
                 {
-                    await output.ExecuteNode(this);
+                    await output.ExecuteNode(this).ConfigureAwait(false);
                 }
 
                 return;
@@ -487,7 +487,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
             foreach (var target in targets)
             {
-                await target.ExecuteNode(this);
+                await target.ExecuteNode(this).ConfigureAwait(false);
             }
         }
 
@@ -619,14 +619,14 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
             if (returnType == typeof(Task))
             {
-                await ((Task)methodInvocationResponse!);
+                await ((Task)methodInvocationResponse!).ConfigureAwait(false);
                 methodInvocationResponse = null;
             }
             else if (returnType.IsGenericType &&
                      returnType.GetGenericTypeDefinition() == typeof(Task<>))
             {
                 var task = (Task)methodInvocationResponse!;
-                await task;
+                await task.ConfigureAwait(false);
 
                 var resultProperty = task.GetType().GetProperty("Result");
                 methodInvocationResponse = resultProperty?.GetValue(task);

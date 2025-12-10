@@ -39,7 +39,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
             }
 
             // Request user input and wait for response
-            var result = await promptService.PromptUserAsync(promptMessage, defaultValue);
+            var result = await promptService.PromptUserAsync(promptMessage, defaultValue).ConfigureAwait(false);
             return result ?? defaultValue;
         }
 
@@ -69,17 +69,17 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         {
             if (start > end)
             {
-                await ctx.ExecutePortAsync("done");
+                await ctx.ExecutePortAsync("done").ConfigureAwait(false);
                 return;
             }
 
             for (int i = start; i < end; i++)
             {
                 ctx.Context["index"] = i;
-                await ctx.ExecutePortAsync("loop");
+                await ctx.ExecutePortAsync("loop").ConfigureAwait(false);
             }
 
-            await ctx.ExecutePortAsync("done");
+            await ctx.ExecutePortAsync("done").ConfigureAwait(false);
         }
 
         /// <summary>
@@ -95,10 +95,10 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
             for (int i = 0; i < count; i++)
             {
                 ctx.Context["index"] = i;
-                await ctx.ExecutePortAsync("loop");
+                await ctx.ExecutePortAsync("loop").ConfigureAwait(false);
             }
 
-            await ctx.ExecutePortAsync("done");
+            await ctx.ExecutePortAsync("done").ConfigureAwait(false);
         }
 
         /// <summary>
@@ -111,11 +111,11 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         {
             if (condition)
             {
-                await ctx.ExecutePortAsync("loop");
+                await ctx.ExecutePortAsync("loop").ConfigureAwait(false);
             }
             else
             {
-                await ctx.ExecutePortAsync("done");
+                await ctx.ExecutePortAsync("done").ConfigureAwait(false);
             }
         }
 
@@ -303,7 +303,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
         [BlazorFlowNodeMethod(NodeType.Function, "Utility")]
         public static async Task Wait([BlazorFlowInputField] int timeMs)
-            => await Task.Delay(Math.Max(0, timeMs));
+            => await Task.Delay(Math.Max(0, timeMs)).ConfigureAwait(false);
 
         [BlazorFlowNodeMethod(NodeType.Function, "Utility")]
         public static string NewGuid() => Guid.NewGuid().ToString("D");
