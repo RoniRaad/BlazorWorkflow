@@ -37,7 +37,7 @@ namespace BlazorExecutionFlow.Services
                 PromptRequested?.Invoke(this, args);
 
                 // Wait for the user's response
-                var result = await tcs.Task;
+                var result = await tcs.Task.ConfigureAwait(false);
                 return result;
             }
             finally

@@ -118,11 +118,11 @@ namespace BlazorExecutionFlow.Helpers
                         {inputHtml}
                     </div>
                     "
-            );
+            ).ConfigureAwait(false);
 
-            await dfBase.JS.InvokeVoidAsync("nextFrame");
+            await dfBase.JS.InvokeVoidAsync("nextFrame").ConfigureAwait(false);
 
-            await dfBase.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", dfBase.Id, nodeId, new List<List<string>>(), node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" } ));
+            await dfBase.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", dfBase.Id, nodeId, new List<List<string>>(), node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" } )).ConfigureAwait(false);
 
             return nodeId ?? throw new InvalidOperationException("Failed to create node: AddNodeAsync returned null");
         }
@@ -133,7 +133,7 @@ namespace BlazorExecutionFlow.Helpers
                 dfBase.Id,
                 nodeId,
                 nodeStatus
-            );
+            ).ConfigureAwait(false);
         }
     }
 }

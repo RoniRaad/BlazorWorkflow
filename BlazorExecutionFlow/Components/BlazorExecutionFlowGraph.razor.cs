@@ -72,10 +72,10 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
             _selfRef ??= DotNetObjectReference.Create(this);
 
             var opts = Options ?? [];
-            _created = await JS.InvokeAsync<bool>("DrawflowBlazor.create", ElementId, _selfRef, opts);
+            _created = await JS.InvokeAsync<bool>("DrawflowBlazor.create", ElementId, _selfRef, opts).ConfigureAwait(false);
             if (_created)
             {
-                await OnReady.InvokeAsync();
+                await OnReady.InvokeAsync().ConfigureAwait(false);
             }
 
             // Create the wrapper:
@@ -84,40 +84,40 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
                 callObject: (m, a) => JS.InvokeAsync<object?>("DrawflowBlazor.call", ElementId, m, a));
 
             // Clear existing graph
-            await CallAsync<object>("clear");
+            await CallAsync<object>("clear").ConfigureAwait(false);
 
             // Import nodes to drawflow
             var json = DrawflowExporter.ExportToDrawflowJson(Graph.Nodes.Select(x => x.Value));
-            await CallAsync("import", json);
-            await JS.InvokeVoidAsync("nextFrame");
+            await CallAsync("import", json).ConfigureAwait(false);
+            await JS.InvokeVoidAsync("nextFrame").ConfigureAwait(false);
 
             // Re-apply port labels for nodes with multiple outputs
             foreach (var node in Graph.Nodes.Select(x => x.Value))
             {
                 if (node.DeclaredOutputPorts.Count > 0)
                 {
-                    await JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", Id, node.DrawflowNodeId, new List<List<string>>(), node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
+                    await JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", Id, node.DrawflowNodeId, new List<List<string>>(), node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" })).ConfigureAwait(false);
                 }
 
-                await JS.InvokeVoidAsync("DrawflowBlazor.setNodeWidthFromTitle", Id, node.DrawflowNodeId);
+                await JS.InvokeVoidAsync("DrawflowBlazor.setNodeWidthFromTitle", Id, node.DrawflowNodeId).ConfigureAwait(false);
             }
 
             // Update connection positions after initial import to prevent glitches
-            await JS.InvokeVoidAsync("DrawflowBlazor.updateConnectionNodes", Id);
+            await JS.InvokeVoidAsync("DrawflowBlazor.updateConnectionNodes", Id).ConfigureAwait(false);
 
             // Subscribe to Drawflow events to keep Graph in sync
-            await OnAsync("nodeCreated");
-            await OnAsync("nodeMoved");
-            await OnAsync("connectionCreated");
-            await OnAsync("connectionRemoved");
-            await OnAsync("nodeRemoved");
+            await OnAsync("nodeCreated").ConfigureAwait(false);
+            await OnAsync("nodeMoved").ConfigureAwait(false);
+            await OnAsync("connectionCreated").ConfigureAwait(false);
+            await OnAsync("connectionRemoved").ConfigureAwait(false);
+            await OnAsync("nodeRemoved").ConfigureAwait(false);
 
             // Setup keyboard listener for undo/redo
-            await JS.InvokeVoidAsync("setupUndoRedoKeyboard", _selfRef, ElementId);
+            await JS.InvokeVoidAsync("setupUndoRedoKeyboard", _selfRef, ElementId).ConfigureAwait(false);
 
             // Take initial snapshot after graph is fully loaded
             // This gives us a baseline state to return to
-            await Task.Delay(100); // Small delay to ensure everything is settled
+            await Task.Delay(100).ConfigureAwait(false); // Small delay to ensure everything is settled
             TakeSnapshot();
         }
     }
@@ -125,13 +125,13 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
     [JSInvokable]
     public async Task OnUndoRequested()
     {
-        await UndoAsync();
+        await UndoAsync().ConfigureAwait(false);
     }
 
     [JSInvokable]
     public async Task OnRedoRequested()
     {
-        await RedoAsync();
+        await RedoAsync().ConfigureAwait(false);
     }
 
     [JSInvokable]
@@ -145,27 +145,27 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
                 switch (name)
                 {
                     case "nodeCreated":
-                        await HandleNodeCreated(payloadJson);
+                        await HandleNodeCreated(payloadJson).ConfigureAwait(false);
                         break;
 
                     case "nodeMoved":
-                        await HandleNodeMoved(payloadJson);
+                        await HandleNodeMoved(payloadJson).ConfigureAwait(false);
                         break;
 
                     case "connectionCreated":
-                        await HandleConnectionCreated(payloadJson);
+                        await HandleConnectionCreated(payloadJson).ConfigureAwait(false);
                         break;
 
                     case "connectionRemoved":
-                        await HandleConnectionRemoved(payloadJson);
+                        await HandleConnectionRemoved(payloadJson).ConfigureAwait(false);
                         break;
 
                     case "nodeRemoved":
-                        await HandleNodeRemoved(payloadJson);
+                        await HandleNodeRemoved(payloadJson).ConfigureAwait(false);
                         break;
 
                     case "translate":
-                        await HandleCanvasTranslate(payloadJson);
+                        await HandleCanvasTranslate(payloadJson).ConfigureAwait(false);
                         break;
                 }
             }
@@ -216,7 +216,7 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
         {
             try
             {
-                var nodeData = await Editor.RawAsync<JsonElement>("getNodeFromId", nodeId);
+                var nodeData = await Editor.RawAsync<JsonElement>("getNodeFromId", nodeId).ConfigureAwait(false);
                 if (nodeData.ValueKind == JsonValueKind.Object)
                 {
                     if (nodeData.TryGetProperty("pos_x", out var posXProp))
@@ -437,18 +437,18 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
 
     /// <summary>Subscribe to an event name (e.g., "nodeCreated").</summary>
     public async Task OnAsync(string eventName)
-        => await JS.InvokeVoidAsync("DrawflowBlazor.on", ElementId, eventName);
+        => await JS.InvokeVoidAsync("DrawflowBlazor.on", ElementId, eventName).ConfigureAwait(false);
 
     /// <summary>Unsubscribe from an event name.</summary>
     public async Task OffAsync(string eventName)
-        => await JS.InvokeVoidAsync("DrawflowBlazor.off", ElementId, eventName);
+        => await JS.InvokeVoidAsync("DrawflowBlazor.off", ElementId, eventName).ConfigureAwait(false);
 
     /// <summary>Call any Drawflow method dynamically (best-coverage path).</summary>
     public async Task<T?> CallAsync<T>(string methodName, params object[] args)
-        => await JS.InvokeAsync<T?>("DrawflowBlazor.call", ElementId, methodName, args);
+        => await JS.InvokeAsync<T?>("DrawflowBlazor.call", ElementId, methodName, args).ConfigureAwait(false);
 
     public async Task<object?> CallAsync(string methodName, params object[] args)
-        => await JS.InvokeAsync<object?>("DrawflowBlazor.call", ElementId, methodName, args);
+        => await JS.InvokeAsync<object?>("DrawflowBlazor.call", ElementId, methodName, args).ConfigureAwait(false);
 
     public BlazorExecutionFlow.Flow.DrawflowEditorInterop? Editor { get; set; }
     ValueTask CallVoidAsync(string method, params object?[] args)
@@ -456,11 +456,11 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
 
     /// <summary>Get an arbitrary property on the editor.</summary>
     public async Task<T?> GetAsync<T>(string propName)
-        => await JS.InvokeAsync<T?>("DrawflowBlazor.get", ElementId, propName);
+        => await JS.InvokeAsync<T?>("DrawflowBlazor.get", ElementId, propName).ConfigureAwait(false);
 
     /// <summary>Set an arbitrary property on the editor.</summary>
     public async Task SetAsync(string propName, object? value)
-        => await JS.InvokeVoidAsync("DrawflowBlazor.set", ElementId, propName, value);
+        => await JS.InvokeVoidAsync("DrawflowBlazor.set", ElementId, propName, value).ConfigureAwait(false);
     public Graph GenerateGraphV2(DrawflowGraph graph)
     {
         var concurrentNodeDict = new ConcurrentDictionary<string, Node>();
@@ -683,7 +683,7 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
 
             // Pop and restore previous state
             var previousSnapshot = _undoStack.Pop();
-            await RestoreSnapshotAsync(previousSnapshot);
+            await RestoreSnapshotAsync(previousSnapshot).ConfigureAwait(false);
 
             // Push current state to redo stack
             _redoStack.Push(currentSnapshot);
@@ -715,7 +715,7 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
 
             // Pop and restore next state
             var nextSnapshot = _redoStack.Pop();
-            await RestoreSnapshotAsync(nextSnapshot);
+            await RestoreSnapshotAsync(nextSnapshot).ConfigureAwait(false);
 
             // Push current state to undo stack
             _undoStack.Push(currentSnapshot);
@@ -743,13 +743,13 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
         try
         {
             // Clear the Drawflow editor
-            await Editor.ClearAsync();
+            await Editor.ClearAsync().ConfigureAwait(false);
 
             // Import the Drawflow JSON from the snapshot
-            await Editor.ImportAsync(snapshot.DrawflowJson);
+            await Editor.ImportAsync(snapshot.DrawflowJson).ConfigureAwait(false);
 
             // Wait for next frame to ensure DOM is ready
-            await JS.InvokeVoidAsync("nextFrame");
+            await JS.InvokeVoidAsync("nextFrame").ConfigureAwait(false);
 
             // Parse the Drawflow JSON to regenerate the Graph object
             var drawflowGraph = DrawflowGraph.Parse(this, snapshot.DrawflowJson);
@@ -772,14 +772,14 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
                 {
                     await JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", Id, node.DrawflowNodeId,
                         new List<List<string>>(),
-                        node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
+                        node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" })).ConfigureAwait(false);
                 }
 
-                await JS.InvokeVoidAsync("DrawflowBlazor.setNodeWidthFromTitle", Id, node.DrawflowNodeId);
+                await JS.InvokeVoidAsync("DrawflowBlazor.setNodeWidthFromTitle", Id, node.DrawflowNodeId).ConfigureAwait(false);
             }
 
             // Update connection positions
-            await JS.InvokeVoidAsync("DrawflowBlazor.updateConnectionNodes", Id);
+            await JS.InvokeVoidAsync("DrawflowBlazor.updateConnectionNodes", Id).ConfigureAwait(false);
 
             // Reattach event handlers to all nodes
             // This is CRITICAL - without it, nodes won't respond to interactions
@@ -818,8 +818,8 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
 
             if (JS is not null && _created)
             {
-                 await JS.InvokeVoidAsync("DrawflowBlazor.destroy", ElementId);
-                 await JS.InvokeVoidAsync("removeUndoRedoKeyboard", ElementId);
+                 await JS.InvokeVoidAsync("DrawflowBlazor.destroy", ElementId).ConfigureAwait(false);
+                 await JS.InvokeVoidAsync("removeUndoRedoKeyboard", ElementId).ConfigureAwait(false);
             }
         }
         catch { /* ignore */ }
