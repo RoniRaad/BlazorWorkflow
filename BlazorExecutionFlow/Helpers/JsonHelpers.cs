@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace BlazorExecutionFlow.Helpers
@@ -88,6 +89,11 @@ namespace BlazorExecutionFlow.Helpers
             if (string.IsNullOrWhiteSpace(str))
                 return false;
 
+            if (!IsValidJson(str))
+            {
+                return false;
+            }
+
             try
             {
                 parsed = JsonNode.Parse(str);
@@ -99,6 +105,60 @@ namespace BlazorExecutionFlow.Helpers
                 return false;
             }
         }
-    }
 
+        public static bool IsProbablyJson(string? s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return false;
+
+            var span = s.AsSpan().TrimStart();
+            if (span.IsEmpty) return false;
+
+            char c = span[0];
+
+            // Valid JSON can start with:
+            // object, array, string, number, true, false, null
+            return c == '{' || c == '[' || c == '"' ||
+                   c == '-' || (c >= '0' && c <= '9') ||
+                   c == 't' || c == 'f' || c == 'n';
+        }
+
+        public static bool IsValidJson(string? s)
+        {
+            if (!IsProbablyJson(s)) return false;
+
+            try
+            {
+                using var _ = JsonDocument.Parse(s);
+                return true;
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+        }
+
+        public static bool IsValidJson(ReadOnlySpan<byte> utf8Json,
+            JsonReaderOptions readerOptions = default)
+        {
+            if (utf8Json.IsEmpty)
+                return false;
+
+            var reader = new Utf8JsonReader(utf8Json, isFinalBlock: true, state: default);
+
+            if (!JsonDocument.TryParseValue(ref reader, out var doc))
+                return false;
+
+            doc.Dispose();
+
+            var remaining = utf8Json.Slice((int)reader.BytesConsumed);
+            for (int i = 0; i < remaining.Length; i++)
+            {
+                byte b = remaining[i];
+                if (b != (byte)' ' && b != (byte)'\t' && b != (byte)'\r' && b != (byte)'\n')
+                    return false;
+            }
+
+            return true;
+        }
+    }
 }
