@@ -42,7 +42,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 tasks.Add(startNode.Value.ExecuteNode());
             }
 
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
     }
 

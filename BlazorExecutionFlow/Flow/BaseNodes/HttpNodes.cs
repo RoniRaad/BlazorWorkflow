@@ -65,8 +65,8 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
                 request.Content = new StringContent(body, Encoding.UTF8, contentType);
                 ApplyHeaders(request, headers);
 
-                var response = await _httpClient.SendAsync(request, cts.Token);
-                var responseBody = await response.Content.ReadAsStringAsync(cts.Token);
+                var response = await _httpClient.SendAsync(request, cts.Token).ConfigureAwait(false);
+                var responseBody = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
 
                 return new HttpResponse
                 {
@@ -108,8 +108,8 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
                 using var request = new HttpRequestMessage(HttpMethod.Get, url);
                 ApplyHeaders(request, headers);
 
-                var response = await _httpClient.SendAsync(request, cts.Token);
-                var responseBody = await response.Content.ReadAsStringAsync(cts.Token);
+                var response = await _httpClient.SendAsync(request, cts.Token).ConfigureAwait(false);
+                var responseBody = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
 
                 return new HttpResponse
                 {
@@ -157,8 +157,8 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
                 request.Content = new StringContent(body, Encoding.UTF8, contentType);
                 ApplyHeaders(request, headers);
 
-                var response = await _httpClient.SendAsync(request, cts.Token);
-                var responseBody = await response.Content.ReadAsStringAsync(cts.Token);
+                var response = await _httpClient.SendAsync(request, cts.Token).ConfigureAwait(false);
+                var responseBody = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
 
                 return new HttpResponse
                 {
@@ -200,8 +200,8 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
                 using var request = new HttpRequestMessage(HttpMethod.Delete, url);
                 ApplyHeaders(request, headers);
 
-                var response = await _httpClient.SendAsync(request, cts.Token);
-                var body = await response.Content.ReadAsStringAsync(cts.Token);
+                var response = await _httpClient.SendAsync(request, cts.Token).ConfigureAwait(false);
+                var body = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
 
                 return new HttpResponse
                 {
@@ -250,8 +250,8 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
                 request.Content = new StringContent(body, Encoding.UTF8, contentType);
                 ApplyHeaders(request, headers);
 
-                var response = await _httpClient.SendAsync(request, cts.Token);
-                var responseBody = await response.Content.ReadAsStringAsync(cts.Token);
+                var response = await _httpClient.SendAsync(request, cts.Token).ConfigureAwait(false);
+                var responseBody = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
 
                 return new HttpResponse
                 {
@@ -298,7 +298,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
                 using var request = new HttpRequestMessage(HttpMethod.Head, url);
                 ApplyHeaders(request, headers);
 
-                var response = await _httpClient.SendAsync(request, cts.Token);
+                var response = await _httpClient.SendAsync(request, cts.Token).ConfigureAwait(false);
 
                 return new HttpResponse
                 {
@@ -344,8 +344,8 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
                 using var request = new HttpRequestMessage(HttpMethod.Options, url);
                 ApplyHeaders(request, headers);
 
-                var response = await _httpClient.SendAsync(request, cts.Token);
-                var body = await response.Content.ReadAsStringAsync(cts.Token);
+                var response = await _httpClient.SendAsync(request, cts.Token).ConfigureAwait(false);
+                var body = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
 
                 return new HttpResponse
                 {
