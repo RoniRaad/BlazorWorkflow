@@ -429,7 +429,7 @@ role="dialog"
         // To add a new filter: _filterRegistry.Add("filtername", FilterMethod);
         _filterRegistry.Add("search", SearchFilter);
         _filterRegistry.Add("Input", InputOnlyFilter);
-        _filterRegistry.Add("Values", PrimitivesOnlyFilter);
+        _filterRegistry.Add("Environment", EnvironmentOnlyFilter);
         _filterRegistry.Add("Workflow", GlobalOnlyFilter);
         _filterRegistry.Add("Nodes", NodeOnlyFilter);
     }
@@ -1339,17 +1339,18 @@ role="dialog"
     /// <summary>
     /// Filter: Primitives only - excludes nested objects and arrays.
     /// </summary>
-    private bool PrimitivesOnlyFilter(JsonNode? node, string key, int depth)
+    private bool EnvironmentOnlyFilter(JsonNode? node, string key, int depth)
     {
-        // At root level (depth 0), allow objects
         if (depth == 0)
+        {
+            // At depth 1, allow only specific global keys
+            var allowedKeys = new HashSet<string> { "environment" };
+            return allowedKeys.Contains(key.ToLowerInvariant());
+        }
+        else
+        {
             return true;
-
-        // Skip nested objects and arrays
-        if (node is JsonObject or JsonArray)
-            return false;
-
-        return true;
+        }
     }
 
     private bool GlobalOnlyFilter(JsonNode? node, string key, int depth)
@@ -1404,7 +1405,15 @@ role="dialog"
         {
             if (node == null)
             {
-                builder.AddContent(0, "Execute the previous node to see the input");
+                if (string.IsNullOrEmpty(path))
+                {
+                    builder.AddContent(0, "Execute the previous node to see the input");
+                }
+                else
+                {
+                    builder.AddContent(0, "null");
+                }
+
                 return;
             }
 
