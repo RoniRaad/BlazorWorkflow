@@ -91,10 +91,14 @@ namespace BlazorExecutionFlow.Helpers
                 return input;
 
             // Try to parse as-is - if it's already valid JSON, return it
+
             try
             {
-                JsonSerializer.Deserialize<JsonNode>(trimmed);
-                return input; // Already valid JSON
+                if (JsonHelpers.IsValidJson(trimmed))
+                {
+                    JsonSerializer.Deserialize<JsonNode>(trimmed);
+                    return input; // Already valid JSON
+                }
             }
             catch
             {

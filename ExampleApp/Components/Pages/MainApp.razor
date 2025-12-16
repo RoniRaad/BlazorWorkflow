@@ -7,6 +7,7 @@
 @using BlazorExecutionFlow.Models.NodeV2
 @using BlazorExecutionFlow.Services
 @using ExampleApp.Components.Layout
+@using ExampleApp.Components
 @using System.Collections.Frozen
 @layout EmptyLayout
 @inject IWorkflowService WorkflowService
@@ -14,7 +15,11 @@
 
 <PageTitle>@GetPageTitle()</PageTitle>
 
-<div style="height: 100vh; overflow: hidden; background: var(--bef-background); color: var(--bef--bef-text-primary, #f1f5f9);">
+<div style="height: 100vh; overflow: hidden; background: var(--bef-background); color: var(--bef-text-primary); position: relative;">
+    <div style="position: fixed; top: 1rem; right: 1rem; z-index: 1000;">
+        <ThemeToggle @rendermode="InteractiveServer" />
+    </div>
+
     @if (currentView == ViewState.WorkflowList)
     {
         <WorkflowManager

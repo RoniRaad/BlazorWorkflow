@@ -1640,3 +1640,114 @@ h1 {
         border-color: rgba(59, 130, 246, 0.5);
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
+
+/* ===== Light Theme Overrides - Slate & Indigo ===== */
+:root[data-theme="light"] {
+    /* Colors - Background */
+    --color-bg-dark: #cbd5e1;
+    --color-bg-panel: rgba(241, 245, 249, 0.95);
+    --color-bg-gradient-start: #f8fafc;
+    --color-bg-gradient-end: #e2e8f0;
+    /* Colors - Border */
+    --color-border-light: rgba(148, 163, 184, 0.5);
+    --color-border-medium: rgba(100, 116, 139, 0.6);
+    --color-border-dark: rgba(71, 85, 105, 0.7);
+    /* Colors - Text */
+    --color-text-primary: #0f172a;
+    --color-text-secondary: #475569;
+    --color-text-muted: #64748b;
+    /* Colors - Accent */
+    --color-primary: #6366f1;
+    --color-success: #059669;
+    --color-warning: #d97706;
+    --color-danger: #dc2626;
+    --color-info: #6366f1;
+}
+
+:root[data-theme="light"] .sidebar-panel {
+    background: var(--bef-surface-elevated);
+    border-color: var(--color-border-medium);
+}
+
+:root[data-theme="light"] .node-search .form-control {
+    background: var(--bef-surface);
+    border-color: var(--color-border-medium);
+    color: var(--color-text-primary);
+}
+
+:root[data-theme="light"] .node-search .form-control:focus {
+    background: var(--bef-surface-elevated);
+    border-color: var(--color-info);
+}
+
+:root[data-theme="light"] .breadcrumb-nav {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: rgba(99, 102, 241, 0.2);
+}
+
+:root[data-theme="light"] .breadcrumb-back {
+    background: var(--bef-surface);
+    border-color: var(--color-border-medium);
+}
+
+:root[data-theme="light"] .breadcrumb-back:hover {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+:root[data-theme="light"] .category-pill {
+    background: var(--bef-surface);
+    border-color: var(--color-border-medium);
+}
+
+:root[data-theme="light"] .category-pill:hover {
+    background: rgba(99, 102, 241, 0.08);
+}
+
+:root[data-theme="light"] .category-pill.active {
+    background: linear-gradient(135deg, var(--color-info) 0%, #4f46e5 100%);
+    color: white;
+}
+
+:root[data-theme="light"] .node-list::-webkit-scrollbar-track {
+    background: var(--bef-surface);
+}
+
+:root[data-theme="light"] .node-list::-webkit-scrollbar-thumb {
+    background: var(--color-border-medium);
+}
+
+:root[data-theme="light"] .node-item {
+    background: var(--bef-surface-elevated);
+    border-color: var(--color-border-medium);
+}
+
+:root[data-theme="light"] .node-item:hover {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: var(--color-info);
+}
+
+:root[data-theme="light"] .node-item.selected {
+    background: rgba(99, 102, 241, 0.12);
+    border-color: var(--color-info);
+}
+
+:root[data-theme="light"] .node-count {
+    background: rgba(99, 102, 241, 0.08);
+}
+
+:root[data-theme="light"] .node-category {
+    background: rgba(99, 102, 241, 0.12);
+}
+
+:root[data-theme="light"] .export-preview {
+    background: var(--bef-surface);
+    border-color: var(--color-border-medium);
+}
+
+:root[data-theme="light"] .control-buttons .btn {
+    background: linear-gradient(135deg, var(--color-info) 0%, #4f46e5 100%);
+}
+
+:root[data-theme="light"] .control-buttons .btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #818cf8 0%, var(--color-info) 100%);
+}

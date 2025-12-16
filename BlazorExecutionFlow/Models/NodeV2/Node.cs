@@ -540,11 +540,14 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 {
                     try
                     {
-                        // Try to parse the string as JSON
-                        var parsed = JsonNode.Parse(stringValue);
-                        if (parsed != null)
+                        if (JsonHelpers.IsValidJson(stringValue))
                         {
-                            fullResponseAsNode = parsed;
+                            // Try to parse the string as JSON
+                            var parsed = JsonNode.Parse(stringValue);
+                            if (parsed != null)
+                            {
+                                fullResponseAsNode = parsed;
+                            }
                         }
                     }
                     catch

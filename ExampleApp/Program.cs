@@ -1,4 +1,5 @@
 using ExampleApp.Components;
+using ExampleApp.Services;
 using BlazorExecutionFlow.Extensions;
 using BlazorExecutionFlow.Helpers;
 
@@ -10,6 +11,9 @@ builder.Services.AddRazorComponents()
 
 // Register BlazorExecutionFlow services with file-based storage
 builder.Services.AddBlazorExecutionFlow();
+
+// Register theme service
+builder.Services.AddScoped<ThemeService>();
 
 
 var app = builder.Build();
