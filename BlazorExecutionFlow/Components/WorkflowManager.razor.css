@@ -87,7 +87,7 @@
 .environment-dropdown {
     flex: 1;
     padding: 0.625rem 0.875rem;
-    background: rgb(24, 32, 44);
+    background: var(--bef-surface-elevated);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
     color: var(--bef-text-primary);
@@ -150,7 +150,7 @@
 .environment-selector-compact {
     padding: 1rem 1.5rem;
     border-bottom: 1px solid var(--bef-border-color);
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--bef-surface-elevated);
 }
 
 .environment-selector-compact label {
@@ -176,7 +176,7 @@
 .sidebar-search input {
     width: 100%;
     padding: 0.75rem 3rem 0.75rem 1rem;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--bef-surface-elevated);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
     color: var(--bef-text-primary);
@@ -212,7 +212,7 @@
 
 .workflow-item {
     padding: 1rem;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--bef-surface-elevated);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
     cursor: pointer;
@@ -368,7 +368,7 @@
     font-size: 1.5rem;
     font-weight: 700;
     padding: 0.5rem 0.75rem;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--bef-surface);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
     color: var(--bef-text-primary);
@@ -389,7 +389,7 @@
 .workflow-description-input {
     font-size: 0.875rem;
     padding: 0.5rem 0.75rem;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--bef-surface);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
     color: var(--bef-text-secondary);
@@ -420,7 +420,7 @@
     font-size: 2rem;
     font-weight: 700;
     padding: 0.5rem 0.75rem;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--bef-surface);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
     color: var(--bef-text-primary);
@@ -551,7 +551,7 @@
 .param-row input {
     width: 100%;
     padding: 0.5rem 0.75rem;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--bef-surface-elevated);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
     color: var(--bef-text-primary);
@@ -583,7 +583,7 @@
     flex: 1;
     min-width: 120px;
     padding: 0.375rem 0.625rem;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--bef-surface);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
     color: var(--bef-primary-color);
@@ -594,7 +594,7 @@
 
 .input-name-input:hover {
     border-color: var(--bef-primary-color);
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--bef-surface-elevated);
 }
 
 .input-name-input:focus {
@@ -664,7 +664,7 @@
 .env-var-key-input {
     flex: 1;
     padding: 0.5rem 0.75rem;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--bef-surface);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
     color: var(--bef-primary-color);
@@ -682,7 +682,7 @@
 .env-var-value-input {
     width: 100%;
     padding: 0.5rem 0.75rem;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--bef-surface-elevated);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
     color: var(--bef-text-primary);
@@ -697,7 +697,7 @@
 
 .execution-item {
     padding: 1rem;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--bef-surface-elevated);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
 }
@@ -764,7 +764,7 @@
 .output-content {
     margin-top: 0.5rem;
     padding: 0.75rem;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--bef-surface);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
     font-size: 0.85rem;

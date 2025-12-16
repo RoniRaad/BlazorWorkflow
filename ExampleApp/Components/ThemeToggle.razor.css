@@ -1,0 +1,34 @@
+.theme-toggle-btn {
+    background: transparent;
+    border: 1px solid var(--bef-border-color);
+    border-radius: var(--bef-radius);
+    padding: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--bef-text-primary);
+    transition: all var(--transition-fast, 0.15s ease-in-out);
+    width: 40px;
+    height: 40px;
+}
+
+.theme-toggle-btn:hover {
+    background: var(--bef-surface-elevated);
+    border-color: var(--bef-primary-color);
+    transform: scale(1.05);
+}
+
+.theme-toggle-btn:active {
+    transform: scale(0.95);
+}
+
+.theme-toggle-btn svg {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.3s ease-in-out;
+}
+
+.theme-toggle-btn:hover svg {
+    transform: rotate(15deg);
+}

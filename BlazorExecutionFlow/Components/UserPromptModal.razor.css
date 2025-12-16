@@ -57,7 +57,7 @@
     margin: 0;
     font-size: 1.25rem;
     font-weight: 600;
-    color: var(--bef--bef-text-primary, #f1f5f9);
+    color: var(--bef-text-primary, #f1f5f9);
 }
 
 .user-prompt-close {
@@ -74,7 +74,7 @@
 
 .user-prompt-close:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: var(--bef--bef-text-primary, #f1f5f9);
+    color: var(--bef-text-primary, #f1f5f9);
 }
 
 .user-prompt-body {
@@ -87,7 +87,7 @@
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid var(--bef-border-color, rgba(148, 163, 184, 0.2));
     border-radius: var(--bef-radius, 6px);
-    color: var(--bef--bef-text-primary, #f1f5f9);
+    color: var(--bef-text-primary, #f1f5f9);
     font-size: 1rem;
     transition: all 0.15s ease;
 }
@@ -128,7 +128,7 @@
 
 .user-prompt-footer .btn-secondary:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: var(--bef--bef-text-primary, #f1f5f9);
+    color: var(--bef-text-primary, #f1f5f9);
 }
 
 .user-prompt-footer .btn-primary {

@@ -1,4 +1,5 @@
 /* Global CSS Variables */
+/* Default to dark theme, can be overridden by [data-theme="light"] */
 :root {
     --bef-primary-color: #6366f1;
     --bef-primary-hover: #7c3aed;
@@ -15,4 +16,21 @@
     --bef-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
     --bef-radius: 8px;
     --bef-radius-lg: 12px;
+}
+
+/* Light Theme Override - Slate & Indigo */
+:root[data-theme="light"] {
+    --bef-primary-color: #6366f1;
+    --bef-primary-hover: #4f46e5;
+    --bef-primary-light: #818cf8;
+    --bef-secondary-color: #8b5cf6;
+    --bef-background: #e2e8f0;
+    --bef-surface: #f1f5f9;
+    --bef-surface-elevated: #f8fafc;
+    --bef-border-color: #cbd5e1;
+    --bef-text-primary: #0f172a;
+    --bef-text-secondary: #475569;
+    --bef-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --bef-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+    --bef-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
