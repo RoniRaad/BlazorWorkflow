@@ -116,5 +116,6 @@
         workflow.PreviousExecutions.Add(execution);
         workflow.ModifiedAt = DateTime.Now;
         WorkflowService.UpdateWorkflow(workflow);
+        await InvokeAsync(StateHasChanged);
     }
 }

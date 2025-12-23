@@ -867,7 +867,6 @@ h1 {
     overflow-y: auto;
     overflow-x: hidden;
     padding-right: 0.5rem;
-    padding-bottom: 40px;
     max-height: calc(100vh - 350px);
 }
 

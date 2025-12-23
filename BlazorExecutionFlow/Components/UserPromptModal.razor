@@ -5,7 +5,7 @@
 
 @if (_isVisible)
 {
-    <div class="user-prompt-overlay" @onclick="HandleOverlayClick">
+    <div class="bef-lib user-prompt-overlay" @onclick="HandleOverlayClick">
         <div class="user-prompt-modal" @onclick:stopPropagation="true">
             <div class="user-prompt-header">
                 <h3>@_currentMessage</h3>
