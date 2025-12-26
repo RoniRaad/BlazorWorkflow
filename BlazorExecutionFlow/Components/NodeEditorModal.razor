@@ -26,7 +26,8 @@ tabindex="-1"
 aria-labelledby="nodeEditorLabel"
 aria-modal="true"
 role="dialog"
-@onkeydown="HandleKeyDown">
+@onkeydown="HandleKeyDown"
+@ref="_modalRef">
     <div class="modal-dialog node-editor-dialog">
         <div class="modal-content node-editor-content">
             <div class="modal-header node-editor-header">
@@ -176,27 +177,29 @@ role="dialog"
                                                     <span class="param-type-hint">(@formattedType)</span>
                                                 }
                                             </label>
-                                            <div class="input-with-preview">
+                                            <div class="input-with-preview" style="position: relative;">
                                                 <textarea value="@inputMapping.From"
-                                                          @oninput="@((e) => { inputMapping.From = e.Value?.ToString() ?? ""; TriggerAutoSave(); })"
+                                                          @oninput="@(e => { inputMapping.From = e.Value?.ToString() ?? string.Empty; TriggerAutoSave(); })"
                                                           class="form-control form-control-sm droppable-input mapping-input"
                                                           placeholder="e.g. input.name or {{input.name}}"
                                                           aria-label="Scriban template for @inputMapping.To"
-                                                          @ondragover="@((e) => HandleDragOver(e))"
+                                                          @ondragover="@(e => HandleDragOver(e))"
                                                           @ondragover:preventDefault="true"
-                                                          @ondrop="@((e) => HandleDrop(e, inputMapping))"
-                                                          style="padding-right: 15px"
+                                                          @ondrop="@(e => HandleDrop(e, inputMapping))"
+                                                          style="padding-right: 40px"
                                                           rows="1"
                                                           required
                                                           data-role="payload-path"></textarea>
-                                                <div class="preview-button-container" style="top: -5px;position: absolute;right: -9px;">
+                                                <div class="preview-button-container">
                                                     <button type="button"
-                                                            class="btn-preview"
-                                                            style="background-color: transparent;border: transparent;color: white;"
-                                                            @onclick="@((e) => TogglePreview(inputMapping, e))"
+                                                            class="btn-preview eye-icon-button"
+                                                            @onclick="@(e => TogglePreview(inputMapping, e))"
                                                             @onclick:stopPropagation="true"
                                                             title="Toggle preview">
-                                                        👁
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                            <circle cx="12" cy="12" r="3"></circle>
+                                                        </svg>
                                                     </button>
                                                     @if (_previewMapping == inputMapping)
                                                     {
@@ -420,6 +423,7 @@ role="dialog"
     private bool _isEditingNodeName = false;
     private string _editingNodeName = "";
     private ElementReference _nodeNameInputRef;
+    private ElementReference _modalRef;
 
     protected override void OnInitialized()
     {
@@ -438,6 +442,16 @@ role="dialog"
     {
         if (firstRender)
         {
+            // Focus the modal so keyboard events work immediately
+            try
+            {
+                await _modalRef.FocusAsync();
+            }
+            catch
+            {
+                // Ignore focus errors
+            }
+
             // Add event listener for tab key and auto-resize for textareas
             await JSRuntime.InvokeVoidAsync("eval", @"
                 // Auto-resize function

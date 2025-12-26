@@ -75,7 +75,7 @@
                     </div>
                 }
 
-                <div class="node-list" @ref="nodeListRef">
+                <div class="node-list" style="@(EffectiveSelectedCategory is not null || selectedNodeIndex != -1 ? "max-height:calc(100vh - 440px)" : "")" @ref="nodeListRef">
                     @if (EffectiveSelectedCategory == null)
                     {
                         @* Show sections *@
@@ -492,6 +492,8 @@
 
         // Update connection positions after import to prevent glitches
         await _base.JS.InvokeVoidAsync("DrawflowBlazor.updateConnectionNodes", _base.Id);
+
+        AttachNodeEventHandlers();
     }
 
     private async Task ExecuteInputNodes()
@@ -805,6 +807,13 @@
             // Clear existing graph
             await _base.CallAsync<object>("clear");
 
+            // Update Graph.Nodes to match imported nodes
+            Graph.Nodes.Clear();
+            foreach (var node in nodes)
+            {
+                Graph.Nodes[node.DrawflowNodeId] = node;
+            }
+
             // Import nodes to drawflow
             var json = DrawflowExporter.ExportToDrawflowJson(nodes);
             await _base.CallAsync("import", json);
@@ -821,6 +830,8 @@
 
             // Update connection positions after import to prevent glitches
             await _base.JS.InvokeVoidAsync("DrawflowBlazor.updateConnectionNodes", _base.Id);
+
+            AttachNodeEventHandlers();
 
             showImportModal = false;
             _importJson = null;
