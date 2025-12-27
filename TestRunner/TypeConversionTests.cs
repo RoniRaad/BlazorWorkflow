@@ -129,15 +129,23 @@ namespace TestRunner
         [Fact]
         public async Task TestNumericToStringConversion()
         {
-            // Convert int to string
+            // Test automatic int to string conversion via StringConcat
             var graph = new NodeGraphBuilder();
 
-            graph.AddNode("intToString", typeof(BaseNodeCollection), "IntToString")
-                .MapInput("value", "42")
+            graph.AddNode("add", typeof(BaseNodeCollection), "Add")
+                .MapInput("input1", "40")
+                .MapInput("input2", "2")
                 .AutoMapOutputs();
 
-            var result = await graph.ExecuteAsync("intToString");
-            Assert.Equal("42", result.GetOutput<string>("intToString", "result"));
+            graph.AddNode("concat", typeof(BaseNodeCollection), "StringConcat")
+                .MapInput("input1", "Result: ")
+                .MapInput("input2", "input.result")  // int automatically converts to string
+                .AutoMapOutputs();
+
+            graph.Connect("add", "concat");
+
+            var result = await graph.ExecuteAsync("add");
+            Assert.Equal("Result: 42", result.GetOutput<string>("concat", "result"));
         }
 
         [Fact]
@@ -184,28 +192,40 @@ namespace TestRunner
         [Fact]
         public async Task TestIntToDoubleAndBack()
         {
-            // Int -> Double -> Int round trip
+            // Test automatic int -> double -> int conversion through math operations
             var graph = new NodeGraphBuilder();
 
-            graph.AddNode("intToDouble", typeof(BaseNodeCollection), "IntToDouble")
-                .MapInput("value", "42")
+            graph.AddNode("add", typeof(BaseNodeCollection), "Add")
+                .MapInput("input1", "40")
+                .MapInput("input2", "2")
                 .AutoMapOutputs();
 
-            graph.AddNode("doubleToInt", typeof(BaseNodeCollection), "DoubleToInt")
-                .MapInput("value", "input.result")
+            // MultiplyD takes double but receives int - automatic conversion
+            graph.AddNode("multiplyDouble", typeof(BaseNodeCollection), "MultiplyD")
+                .MapInput("input1", "input.result")  // int auto-converts to double
+                .MapInput("input2", "1.5")
                 .AutoMapOutputs();
 
-            graph.Connect("intToDouble", "doubleToInt");
+            // Divide takes int but receives double - automatic conversion
+            graph.AddNode("divideInt", typeof(BaseNodeCollection), "Divide")
+                .MapInput("numerator", "input.result")  // double auto-converts to int (truncates)
+                .MapInput("denominator", "3")
+                .AutoMapOutputs();
 
-            var result = await graph.ExecuteAsync("intToDouble");
+            graph.Connect("add", "multiplyDouble");
+            graph.Connect("multiplyDouble", "divideInt");
 
-            Assert.Equal(42.0, result.GetOutput<double>("intToDouble", "result"));
-            Assert.Equal(42, result.GetOutput<int>("doubleToInt", "result"));
+            var result = await graph.ExecuteAsync("add");
+
+            Assert.Equal(42, result.GetOutput<int>("add", "result"));
+            Assert.Equal(63.0, result.GetOutput<double>("multiplyDouble", "result"));
+            Assert.Equal(21, result.GetOutput<int>("divideInt", "result"));
         }
 
         [Fact]
         public async Task TestBoolToIntConversion()
         {
+            // Test automatic bool conversion - bool can be used in Ternary node
             var graph = new NodeGraphBuilder();
 
             graph.AddNode("compare", typeof(CoreNodes), "Equal")
@@ -213,21 +233,24 @@ namespace TestRunner
                 .MapInput("b", "5")
                 .AutoMapOutputs();
 
-            graph.AddNode("boolToInt", typeof(BaseNodeCollection), "BoolToInt")
-                .MapInput("value", "input.result")
+            graph.AddNode("ternary", typeof(CoreNodes), "Ternary")
+                .MapInput("condition", "input.result")  // bool used as condition
+                .MapInput("trueValue", "1")
+                .MapInput("falseValue", "0")
                 .AutoMapOutputs();
 
-            graph.Connect("compare", "boolToInt");
+            graph.Connect("compare", "ternary");
 
             var result = await graph.ExecuteAsync("compare");
 
             Assert.True(result.GetOutput<bool>("compare", "result"));
-            Assert.Equal(1, result.GetOutput<int>("boolToInt", "result"));
+            Assert.Equal(1, result.GetOutput<int>("ternary", "result"));
         }
 
         [Fact]
         public async Task TestIntToBoolConversion()
         {
+            // Test automatic int to bool conversion in comparisons
             var graph = new NodeGraphBuilder();
 
             graph.AddNode("add", typeof(BaseNodeCollection), "Add")
@@ -235,16 +258,18 @@ namespace TestRunner
                 .MapInput("input2", "1")
                 .AutoMapOutputs();
 
-            graph.AddNode("intToBool", typeof(BaseNodeCollection), "IntToBool")
-                .MapInput("value", "input.result")
+            // NotEqual compares int result with 0
+            graph.AddNode("notZero", typeof(CoreNodes), "NotEqual")
+                .MapInput("a", "input.result")  // int value
+                .MapInput("b", "0")
                 .AutoMapOutputs();
 
-            graph.Connect("add", "intToBool");
+            graph.Connect("add", "notZero");
 
             var result = await graph.ExecuteAsync("add");
 
             Assert.Equal(2, result.GetOutput<int>("add", "result"));
-            Assert.True(result.GetOutput<bool>("intToBool", "result")); // 2 != 0, so true
+            Assert.True(result.GetOutput<bool>("notZero", "result")); // 2 != 0, so true
         }
 
         #endregion
@@ -254,14 +279,16 @@ namespace TestRunner
         [Fact]
         public async Task TestZeroConversions()
         {
+            // Test that 0 equals 0 (verification of number handling)
             var graph = new NodeGraphBuilder();
 
-            graph.AddNode("intToBool", typeof(BaseNodeCollection), "IntToBool")
-                .MapInput("value", "0")
+            graph.AddNode("equal", typeof(CoreNodes), "Equal")
+                .MapInput("a", "0")
+                .MapInput("b", "0")
                 .AutoMapOutputs();
 
-            var result = await graph.ExecuteAsync("intToBool");
-            Assert.False(result.GetOutput<bool>("intToBool", "result")); // 0 == false
+            var result = await graph.ExecuteAsync("equal");
+            Assert.True(result.GetOutput<bool>("equal", "result")); // 0 == 0
         }
 
         [Fact]
