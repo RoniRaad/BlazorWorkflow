@@ -148,7 +148,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
         /// <summary>
         /// Compares two objects for equality. Handles numbers, strings, nulls, and other types intelligently.
         /// </summary>
-        [BlazorFlowNodeMethod(NodeType.Function, "Comparison")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
         public static bool Equal(object? a, object? b)
         {
             // Handle nulls
@@ -185,13 +185,13 @@ namespace BlazorWorkflow.Flow.BaseNodes
             }
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Comparison")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
         public static bool NotEqual(object? a, object? b) => !Equal(a, b);
 
         /// <summary>
         /// Checks if first value is greater than second. Works with numbers, dates, and strings.
         /// </summary>
-        [BlazorFlowNodeMethod(NodeType.Function, "Comparison")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
         public static bool GreaterThan(object? a, object? b)
         {
             if (a == null || b == null) return false;
@@ -235,19 +235,19 @@ namespace BlazorWorkflow.Flow.BaseNodes
             }
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Comparison")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
         public static bool GreaterOrEqual(object? a, object? b)
         {
             return Equal(a, b) || GreaterThan(a, b);
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Comparison")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
         public static bool LessThan(object? a, object? b)
         {
             return !GreaterOrEqual(a, b);
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Comparison")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
         public static bool LessOrEqual(object? a, object? b)
         {
             return !GreaterThan(a, b);
@@ -256,7 +256,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
         /// <summary>
         /// Compares two numeric values with a tolerance for floating point precision.
         /// </summary>
-        [BlazorFlowNodeMethod(NodeType.Function, "Comparison")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
         public static bool EqualWithTolerance(object? a, object? b, [BlazorFlowInputField] double tolerance = 0.0)
         {
             try
@@ -275,7 +275,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
             }
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Comparison")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
         public static bool StringEquals(string a, string b, [BlazorFlowInputField] bool ignoreCase = false)
         {
             var comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;

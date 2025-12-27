@@ -272,10 +272,6 @@ namespace BlazorWorkflow.Flow.BaseNodes
             }
         }
 
-        // ==========================================
-        // HEAD
-        // ==========================================
-
         /// <summary>
         /// Performs an HTTP HEAD request to retrieve headers without body.
         /// Useful for checking resource existence or metadata.
@@ -310,53 +306,6 @@ namespace BlazorWorkflow.Flow.BaseNodes
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"[ERROR] HttpHead failed: {ex.Message}");
-                return new HttpResponse
-                {
-                    Body = ex.Message,
-                    StatusCode = 0,
-                    Success = false
-                };
-            }
-        }
-
-        // ==========================================
-        // OPTIONS
-        // ==========================================
-
-        /// <summary>
-        /// Performs an HTTP OPTIONS request to discover allowed methods.
-        /// </summary>
-        [BlazorFlowNodeMethod(NodeType.Function, "HTTP")]
-        public static async Task<HttpResponse> HttpOptions(
-            [BlazorFlowInputField] string url,
-            [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,
-            [BlazorFlowInputField] int timeoutMs = 10000)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-                return new HttpResponse { Body = string.Empty, StatusCode = 0, Success = false };
-
-            using var cts = timeoutMs > 0
-                ? new CancellationTokenSource(timeoutMs)
-                : new CancellationTokenSource();
-
-            try
-            {
-                using var request = new HttpRequestMessage(HttpMethod.Options, url);
-                ApplyHeaders(request, headers);
-
-                var response = await _httpClient.SendAsync(request, cts.Token).ConfigureAwait(false);
-                var body = await response.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
-
-                return new HttpResponse
-                {
-                    Body = body,
-                    StatusCode = (int)response.StatusCode,
-                    Success = response.IsSuccessStatusCode
-                };
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"[ERROR] HttpOptions failed: {ex.Message}");
                 return new HttpResponse
                 {
                     Body = ex.Message,

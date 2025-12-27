@@ -109,9 +109,22 @@ namespace BlazorWorkflow.Models.NodeV2
             }
 
             // First pass: create all node objects
+            var skippedNodes = new List<string>();
             foreach (var serNode in uniqueNodes.Values)
             {
-                var method = MethodInfoHelpers.FromSerializableString(serNode.MethodSignature);
+                MethodInfo? method;
+                try
+                {
+                    method = MethodInfoHelpers.FromSerializableString(serNode.MethodSignature);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    // Method no longer exists (e.g., removed node like IntToString, JsonGet)
+                    // Skip this node and continue loading the rest
+                    Console.WriteLine($"Skipping node '{serNode.Id}' - method not found: {ex.Message}");
+                    skippedNodes.Add(serNode.Id);
+                    continue;
+                }
 
                 var node = new Node
                 {
@@ -136,31 +149,47 @@ namespace BlazorWorkflow.Models.NodeV2
                 nodeMap[serNode.Id] = node;
             }
 
+            // Log skipped nodes if any
+            if (skippedNodes.Count > 0)
+            {
+                Console.WriteLine($"Warning: Skipped {skippedNodes.Count} node(s) with missing methods during workflow load.");
+            }
+
             // Second pass: restore connections
             for (int i = 0; i < nodes.Count; i++)
             {
                 var node = nodes[i];
                 var serNode = uniqueNodes[node.Id];
 
-                // Restore input connections
+                // Restore input connections (skip connections to removed nodes)
                 foreach (var inputId in serNode.InputNodeIds)
                 {
                     if (nodeMap.TryGetValue(inputId, out var inputNode))
                     {
                         node.InputNodes.Add(inputNode);
                     }
+                    else if (skippedNodes.Contains(inputId))
+                    {
+                        // Connection to a removed node - skip silently
+                        continue;
+                    }
                 }
 
-                // Restore output connections
+                // Restore output connections (skip connections to removed nodes)
                 foreach (var outputId in serNode.OutputNodeIds)
                 {
                     if (nodeMap.TryGetValue(outputId, out var outputNode))
                     {
                         node.OutputNodes.Add(outputNode);
                     }
+                    else if (skippedNodes.Contains(outputId))
+                    {
+                        // Connection to a removed node - skip silently
+                        continue;
+                    }
                 }
 
-                // Restore output port connections
+                // Restore output port connections (skip connections to removed nodes)
                 foreach (var (portName, connectedIds) in serNode.OutputPortConnections)
                 {
                     foreach (var connectedId in connectedIds)
@@ -168,6 +197,11 @@ namespace BlazorWorkflow.Models.NodeV2
                         if (nodeMap.TryGetValue(connectedId, out var connectedNode))
                         {
                             node.AddOutputConnection(portName, connectedNode);
+                        }
+                        else if (skippedNodes.Contains(connectedId))
+                        {
+                            // Connection to a removed node - skip silently
+                            continue;
                         }
                     }
                 }

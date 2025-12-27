@@ -29,9 +29,14 @@
                     <h5>Workflows</h5>
                     <small>@Workflows.Count workflow@(Workflows.Count == 1 ? "" : "s")</small>
                 </div>
-                <button class="btn-primary-custom" @onclick="HandleCreateWorkflow">
-                    <i class="bi bi-plus-lg"></i> New
-                </button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-primary-custom" @onclick="HandleCreateWorkflow">
+                        <i class="bi bi-plus-lg"></i> New
+                    </button>
+                    <button class="btn-secondary-custom" @onclick="HandleImportWorkflow">
+                        <i class="bi bi-upload"></i> Import
+                    </button>
+                </div>
             </div>
 
             <div class="environment-selector-compact">
@@ -133,16 +138,23 @@
                               placeholder="Add a description..."
                               rows="2"></textarea>
                 </div>
-                <div class="detail-actions">
-                    <button class="btn-success-custom" @onclick="HandleExecuteWorkflow">
-                        <i class="bi bi-play-fill"></i> Execute
-                    </button>
-                    <button class="btn-primary-custom" @onclick="@(() => OnEditWorkflow.InvokeAsync(SelectedWorkflow.Id))">
-                        <i class="bi bi-pencil"></i> Edit
-                    </button>
-                    <button class="btn-danger-custom" @onclick="HandleDeleteWorkflow">
-                        <i class="bi bi-trash"></i> Delete
-                    </button>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div class="detail-actions">
+                        <button class="btn-success-custom" @onclick="HandleExecuteWorkflow" style="width: 100px; text-align: center;">
+                            <i class="bi bi-play-fill"></i> Execute
+                        </button>
+                        <button class="btn-primary-custom" @onclick="@(() => OnEditWorkflow.InvokeAsync(SelectedWorkflow.Id))" style="width: 100px; text-align: center;">
+                            <i class="bi bi-pencil"></i> Edit
+                        </button>
+                    </div>
+                    <div class="detail-actions">
+                        <button class="btn-secondary-custom" @onclick="HandleExportWorkflow" style="width: 100px; text-align: center;">
+                            <i class="bi bi-download"></i> Export
+                        </button>
+                        <button class="btn-danger-custom" @onclick="HandleDeleteWorkflow" style="width: 100px; text-align: center;">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -407,10 +419,73 @@
             </div>
         }
     </div>
+
+    @* Export Modal *@
+    @if (!string.IsNullOrWhiteSpace(_exportJson))
+    {
+        <div class="export-modal-backdrop" @onclick="() => _exportJson = null">
+            <div class="export-modal" @onclick:stopPropagation="true">
+                <div class="export-modal-header">
+                    <h3>Export Workflow</h3>
+                    <button class="btn-close" @onclick="() => _exportJson = null">×</button>
+                </div>
+                <div class="export-modal-body">
+                    <button class="btn btn-sm btn-primary mb-2" @onclick="CopyExportToClipboard">Copy to Clipboard</button>
+                    <textarea class="export-textarea" readonly>@_exportJson</textarea>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* Import Modal *@
+    @if (_showImportModal)
+    {
+        <div class="export-modal-backdrop" @onclick="() => _showImportModal = false">
+            <div class="export-modal" @onclick:stopPropagation="true">
+                <div class="export-modal-header">
+                    <h3>Import Workflow</h3>
+                    <button class="btn-close" @onclick="() => _showImportModal = false">×</button>
+                </div>
+                <div class="export-modal-body">
+                    <textarea class="export-textarea" @bind="_importJson" placeholder="Paste workflow JSON here..."></textarea>
+                    <div class="mt-2">
+                        <button class="btn btn-sm btn-primary" @onclick="HandleImportConfirm">Import</button>
+                        <button class="btn btn-sm btn-secondary" @onclick="() => _showImportModal = false">Cancel</button>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(_importError))
+                    {
+                        <div class="alert alert-danger mt-2">@_importError</div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    @* Delete Confirmation Modal *@
+    @if (_showDeleteConfirmation)
+    {
+        <div class="export-modal-backdrop" @onclick="CancelDeleteWorkflow">
+            <div class="export-modal" @onclick:stopPropagation="true" style="max-width: 400px;">
+                <div class="export-modal-header">
+                    <h3>Delete Workflow</h3>
+                    <button class="btn-close" @onclick="CancelDeleteWorkflow">×</button>
+                </div>
+                <div class="export-modal-body">
+                    <p>Are you sure you want to delete "@SelectedWorkflow?.Name"?</p>
+                    <p class="text-muted" style="font-size: 0.875rem;">This action cannot be undone.</p>
+                    <div class="mt-3" style="display: flex; gap: 8px; justify-content: flex-end;">
+                        <button class="btn-secondary-custom" @onclick="CancelDeleteWorkflow">Cancel</button>
+                        <button class="btn-danger-custom" @onclick="ConfirmDeleteWorkflow">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 </div>
 
 @inject IWorkflowService WorkflowService
 @inject IEnvironmentVariablesService EnvVarService
+@inject IJSRuntime JS
 
 @code {
     [Parameter] public EventCallback<string> OnEditWorkflow { get; set; }
@@ -423,6 +498,15 @@
     private System.Threading.Timer? _refreshTimer;
     private int currentExecutionPage = 0;
     private const int executionsPerPage = 10;
+
+    // Export/Import state
+    private string? _exportJson;
+    private bool _showImportModal = false;
+    private string? _importJson;
+    private string? _importError;
+
+    // Delete confirmation state
+    private bool _showDeleteConfirmation = false;
 
     // Cache workflows to prevent losing changes when properties are accessed
     private List<WorkflowInfo> _workflowsCache = new();
@@ -545,15 +629,33 @@
     {
         if (selectedWorkflowId != null)
         {
+            _showDeleteConfirmation = true;
+        }
+    }
+
+    private void ConfirmDeleteWorkflow()
+    {
+        if (selectedWorkflowId != null)
+        {
             WorkflowService.DeleteWorkflow(selectedWorkflowId);
             var workflowToRemove = _workflowsCache.FirstOrDefault(w => w.Id == selectedWorkflowId);
             if (workflowToRemove != null)
             {
                 _workflowsCache.Remove(workflowToRemove);
             }
-            selectedWorkflowId = null;
+
+            // Automatically select another workflow if available
+            var remainingWorkflows = _workflowsCache.OrderByDescending(w => w.ModifiedAt).ToList();
+            selectedWorkflowId = remainingWorkflows.FirstOrDefault()?.Id;
+
+            _showDeleteConfirmation = false;
             StateHasChanged();
         }
+    }
+
+    private void CancelDeleteWorkflow()
+    {
+        _showDeleteConfirmation = false;
     }
 
     private void HandleAddInput()
@@ -839,5 +941,146 @@
     {
         currentExecutionPage = newPage;
         StateHasChanged();
+    }
+
+    private void HandleExportWorkflow()
+    {
+        if (SelectedWorkflow == null) return;
+
+        try
+        {
+            var nodes = SelectedWorkflow.FlowGraph.Nodes.Select(x => x.Value).ToList();
+            _exportJson = FlowSerializer.SerializeFlow(nodes, SelectedWorkflow.Name, new Dictionary<string, object>
+            {
+                { "description", SelectedWorkflow.Description ?? string.Empty },
+                { "createdAt", SelectedWorkflow.CreatedAt },
+                { "modifiedAt", SelectedWorkflow.ModifiedAt },
+                { "inputs", SelectedWorkflow.Inputs }
+            });
+        }
+        catch (Exception ex)
+        {
+            _exportJson = $"Error exporting workflow: {ex.Message}";
+        }
+    }
+
+    private async Task CopyExportToClipboard()
+    {
+        if (string.IsNullOrWhiteSpace(_exportJson)) return;
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", _exportJson);
+    }
+
+    private void HandleImportWorkflow()
+    {
+        _showImportModal = true;
+        _importJson = null;
+        _importError = null;
+    }
+
+    private void HandleImportConfirm()
+    {
+        if (string.IsNullOrWhiteSpace(_importJson))
+        {
+            _importError = "Please paste workflow JSON";
+            return;
+        }
+
+        try
+        {
+            _importError = null;
+
+            // Deserialize the workflow
+            var nodes = FlowSerializer.DeserializeFlow(_importJson, out var metadata);
+
+            if (nodes.Count == 0)
+            {
+                _importError = "No valid nodes found in the workflow. The workflow may contain only removed/missing nodes.";
+                return;
+            }
+
+            // Always create a new workflow on import
+            // Generate a unique name if one with the same name already exists
+            var workflowName = GetUniqueWorkflowName(metadata.FlowName);
+
+            // Create a new workflow for the import
+            var targetWorkflow = new WorkflowInfo
+            {
+                Id = Guid.NewGuid().ToString(),
+                Name = workflowName,
+                Description = string.Empty,
+                CreatedAt = DateTime.Now,
+                ModifiedAt = DateTime.Now,
+                FlowGraph = new Graph(),
+                Inputs = new Dictionary<string, string>(),
+                PreviousExecutions = new List<WorkflowExecution>(),
+                IncludeAsNode = false
+            };
+            WorkflowService.AddWorkflow(targetWorkflow);
+            _workflowsCache.Add(targetWorkflow);
+            selectedWorkflowId = targetWorkflow.Id;
+
+            // Clear existing nodes and import new ones
+            targetWorkflow.FlowGraph.Nodes.Clear();
+            foreach (var node in nodes)
+            {
+                targetWorkflow.FlowGraph.Nodes[node.DrawflowNodeId] = node;
+            }
+
+            // Update metadata if present
+            if (metadata.Metadata.TryGetValue("description", out var description))
+            {
+                targetWorkflow.Description = description?.ToString() ?? string.Empty;
+            }
+
+            if (metadata.Metadata.TryGetValue("inputs", out var inputs))
+            {
+                // Handle different possible types from JSON deserialization
+                if (inputs is Dictionary<string, object> inputsDict)
+                {
+                    targetWorkflow.Inputs = inputsDict.ToDictionary(kvp => kvp.Key, kvp => kvp.Value?.ToString() ?? string.Empty);
+                }
+                else if (inputs is System.Text.Json.JsonElement jsonElement && jsonElement.ValueKind == System.Text.Json.JsonValueKind.Object)
+                {
+                    targetWorkflow.Inputs = new Dictionary<string, string>();
+                    foreach (var prop in jsonElement.EnumerateObject())
+                    {
+                        targetWorkflow.Inputs[prop.Name] = prop.Value.ToString();
+                    }
+                }
+            }
+
+            targetWorkflow.ModifiedAt = DateTime.Now;
+            WorkflowService.UpdateWorkflow(targetWorkflow);
+
+            _showImportModal = false;
+            _importJson = null;
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _importError = $"Import failed: {ex.Message}";
+        }
+    }
+
+    private string GetUniqueWorkflowName(string baseName)
+    {
+        // Check if the base name already exists
+        if (!Workflows.Any(w => w.Name.Equals(baseName, StringComparison.OrdinalIgnoreCase)))
+        {
+            return baseName;
+        }
+
+        // Find a unique name by appending a number
+        int counter = 1;
+        string candidateName;
+        do
+        {
+            candidateName = $"{baseName} ({counter})";
+            counter++;
+        }
+        while (Workflows.Any(w => w.Name.Equals(candidateName, StringComparison.OrdinalIgnoreCase)));
+
+        return candidateName;
     }
 }

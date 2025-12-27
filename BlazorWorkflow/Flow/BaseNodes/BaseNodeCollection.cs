@@ -73,16 +73,16 @@ namespace BlazorWorkflow.Flow.BaseNodes
 
         // ---------- Floating-point helpers ----------
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math/Float")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
         public static double AddD(double input1, double input2) => input1 + input2;
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math/Float")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
         public static double SubtractD(double input1, double input2) => input1 - input2;
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math/Float")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
         public static double MultiplyD(double input1, double input2) => input1 * input2;
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math/Float")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
         public static double DivideD(double numerator, double denominator)
         {
             if (Math.Abs(denominator) < double.Epsilon)
@@ -90,44 +90,44 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return numerator / denominator;
         }
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math/Float")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
         public static double Pow(double @base, double exponent) => Math.Pow(@base, exponent);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math/Float")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
         public static double Sqrt(double value) => Math.Sqrt(value);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math/Float")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
         public static double Sin(double value) => Math.Sin(value);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math/Float")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
         public static double Cos(double value) => Math.Cos(value);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math/Float")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
         public static double Tan(double value) => Math.Tan(value);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math/Float")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
         public static double ClampD(double value, double min, double max)
         {
             if (min > max) (min, max) = (max, min);
             return Math.Min(Math.Max(value, min), max);
         }
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math/Float")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
         public static double AbsD(double value) => Math.Abs(value);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math/Float")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
         public static double RoundD(double value, int digits = 0) => Math.Round(value, digits);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math/Float")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
         public static double FloorD(double value) => Math.Floor(value);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math/Float")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
         public static double CeilingD(double value) => Math.Ceiling(value);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math/Float")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
         public static double Lerp(double start, double end, double t)
             => start + (end - start) * ClampD(t, 0.0, 1.0);
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math/Float")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
         public static double Sign(double input)
             => Math.Sign(input);
 
@@ -219,19 +219,19 @@ namespace BlazorWorkflow.Flow.BaseNodes
 
         // ---------- Parsing / Conversion ----------
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Parsing")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Convert")]
         public static int ParseInt(string text, [BlazorFlowInputField] int @default = 0)
             => int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v) ? v : @default;
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Parsing")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Convert")]
         public static double ParseDouble(string text, [BlazorFlowInputField] double @default = 0.0)
             => double.TryParse(text, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var v) ? v : @default;
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Parsing")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Convert")]
         public static bool ParseBool(string text, [BlazorFlowInputField] bool @default = false)
             => bool.TryParse(text, out var v) ? v : @default;
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Parsing")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Convert")]
         public static DateTime ParseDateTime(
             string text,
             [BlazorFlowInputField] string format,
@@ -253,23 +253,8 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return DateTime.MinValue;
         }
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Parsing")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Convert")]
         public static string ToStringInvariant(double value) => value.ToString(CultureInfo.InvariantCulture);
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Parsing")]
-        public static string IntToString(int value) => value.ToString(CultureInfo.InvariantCulture);
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Parsing")]
-        public static double IntToDouble(int value) => value;
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Parsing")]
-        public static int DoubleToInt(double value) => (int)value;
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Parsing")]
-        public static int BoolToInt(bool value) => value ? 1 : 0;
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Parsing")]
-        public static bool IntToBool(int value) => value != 0;
 
         // ---------- Random ----------
 
@@ -294,93 +279,49 @@ namespace BlazorWorkflow.Flow.BaseNodes
 
         // ---------- Date/Time ----------
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Date/Time")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "DateTime")]
         public static DateTime UtcNow() => DateTime.UtcNow;
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Date/Time")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "DateTime")]
         public static DateTime NowLocal() => DateTime.Now;
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Date/Time")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "DateTime")]
         public static DateTime AddSeconds(DateTime dateTime, double seconds) => dateTime.AddSeconds(seconds);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Date/Time")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "DateTime")]
         public static DateTime AddMilliseconds(DateTime dateTime, double milliseconds) => dateTime.AddMilliseconds(milliseconds);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Date/Time")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "DateTime")]
         public static DateTime AddDays(DateTime dateTime, double days) => dateTime.AddDays(days);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Date/Time")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "DateTime")]
         public static string FormatIso8601(DateTime dateTime)
             => dateTime.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Date/Time")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "DateTime")]
         public static long ToUnixSeconds(DateTime dateTime)
             => new DateTimeOffset(dateTime.ToUniversalTime()).ToUnixTimeSeconds();
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Date/Time")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "DateTime")]
         public static DateTime FromUnixSeconds(long seconds)
             => DateTimeOffset.FromUnixTimeSeconds(seconds).UtcDateTime;
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Date/Time")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "DateTime")]
         public static double DateDiffDays(DateTime startDate, DateTime endDate)
         {
             return (endDate - startDate).TotalDays;
         }
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Date/Time")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "DateTime")]
         public static double DateDiffHours(DateTime startDate, DateTime endDate)
         {
             return (endDate - startDate).TotalHours;
         }
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Date/Time")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "DateTime")]
         public static string FormatDateTime(DateTime dateTime, [BlazorFlowInputField] string format = "yyyy-MM-dd HH:mm:ss")
         {
             return dateTime.ToString(format);
-        }
-
-        // ---------- JSON helpers (for payload work) ----------
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "JSON")]
-        public static JsonObject JsonMerge(JsonObject? left, JsonObject? right)
-        {
-            var result = new JsonObject();
-            if (left != null) result.Merge(left);
-            if (right != null) result.Merge(right);
-            return result;
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "JSON")]
-        public static JsonNode? JsonGet(JsonObject? obj, [BlazorFlowInputField] string path)
-        {
-            if (obj == null || string.IsNullOrWhiteSpace(path)) return null;
-            return obj.GetByPath(path);
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "JSON")]
-        public static JsonObject JsonSet(JsonObject? obj, [BlazorFlowInputField] string path, JsonNode? value)
-        {
-            obj ??= new JsonObject();
-            var clone = new JsonObject();
-            clone.Merge(obj);
-            if (!string.IsNullOrWhiteSpace(path))
-            {
-                clone.SetByPath(path, value);
-            }
-            return clone;
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "JSON")]
-        public static JsonObject JsonSetString(JsonObject? obj, [BlazorFlowInputField] string path, [BlazorFlowInputField] string value)
-        {
-            obj ??= new JsonObject();
-            var clone = new JsonObject();
-            clone.Merge(obj);
-            if (!string.IsNullOrWhiteSpace(path))
-            {
-                clone.SetByPath(path, value);
-            }
-            return clone;
         }
 
         // ---------- Math Utilities ----------
