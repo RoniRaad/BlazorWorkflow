@@ -17,6 +17,7 @@ on:
 env:
   DOTNET_VERSION: '8.0.x'
   PROJECT_PATH: 'BlazorWorkflow/BlazorWorkflow.csproj'
+
   PACKAGE_OUTPUT_DIR: 'packages'
 
 jobs:
