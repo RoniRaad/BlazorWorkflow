@@ -31,7 +31,7 @@
     border: none;
     border-bottom: 2px solid transparent;
     color: var(--bw-text-secondary);
-    font-size: 0.9rem;
+    font-size: 14.4px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -53,7 +53,7 @@
 }
 
 .tab-button i {
-    font-size: 1rem;
+    font-size: 16px;
 }
 
 .config-sidebar-content {
@@ -71,7 +71,7 @@
 }
 
 .environment-selector label {
-    font-size: 0.75rem;
+    font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -91,7 +91,7 @@
     border: 1px solid var(--bw-border-color);
     border-radius: var(--bw-radius);
     color: var(--bw-text-primary);
-    font-size: 0.9rem;
+    font-size: 14.4px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.15s ease;
@@ -118,7 +118,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.125rem;
+    font-size: 18px;
 }
 
 .btn-icon-secondary:hover {
@@ -137,14 +137,14 @@
 
 .sidebar-header h5 {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: 20px;
     font-weight: 700;
     color: var(--bw-text-primary);
 }
 
 .sidebar-header small {
     color: var(--bw-text-secondary);
-    font-size: 0.875rem;
+    font-size: 14px;
 }
 
 .environment-selector-compact {
@@ -154,7 +154,7 @@
 }
 
 .environment-selector-compact label {
-    font-size: 0.75rem;
+    font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -180,7 +180,7 @@
     border: 1px solid var(--bw-border-color);
     border-radius: var(--bw-radius);
     color: var(--bw-text-primary);
-    font-size: 0.9rem;
+    font-size: 14.4px;
 }
 
 .sidebar-search input::placeholder {
@@ -239,19 +239,19 @@
 }
 
 .workflow-item-header h6 {
-    font-size: 0.95rem;
+    font-size: 15.2px;
     font-weight: 600;
     margin: 0;
     color: var(--bw-text-primary);
 }
 
 .workflow-item-header small {
-    font-size: 0.75rem;
+    font-size: 12px;
     color: var(--bw-text-secondary);
 }
 
 .workflow-desc {
-    font-size: 0.85rem;
+    font-size: 13.6px;
     color: var(--bw-text-secondary);
     margin: 0 0 12px;
     line-height: 1.4;
@@ -261,7 +261,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.75rem;
+    font-size: 12px;
 }
 
 .workflow-status.success {
@@ -283,7 +283,7 @@
 }
 
 .empty-state i {
-    font-size: 3rem;
+    font-size: 48px;
     margin-bottom: 16px;
     opacity: 0.5;
 }
@@ -310,7 +310,7 @@
 }
 
 .detail-header h2 {
-    font-size: 2rem;
+    font-size: 32px;
     font-weight: 700;
     margin: 0 0 8px;
     color: var(--bw-text-primary);
@@ -344,7 +344,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
+    font-size: 16px;
     opacity: 0.6;
 }
 
@@ -365,7 +365,7 @@
 }
 
 .workflow-name-input {
-    font-size: 1.5rem;
+    font-size: 24px;
     font-weight: 700;
     padding: 8px 12px;
     background: var(--bw-surface);
@@ -387,7 +387,7 @@
 }
 
 .workflow-description-input {
-    font-size: 0.875rem;
+    font-size: 14px;
     padding: 8px 12px;
     background: var(--bw-surface);
     border: 1px solid var(--bw-border-color);
@@ -417,7 +417,7 @@
 }
 
 .environment-name-input {
-    font-size: 2rem;
+    font-size: 32px;
     font-weight: 700;
     padding: 8px 12px;
     background: var(--bw-surface);
@@ -449,7 +449,7 @@
     border-bottom: 1px solid var(--bw-border-color);
     display: flex;
     gap: 32px;
-    font-size: 0.875rem;
+    font-size: 14px;
     color: var(--bw-text-secondary);
 }
 
@@ -482,7 +482,7 @@
 }
 
 .detail-meta .checkbox-label span {
-    font-size: 0.875rem;
+    font-size: 14px;
     font-weight: 500;
     color: var(--bw-text-secondary);
     white-space: nowrap;
@@ -517,7 +517,7 @@
 }
 
 .section-header h5 {
-    font-size: 1.125rem;
+    font-size: 18px;
     font-weight: 600;
     margin: 0;
     color: var(--bw-text-primary);
@@ -544,7 +544,7 @@
 
 .param-key strong {
     color: var(--bw-text-primary);
-    font-size: 0.875rem;
+    font-size: 14px;
     flex-shrink: 0;
 }
 
@@ -555,7 +555,7 @@
     border: 1px solid var(--bw-border-color);
     border-radius: var(--bw-radius);
     color: var(--bw-text-primary);
-    font-size: 0.875rem;
+    font-size: 14px;
 }
 
 .param-row input:focus {
@@ -587,7 +587,7 @@
     border: 1px solid var(--bw-border-color);
     border-radius: var(--bw-radius);
     color: var(--bw-primary-color);
-    font-size: 0.875rem;
+    font-size: 14px;
     font-weight: 600;
     transition: all 0.15s ease;
 }
@@ -611,7 +611,7 @@
 .input-badge {
     display: inline-block;
     padding: 2px 8px;
-    font-size: 0.7rem;
+    font-size: 11.2px;
     font-weight: 600;
     border-radius: 9999px;
     text-transform: uppercase;
@@ -640,7 +640,7 @@
 }
 
 .unused-inputs-divider span {
-    font-size: 0.75rem;
+    font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--bw-text-secondary);
@@ -668,7 +668,7 @@
     border: 1px solid var(--bw-border-color);
     border-radius: var(--bw-radius);
     color: var(--bw-primary-color);
-    font-size: 0.875rem;
+    font-size: 14px;
     font-weight: 500;
     font-family: monospace;
 }
@@ -686,7 +686,7 @@
     border: 1px solid var(--bw-border-color);
     border-radius: var(--bw-radius);
     color: var(--bw-text-primary);
-    font-size: 0.875rem;
+    font-size: 14px;
 }
 
 .env-var-value-input:focus {
@@ -722,7 +722,7 @@
 }
 
 .execution-header i {
-    font-size: 1.25rem;
+    font-size: 20px;
 }
 
 .execution-item.success i {
@@ -739,12 +739,12 @@
 
 .execution-header strong {
     color: var(--bw-text-primary);
-    font-size: 0.875rem;
+    font-size: 14px;
 }
 
 .execution-header small {
     color: var(--bw-text-secondary);
-    font-size: 0.75rem;
+    font-size: 12px;
 }
 
 .execution-header .badge {
@@ -757,13 +757,13 @@
     background: rgba(239, 68, 68, 0.1);
     border: 1px solid rgba(239, 68, 68, 0.3);
     border-radius: var(--bw-radius);
-    font-size: 0.875rem;
+    font-size: 14px;
     color: #fca5a5;
     font-family: monospace;
 }
 
 .execution-output summary {
-    font-size: 0.85rem;
+    font-size: 13.6px;
     color: var(--bw-text-secondary);
     cursor: pointer;
     padding: 8px 0;
@@ -776,7 +776,7 @@
     background: var(--bw-surface);
     border: 1px solid var(--bw-border-color);
     border-radius: var(--bw-radius);
-    font-size: 0.85rem;
+    font-size: 13.6px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -808,13 +808,13 @@
 }
 
 .empty-detail i {
-    font-size: 4rem;
+    font-size: 64px;
     margin-bottom: 24px;
     opacity: 0.5;
 }
 
 .empty-detail h3 {
-    font-size: 1.5rem;
+    font-size: 24px;
     font-weight: 600;
     margin: 0 0 8px;
 }
@@ -828,7 +828,7 @@
     padding: 8px 16px;
     border-radius: var(--bw-radius);
     border: none;
-    font-size: 0.875rem;
+    font-size: 14px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.15s ease;
@@ -884,7 +884,7 @@
     color: #ef4444;
     cursor: pointer;
     padding: 4px;
-    font-size: 1rem;
+    font-size: 16px;
     transition: all 0.15s ease;
 }
 
@@ -894,7 +894,7 @@
 }
 
 .badge {
-    font-size: 0.75rem;
+    font-size: 12px;
     padding: 4px 10px;
     background: rgba(99, 102, 241, 0.15);
     color: var(--bw-primary-color);
@@ -935,7 +935,7 @@
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-    font-size: 1.25rem;
+    font-size: 20px;
     margin-left: auto;
 }
 
@@ -966,7 +966,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.875rem;
+    font-size: 14px;
 }
 
 .pagination-btn:hover:not(:disabled) {
@@ -982,5 +982,5 @@
 
 .pagination-info {
     color: var(--bw-text-secondary);
-    font-size: 0.875rem;
+    font-size: 14px;
 }

@@ -79,11 +79,11 @@ role="dialog"
                 title="Execute Flow">
                     @if (isExecuting)
                     {
-                        <span class="spinner-border" role="status" aria-hidden="true" style="width: 2.5rem; height: 2.5rem;"></span>
+                        <span class="spinner-border" role="status" aria-hidden="true" style="width: 40px; height: 40px;"></span>
                     }
                     else
                     {
-                        <svg viewBox="0 0 24 24" fill="currentColor" style="width: 2.5rem; height: 2.5rem;">
+                        <svg viewBox="0 0 24 24" fill="currentColor" style="width: 40px; height: 40px;">
                             <path d="M8 5v14l11-7z"/>
                         </svg>
                     }
@@ -347,10 +347,10 @@ role="dialog"
                                 <div class="panel-section" data-role="port-driven-info">
                                     <div class="alert alert-info" style="margin: 0;">
                                         <strong>Port-Driven Node</strong>
-                                        <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem;">
+                                        <p style="margin: 8px 0 0 0; font-size: 14px;">
                                             This node uses port-driven execution with outputs: <strong>@string.Join(", ", BackingNode.DeclaredOutputPorts)</strong>
                                         </p>
-                                        <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: #666;">
+                                        <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
                                             Data provided by this node varies by port. Output mappings are not used—downstream nodes receive data automatically based on which port they're connected to.
                                         </p>
                                     </div>
