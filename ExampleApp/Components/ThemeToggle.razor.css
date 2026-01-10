@@ -2,7 +2,7 @@
     background: transparent;
     border: 1px solid var(--bw-border-color);
     border-radius: var(--bw-radius);
-    padding: 0.5rem;
+    padding: 8px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
