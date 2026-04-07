@@ -239,7 +239,7 @@ namespace BlazorWorkflow.Helpers
                     <div class='title-container'>
                         <div class='title' style='text-align: center;'>{node.Name}</div>
                     </div>
-                    <div class='main-content' style='min-width:300px'>
+                    <div class='main-content' style='min-width:200px'>
                     </div>
                     """;
         }

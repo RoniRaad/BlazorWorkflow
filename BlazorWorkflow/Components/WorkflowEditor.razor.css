@@ -6,8 +6,8 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 24px;
-    gap: 24px;
+    padding: 20px;
+    gap: 16px;
     overflow: hidden;
     height: 100%;
     background-color: var(--bw-background);
@@ -21,24 +21,25 @@
 }
 
 .page-title {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 700;
     color: var(--bw-text-primary, #f1f5f9);
-    letter-spacing: -0.025em;
+    letter-spacing: -0.02em;
 }
 
 .page-description {
     color: var(--bw-text-secondary);
-    font-size: 14px;
+    font-size: 13px;
     margin-top: 4px;
+    opacity: 0.8;
 }
 
 .canvas-container {
     flex: 1;
     background: var(--bw-surface-elevated);
-    border-radius: var(--bw-radius-lg);
-    border: 1px solid var(--bw-border-color);
-    box-shadow: var(--bw-shadow-lg);
+    border-radius: 14px;
+    border: 1px solid rgba(55, 75, 110, 0.3);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255,255,255,0.03);
     overflow: hidden;
     position: relative;
 }
@@ -69,26 +70,30 @@
 }
 
 .btn-primary {
-    background: var(--bw-primary-color);
-    color: white;
-    box-shadow: var(--bw-shadow-sm);
+    background: rgba(99, 102, 241, 0.15);
+    color: #a5b4fc;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    box-shadow: none;
 }
 
 .btn-primary:hover {
-    background: var(--bw-primary-hover);
-    box-shadow: var(--bw-shadow-md);
+    background: rgba(99, 102, 241, 0.25);
+    border-color: rgba(99, 102, 241, 0.5);
+    color: #c7d2fe;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
     transform: translateY(-1px);
 }
 
 .btn-outline-secondary {
     background: transparent;
     color: var(--bw-text-secondary);
-    border: 1px solid var(--bw-border-color);
+    border: 1px solid rgba(55, 75, 110, 0.3);
 }
 
 .btn-outline-secondary:hover {
-    background: var(--bw-background);
+    background: rgba(255, 255, 255, 0.04);
     color: var(--bw-text-primary, #f1f5f9);
+    border-color: rgba(55, 75, 110, 0.5);
 }
 
 /* Workflow Name Editing */
@@ -104,34 +109,33 @@
 }
 
 .btn-icon-edit-small {
-    background: rgba(255, 255, 255, 0.05);
+    background: transparent;
     border: 1px solid transparent;
     color: var(--bw-text-secondary);
-    padding: 6px;
-    border-radius: var(--bw-radius);
+    padding: 5px;
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.15s ease;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 14px;
-    opacity: 0.6;
+    opacity: 0.4;
 }
 
 .btn-icon-edit-small:hover {
-    background: rgba(99, 102, 241, 0.1);
-    color: var(--bw-primary-color);
-    border-color: rgba(99, 102, 241, 0.3);
+    background: rgba(99, 102, 241, 0.08);
+    color: #a5b4fc;
     opacity: 1;
 }
 
 .workflow-name-input-editor {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 700;
     padding: 6px 10px;
     background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--bw-border-color);
-    border-radius: var(--bw-radius);
+    border: 1px solid rgba(55, 75, 110, 0.3);
+    border-radius: 10px;
     color: var(--bw-text-primary, #f1f5f9);
     transition: all 0.15s ease;
     width: 100%;
@@ -139,13 +143,13 @@
 }
 
 .workflow-name-input-editor:hover {
-    border-color: var(--bw-primary-color);
+    border-color: rgba(99, 102, 241, 0.4);
 }
 
 .workflow-name-input-editor:focus {
     outline: none;
-    border-color: var(--bw-primary-color);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
 }
 
 /* Responsive Design */

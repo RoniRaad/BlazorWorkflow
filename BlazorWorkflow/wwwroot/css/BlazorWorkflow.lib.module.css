@@ -69,23 +69,117 @@
     --bw-shadow-lg-alt: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     --shadow-xl: 0 24px 80px rgba(0, 0, 0, 0.85);
     /* ===== Drawflow Theme Tokens (scoped) ===== */
-    --df-radius: 12px;
-    --df-canvas: #1f2430;
-    --df-node: #252c3b;
-    --df-node-2: #2c3548;
-    --df-border: #3a465d;
-    --df-shadow: rgba(0,0,0,.38);
-    --df-text: #e9edf6;
-    --df-text-weak: #c3cad6;
-    --df-text-muted: #9aa4b5;
+    --df-radius: 14px;
+    --df-canvas: #151a27;
+    --df-node: #1c2235;
+    --df-node-2: #232b42;
+    --df-border: #2e3a54;
+    --df-shadow: rgba(0,0,0,.5);
+    --df-text: #e4e8f4;
+    --df-text-weak: #b0bbd0;
+    --df-text-muted: #7e8da6;
     --df-heading: #f4f7fd;
-    --df-accent: #60a5fa; /* cyan-ish blue */
-    --df-accent-2: #a855f7; /* violet */
+    --df-accent: #6ea0ff; /* soft blue */
+    --df-accent-2: #b07cff; /* soft violet */
 
     --df-port: #3a465e;
-    --df-port-hover: #495979;
-    --df-wire: #6ea0ff;
-    --df-wire-active: #9ed0ff;
+    --df-port-hover: #5a7aad;
+    --df-wire: #5b8eff;
+    --df-wire-active: #8ab8ff;
+    --df-wire-glow: rgba(91, 142, 255, 0.25);
+
+    --df-node-title-height: 32px;
+}
+
+/* ==========================================================================
+   Host-Style Isolation Reset
+   Neutralise common host / Bootstrap / Tailwind rules that leak into .bw-lib.
+   We reset the properties that frameworks most aggressively set, then let the
+   library's own rules re-apply what we need.
+   ========================================================================== */
+
+/* Reset all elements inside the boundary so inherited host fonts, colors,
+   box-sizing etc. don't bleed through. */
+.bw-lib *,
+.bw-lib *::before,
+.bw-lib *::after {
+    box-sizing: border-box !important;
+}
+
+/* Buttons - hosts commonly style these globally */
+.bw-lib button,
+.bw-lib .btn {
+    font-family: inherit !important;
+    line-height: 1.5 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    text-decoration: none !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+}
+
+/* Inputs & selects - Bootstrap/Tailwind aggressively style these */
+.bw-lib input,
+.bw-lib textarea,
+.bw-lib select,
+.bw-lib .form-control,
+.bw-lib .form-select {
+    font-family: inherit !important;
+    line-height: 1.5 !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+}
+
+/* Modals - Bootstrap's .modal and .modal-backdrop are heavily opinionated */
+.bw-lib .modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    z-index: 1050 !important;
+    width: 100% !important;
+    height: 100% !important;
+    outline: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+}
+
+.bw-lib .modal-dialog {
+    position: relative !important;
+    pointer-events: none !important;
+    margin: 0 auto !important;
+}
+
+.bw-lib .modal-content {
+    position: relative !important;
+    pointer-events: auto !important;
+    background-clip: padding-box !important;
+    outline: 0 !important;
+}
+
+/* Prevent host heading resets from affecting node titles */
+.bw-lib h1, .bw-lib h2, .bw-lib h3,
+.bw-lib h4, .bw-lib h5, .bw-lib h6 {
+    margin: 0 !important;
+    font-family: inherit !important;
+    line-height: 1.3 !important;
+}
+
+/* Prevent host link styles leaking in */
+.bw-lib a {
+    color: inherit !important;
+    text-decoration: none !important;
+}
+
+/* Prevent host list resets */
+.bw-lib ul, .bw-lib ol {
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+}
+
+/* Prevent host SVG fill overrides */
+.bw-lib svg {
+    overflow: visible !important;
 }
 
     /* ===== Light Theme Override (Dim / Less Dark, noticeably lifted) ===== */
@@ -127,21 +221,22 @@
         --bw-shadow-lg-alt: 0 26px 46px -34px rgba(0, 0, 0, 0.28);
         --shadow-xl: 0 24px 80px rgba(0, 0, 0, 0.45);
         /* Drawflow Light Theme Override (Dim / Lifted) */
-        --df-canvas: #2a3650;
-        --df-node: #32405c;
-        --df-node-2: #394a69;
-        --df-border: #5a7396;
-        --df-shadow: rgba(0, 0, 0, 0.28);
+        --df-canvas: #222d44;
+        --df-node: #2a3858;
+        --df-node-2: #314168;
+        --df-border: #4a6590;
+        --df-shadow: rgba(0, 0, 0, 0.35);
         --df-text: #eaf0f8;
         --df-text-weak: #d5deea;
         --df-text-muted: #a5b4cf;
         --df-heading: #f4f7fd;
-        --df-accent: #60a5fa;
-        --df-accent-2: #a855f7;
+        --df-accent: #6ea0ff;
+        --df-accent-2: #b07cff;
         --df-port: #58739a;
         --df-port-hover: #6b89b7;
-        --df-wire: #6ea0ff;
-        --df-wire-active: #9ed0ff;
+        --df-wire: #5b8eff;
+        --df-wire-active: #8ab8ff;
+        --df-wire-glow: rgba(91, 142, 255, 0.2);
     }
 
     /* ==========================================================================
@@ -1454,43 +1549,58 @@
         position: relative !important;
         overflow: hidden !important;
         border: 1px solid var(--df-border) !important;
-        border-radius: 12px !important;
-        background: var(--df-canvas) !important;
-        background-image: radial-gradient(transparent 0 10px, rgba(148, 163, 184, 0.02) 10px), linear-gradient(0deg, rgba(148, 163, 184, 0.02), rgba(148, 163, 184, 0.02)) !important;
-        background-size: 16px 16px, 100% 100% !important;
+        border-radius: 14px !important;
+        background-color: var(--df-canvas) !important;
+        background-image:
+            radial-gradient(circle, rgba(110, 160, 255, 0.04) 1px, transparent 1px) !important;
+        background-size: 24px 24px !important;
         color: var(--df-text) !important;
     }
 
     /* Node Base */
     .bw-lib .drawflow .drawflow-node,
     .bw-lib .drawflow-node {
-        width: var(--df-title-width, 200px) !important;
-        min-width: 150px !important;
+        width: var(--df-title-width, 210px) !important;
+        min-width: 160px !important;
         background-color: var(--df-node) !important;
+        background-image: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 50%) !important;
         border-radius: var(--df-radius) !important;
         border: 1px solid var(--df-border) !important;
-        box-shadow: 0 10px 24px var(--df-shadow) !important;
+        box-shadow:
+            0 2px 4px rgba(0,0,0,0.2),
+            0 8px 24px var(--df-shadow),
+            inset 0 1px 0 rgba(255,255,255,0.04) !important;
         color: var(--df-text) !important;
-        padding-bottom: 6px !important;
-        transition: box-shadow 0.2s ease, transform 0.2s ease !important;
+        padding-bottom: 8px !important;
+        transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease !important;
     }
+
+        .bw-lib .drawflow .drawflow-node:hover,
+        .bw-lib .drawflow-node:hover {
+            border-color: rgba(110, 160, 255, 0.25) !important;
+            box-shadow:
+                0 2px 4px rgba(0,0,0,0.2),
+                0 12px 32px rgba(0,0,0,0.45),
+                inset 0 1px 0 rgba(255,255,255,0.04) !important;
+        }
 
         .bw-lib .drawflow .drawflow-node .drawflow_content_node,
         .bw-lib .drawflow-node .drawflow_content_node {
             display: block !important;
-            margin-top: 15px !important;
+            margin-top: 18px !important;
         }
 
         .bw-lib .drawflow-node .inputs {
-            padding-top: 13px !important;
+            padding-top: 16px !important;
         }
 
         .bw-lib .drawflow-node .outputs {
-            padding-top: 13px !important;
+            padding-top: 16px !important;
         }
 
             .bw-lib .drawflow-node .outputs .computed_node .port_label {
-                color: #72b663 !important;
+                color: #6ec95e !important;
+                font-weight: 500 !important;
             }
 
         /* Ports */
@@ -1499,8 +1609,9 @@
         .bw-lib .drawflow-node .input,
         .bw-lib .drawflow-node .output {
             background: var(--df-port) !important;
-            transition: all 0.2s ease !important;
-            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2) !important;
+            transition: all 0.18s ease !important;
+            box-shadow: 0 0 0 2.5px rgba(0, 0, 0, 0.25), inset 0 1px 2px rgba(0,0,0,0.2) !important;
+            border: none !important;
         }
 
             .bw-lib .drawflow .drawflow-node .input:hover,
@@ -1508,8 +1619,8 @@
             .bw-lib .drawflow-node .input:hover,
             .bw-lib .drawflow-node .output:hover {
                 background: var(--df-port-hover) !important;
-                transform: scale(1.15) !important;
-                box-shadow: 0 0 0 3px rgba(110, 160, 255, 0.3) !important;
+                transform: scale(1.25) !important;
+                box-shadow: 0 0 0 3px rgba(110, 160, 255, 0.35), 0 0 12px rgba(110, 160, 255, 0.2) !important;
             }
 
         /* Title bar */
@@ -1520,42 +1631,52 @@
             left: 0 !important;
             z-index: 2 !important;
             width: 100% !important;
-            height: 24px !important;
-            background: linear-gradient(90deg, var(--df-node-2), var(--df-node)) !important;
+            height: var(--df-node-title-height) !important;
+            background: linear-gradient(135deg, var(--df-node-2) 0%, var(--df-node) 100%) !important;
             border-radius: var(--df-radius) var(--df-radius) 0 0 !important;
-            box-shadow: 0 1px 0 rgba(0,0,0,0.35) !important;
+            border-bottom: 1px solid rgba(255,255,255,0.04) !important;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.3) !important;
             display: flex !important;
             align-items: center !important;
         }
 
         .bw-lib .drawflow .selected .title-container,
         .bw-lib .drawflow-node.selected .title-container {
-            background: linear-gradient(90deg, var(--df-accent), var(--df-accent-2)) !important;
+            background: linear-gradient(135deg, var(--df-accent) 0%, var(--df-accent-2) 100%) !important;
+            border-bottom-color: rgba(255,255,255,0.15) !important;
         }
 
         .bw-lib .drawflow .title,
         .bw-lib .drawflow-node .title {
             color: var(--df-heading) !important;
-            padding-left: 30px !important;
-            padding-right: 24px !important;
+            padding-left: 34px !important;
+            padding-right: 12px !important;
             white-space: nowrap !important;
-            line-height: 24px !important;
-            font-size: 13px !important;
-            font-weight: 500 !important;
+            line-height: var(--df-node-title-height) !important;
+            font-size: 12.5px !important;
+            font-weight: 600 !important;
+            letter-spacing: 0.02em !important;
             flex: 1 !important;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
         }
 
         .bw-lib .drawflow .drawflow-node.selected .title,
         .bw-lib .drawflow-node.selected .title {
             color: #020617 !important;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.15) !important;
         }
 
         /* Selected node */
         .bw-lib .drawflow .drawflow-node.selected,
         .bw-lib .drawflow-node.selected {
             background: var(--df-node-2) !important;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 0 0 0 2px var(--df-accent) !important;
-            transform: translateY(-1px) !important;
+            background-image: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 40%) !important;
+            border-color: var(--df-accent) !important;
+            box-shadow:
+                0 0 0 1.5px var(--df-accent),
+                0 4px 12px rgba(110, 160, 255, 0.15),
+                0 12px 32px rgba(0, 0, 0, 0.35) !important;
+            transform: translateY(-2px) !important;
         }
 
     /* Type box */
@@ -1565,25 +1686,27 @@
         left: 0 !important;
         background: var(--df-accent) !important;
         z-index: 3 !important;
-        width: 24px !important;
-        height: 24px !important;
-        border-radius: var(--df-radius) 0 var(--df-radius) 0 !important;
+        width: var(--df-node-title-height) !important;
+        height: var(--df-node-title-height) !important;
+        border-radius: var(--df-radius) 0 8px 0 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        box-shadow: 1px 0 0 rgba(0,0,0,0.15) !important;
     }
 
     .bw-lib .drawflow .drawflow-node.selected .node-type-id-container,
     .bw-lib .drawflow-node.selected .node-type-id-container {
-        background: transparent !important;
+        background: rgba(0,0,0,0.15) !important;
     }
 
     .bw-lib .node-type-id {
         text-align: center !important;
-        font-size: 16px !important;
+        font-size: 15px !important;
         color: var(--df-heading) !important;
         margin: 0 !important;
-        text-shadow: 0 0 4px rgba(0,0,0,0.6) !important;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.5) !important;
+        line-height: 1 !important;
     }
 
     /* Text helpers */
@@ -1600,16 +1723,19 @@
     /* Port labels */
     .bw-lib .drawflow .drawflow-node .port_type,
     .bw-lib .drawflow-node .port_type {
-        color: var(--df-text-weak) !important;
-        font-size: 10px !important;
+        color: var(--df-text-muted) !important;
+        font-size: 9.5px !important;
         font-weight: 500 !important;
-        letter-spacing: 0.02em !important;
+        letter-spacing: 0.04em !important;
+        text-transform: uppercase !important;
+        opacity: 0.8 !important;
     }
 
     .bw-lib .drawflow .drawflow-node .port_label,
     .bw-lib .drawflow-node .port_label {
-        color: var(--df-text-muted) !important;
-        font-size: 12px !important;
+        color: var(--df-text-weak) !important;
+        font-size: 11.5px !important;
+        font-weight: 400 !important;
     }
 
     /* Wires (with flow animation) */
@@ -1617,33 +1743,46 @@
     .bw-lib .connection .main-path {
         fill: none !important;
         stroke: var(--df-wire) !important;
-        stroke-width: 3 !important;
+        stroke-width: 2.5 !important;
         stroke-linecap: round !important;
-        opacity: 0.75 !important;
-        stroke-dasharray: 21 4 !important;
-        animation: df-flow 0.8s linear infinite !important;
-        transition: opacity 0.2s ease, stroke-width 0.2s ease !important;
+        stroke-linejoin: round !important;
+        opacity: 0.6 !important;
+        stroke-dasharray: 8 4 !important;
+        animation: df-flow 0.6s linear infinite !important;
+        transition: opacity 0.2s ease, stroke-width 0.2s ease, stroke 0.2s ease !important;
+        filter: drop-shadow(0 0 3px var(--df-wire-glow)) !important;
     }
+
+        .bw-lib .drawflow .connection:hover .main-path,
+        .bw-lib .connection:hover .main-path {
+            stroke-width: 3 !important;
+            opacity: 0.85 !important;
+        }
 
         .bw-lib .drawflow .connection.selected .main-path,
         .bw-lib .drawflow .connection .main-path.selected,
         .bw-lib .connection.selected .main-path,
         .bw-lib .connection .main-path.selected {
             stroke: var(--df-wire-active) !important;
+            stroke-width: 3 !important;
             opacity: 1 !important;
+            filter: drop-shadow(0 0 6px rgba(138, 184, 255, 0.4)) !important;
         }
 
     /* Drawflow error state */
     .bw-lib .drawflow .drawflow-node.node-error,
     .bw-lib .drawflow-node.node-error {
-        border-color: #dc2626 !important;
-        box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.3) !important;
+        border-color: rgba(220, 38, 38, 0.7) !important;
+        box-shadow:
+            0 0 0 1.5px rgba(220, 38, 38, 0.5),
+            0 0 20px rgba(220, 38, 38, 0.15),
+            0 8px 24px var(--df-shadow) !important;
         animation: errorPulse 2s ease-in-out infinite !important;
     }
 
         .bw-lib .drawflow .drawflow-node.node-error .title-container,
         .bw-lib .drawflow-node.node-error .title-container {
-            background: rgba(220, 38, 38, 0.2) !important;
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.3) 0%, rgba(220, 38, 38, 0.15) 100%) !important;
         }
 
 /* ==========================================================================
@@ -1745,6 +1884,6 @@
     }
 
     to {
-        stroke-dashoffset: -25;
+        stroke-dashoffset: -12;
     }
 }
