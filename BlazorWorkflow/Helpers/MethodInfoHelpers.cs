@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using BlazorWorkflow.Flow.Attributes;
 
 namespace BlazorWorkflow.Helpers
 {
@@ -41,7 +42,8 @@ namespace BlazorWorkflow.Helpers
                 .Where(tn => tn != null)
                 .ToArray()!;
 
-            var method = type.GetMethod(methodName, paramTypes);
+            // Only search public static methods - node methods must be public static
+            var method = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static, binder: null, types: paramTypes, modifiers: null);
 
             // If exact match fails, try to find method by name and parameter count
             if (method == null)
@@ -79,6 +81,17 @@ namespace BlazorWorkflow.Helpers
                 }
 
                 throw new InvalidOperationException(errorMsg);
+            }
+
+            // Validate: method must have [BlazorFlowNodeMethod] attribute.
+            // This is a defence-in-depth check - the caller (MethodInfoJsonConverter)
+            // also validates against NodeRegistry, but this ensures any code path
+            // through FromSerializableString cannot resolve non-node methods.
+            if (method.GetCustomAttribute<BlazorFlowNodeMethodAttribute>() is null)
+            {
+                throw new InvalidOperationException(
+                    $"Security violation: method '{type.FullName}.{methodName}' is not marked with " +
+                    $"[BlazorFlowNodeMethod]. Only attributed node methods can be deserialized.");
             }
 
             return method;

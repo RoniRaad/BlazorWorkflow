@@ -41,10 +41,9 @@ public sealed class MethodInfoJsonConverter : JsonConverter<MethodInfo>
                 .ToArray()!;
         }
 
-        // You can adjust BindingFlags depending on your needs
         var method = type.GetMethod(
             methodName,
-            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static,
+            BindingFlags.Public | BindingFlags.Static,
             binder: null,
             types: parameterTypes,
             modifiers: null);
@@ -55,6 +54,16 @@ public sealed class MethodInfoJsonConverter : JsonConverter<MethodInfo>
         {
             method = MethodInfoHelpers.FromSerializableString(
                 $"{typeName}|{methodName}|{string.Join(",", parameterTypes.Select(t => t.AssemblyQualifiedName))}");
+        }
+
+        // Validate: the resolved method MUST be a registered node method.
+        // This prevents tampered JSON from pointing to arbitrary methods
+        // (e.g. System.IO.File.Delete, Process.Start).
+        if (!NodeRegistry.IsAllowedMethod(method))
+        {
+            throw new InvalidOperationException(
+                $"Security violation: method '{type.FullName}.{methodName}' is not a registered " +
+                $"[BlazorFlowNodeMethod]. Workflow JSON may have been tampered with.");
         }
 
         return method;

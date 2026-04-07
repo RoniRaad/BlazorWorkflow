@@ -86,6 +86,25 @@ namespace BlazorWorkflow.Helpers
         }
 
         /// <summary>
+        /// Returns true if the given method belongs to a registered node type
+        /// and is marked with [BlazorFlowNodeMethod]. Used during deserialization
+        /// to prevent arbitrary method invocation from tampered workflow JSON.
+        /// </summary>
+        internal static bool IsAllowedMethod(MethodInfo? method)
+        {
+            if (method is null || method.DeclaringType is null)
+                return false;
+
+            // Method must have the [BlazorFlowNodeMethod] attribute
+            if (method.GetCustomAttribute<BlazorFlowNodeMethodAttribute>() is null)
+                return false;
+
+            // Declaring type must be in the set of registered types
+            var registeredTypes = GetRegisteredTypes();
+            return registeredTypes.Contains(method.DeclaringType);
+        }
+
+        /// <summary>
         /// Get all types that should be scanned for node methods.
         /// </summary>
         internal static IEnumerable<Type> GetRegisteredTypes()
