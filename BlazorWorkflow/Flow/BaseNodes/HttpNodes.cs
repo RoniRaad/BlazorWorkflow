@@ -120,7 +120,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[ERROR] HttpPost failed: {ex.Message}");
+                Console.Error.WriteLine($"[ERROR] HttpGet failed: {ex.Message}");
                 return new HttpResponse
                 {
                     Body = ex.Message,

@@ -137,7 +137,7 @@ namespace TestRunner
                 .MapInput("input2", "2")
                 .AutoMapOutputs();
 
-            graph.AddNode("concat", typeof(BaseNodeCollection), "StringConcat")
+            graph.AddNode("concat", typeof(BaseNodeCollection), "JoinWith")
                 .MapInput("input1", "Result: ")
                 .MapInput("input2", "input.result")  // int automatically converts to string
                 .AutoMapOutputs();
@@ -154,7 +154,7 @@ namespace TestRunner
             // Test that string concat handles various input types
             var graph = new NodeGraphBuilder();
 
-            graph.AddNode("concat", typeof(BaseNodeCollection), "StringConcat")
+            graph.AddNode("concat", typeof(BaseNodeCollection), "JoinWith")
                 .MapInput("input1", "Value: ")
                 .MapInput("input2", "42")
                 .AutoMapOutputs();

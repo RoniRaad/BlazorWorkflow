@@ -247,7 +247,7 @@ namespace TestRunner
         {
             var graph = new NodeGraphBuilder();
 
-            graph.AddNode("concat", typeof(BaseNodeCollection), "StringConcat")
+            graph.AddNode("concat", typeof(BaseNodeCollection), "JoinWith")
                 .MapInput("input1", "12")
                 .MapInput("input2", "34")
                 .AutoMapOutputs();
@@ -544,12 +544,12 @@ namespace TestRunner
             // Build full name: firstName + " " + lastName
             var graph = new NodeGraphBuilder();
 
-            graph.AddNode("addSpace", typeof(BaseNodeCollection), "StringConcat")
+            graph.AddNode("addSpace", typeof(BaseNodeCollection), "JoinWith")
                 .MapInput("input1", "John")
                 .MapInput("input2", " ")
                 .AutoMapOutputs();
 
-            graph.AddNode("addLastName", typeof(BaseNodeCollection), "StringConcat")
+            graph.AddNode("addLastName", typeof(BaseNodeCollection), "JoinWith")
                 .MapInput("input1", "input.result")
                 .MapInput("input2", "Doe")
                 .AutoMapOutputs();

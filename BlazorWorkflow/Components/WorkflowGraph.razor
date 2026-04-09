@@ -27,143 +27,189 @@
 }
 
 <div class="bw-lib drawflow-container">
+    <div id="@ElementId" class="drawflow-host" style="@(Style ?? "height:500px;")"></div>
+
     @if (IncludeControlPanel)
     {
-        <div class="sidebar-panel">
-            <div class="control-buttons">
-                <button class="btn btn-sm btn-primary" @onclick="Run" aria-label="Run workflow">Run</button>
-                <button class="btn btn-sm btn-primary" @onclick="Clear" aria-label="Clear workflow">Clear</button>
-                <button class="btn btn-sm btn-success" @onclick="ExportCSharp" aria-label="Export to JSON">Export</button>
-                <button class="btn btn-sm btn-primary" @onclick="() => showImportModal = true" aria-label="Import from JSON">Import</button>
-            </div>
-            <div class="node-browser">
-                <div class="node-search">
-                    <input @ref="searchInputRef"
-                    type="text"
-                    class="form-control"
-                    placeholder="@(EffectiveSelectedCategory == null ? "Search sections..." : "Search nodes...")"
-                    @bind="searchQuery"
-                    @bind:event="oninput"
-                    @onkeydown="HandleSearchKeyDown"
-                    aria-label="Search"
-                    autocomplete="off" />
-                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <path d="m21 21-4.35-4.35"></path>
+        @* Floating toolbar - top-right *@
+        <div class="floating-toolbar">
+            <button class="toolbar-btn toolbar-btn--add" @onclick="OpenNodePicker" title="Add node">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Add Node</span>
+            </button>
+            <div class="toolbar-divider"></div>
+            <button class="toolbar-btn toolbar-btn--run" @onclick="Run" title="Run workflow">
+                <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </button>
+            <button class="toolbar-btn" @onclick="Clear" title="Clear">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+            <button class="toolbar-btn" @onclick="ExportCSharp" title="Export">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </button>
+            <button class="toolbar-btn" @onclick="() => showImportModal = true" title="Import">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </button>
+        </div>
+    }
+</div>
+
+@* Add Node modal *@
+@if (showNodePicker)
+{
+    <div class="bw-lib">
+        <div class="add-node-backdrop" @onclick="CloseNodePicker"></div>
+        <div class="add-node-modal" @onclick:stopPropagation="true">
+            <div class="add-node-header">
+                <div class="add-node-search">
+                    <svg class="add-node-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
                     </svg>
+                    <input @ref="searchInputRef"
+                           type="text"
+                           class="add-node-search-input"
+                           placeholder="Search nodes..."
+                           @bind="searchQuery"
+                           @bind:event="oninput"
+                           @onkeydown="HandleSearchKeyDown"
+                           autocomplete="off" />
                     @if (!string.IsNullOrWhiteSpace(searchQuery))
                     {
-                        <button class="search-clear" @onclick="ClearSearch" aria-label="Clear search">
+                        <button class="add-node-search-clear" @onclick="() => { searchQuery = string.Empty; }">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                             </svg>
                         </button>
                     }
                 </div>
+                <button class="add-node-close" @onclick="CloseNodePicker" aria-label="Close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
 
-                @if (EffectiveSelectedCategory != null)
-                {
-                    <div class="breadcrumb-nav">
-                        <button class="breadcrumb-back" @onclick="BackToSections" aria-label="Back to sections">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M19 12H5M12 19l-7-7 7-7"/>
-                            </svg>
-                        </button>
-                        <span class="breadcrumb-text">@EffectiveSelectedCategory</span>
-                    </div>
-                }
-
-                <div class="node-list" style="@(EffectiveSelectedCategory is not null || selectedNodeIndex != -1 ? "max-height:calc(100vh - 440px)" : "")" @ref="nodeListRef">
-                    @if (EffectiveSelectedCategory == null)
+            @if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                @* Search mode — flat list of all matching nodes *@
+                <div class="add-node-body" @ref="nodeListRef">
+                    @{
+                        var searchResults = AllFilteredNodes.ToList();
+                    }
+                    @if (searchResults.Any())
                     {
-                        @* Show sections *@
-                        var filteredSections = MatchingCategories.ToList();
-                        if (filteredSections.Any())
-                        {
-                            for (int i = 0; i < filteredSections.Count; i++)
+                        <div class="node-grid">
+                            @for (int i = 0; i < searchResults.Count; i++)
                             {
-                                var section = filteredSections[i];
+                                var node = searchResults[i];
                                 var index = i;
                                 var isSelected = selectedNodeIndex == index;
-                                var nodeCount = _nodes.Count(n => n.Section == section);
-                                <button class="node-item section-item @(isSelected ? "selected" : "")"
-                                @onclick="@(() => SelectSection(section))"
-                                data-node-index="@index"
-                                aria-label="Open @(section) section">
-                                    <div class="node-content">
-                                        <span class="node-name">@(section)</span>
-                                        <span class="node-count">@nodeCount node@(nodeCount == 1 ? "" : "s")</span>
+                                <button class="node-card @(isSelected ? "node-card--selected" : "")"
+                                        @onclick="@(() => HandleNodePickerSelect(node))"
+                                        data-node-index="@index">
+                                    <span class="node-card-icon">f</span>
+                                    <div class="node-card-text">
+                                        <span class="node-card-name">@((MarkupString)HighlightMatch(TypeHelpers.AddSpacesToPascalCase(node.Name), searchQuery))</span>
+                                        <span class="node-card-section">@node.Section</span>
                                     </div>
-                                    <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M9 18l6-6-6-6"/>
-                                    </svg>
                                 </button>
                             }
-                        }
-                        else
-                        {
-                            <div class="no-results">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <path d="M12 8v4"></path>
-                                    <path d="M12 16h.01"></path>
-                                </svg>
-                                <p>No sections found</p>
-                            </div>
-                        }
+                        </div>
                     }
                     else
                     {
-                        @* Show nodes within selected section *@
-                        var filteredNodesList = FilteredNodes.ToList();
-                        if (filteredNodesList.Any())
+                        <div class="add-node-empty">
+                            <p>No nodes match your search</p>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                @* Browse mode — sidebar + node list *@
+                <div class="add-node-panels">
+                    <div class="add-node-sidebar">
+                        @foreach (var section in AllTopSections)
                         {
-                            for (int i = 0; i < filteredNodesList.Count; i++)
+                            var isActive = selectedSection == section;
+                            var subs = GetSubsectionsFor(section);
+                            var hasSubs = subs.Any();
+
+                            <button class="nav-section @(isActive && !hasSubs ? "nav-section--active" : "") @(isActive && hasSubs ? "nav-section--expanded" : "")"
+                                    @onclick="@(() => SelectTopSection(section))">
+                                <span class="nav-section-name">@(section)</span>
+                                @if (hasSubs)
+                                {
+                                    <svg class="nav-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                                }
+                            </button>
+
+                            @if (isActive && hasSubs)
                             {
-                                var node = filteredNodesList[i];
-                                var index = i;
-                                var isSelected = selectedNodeIndex == index;
-                                <button class="node-item @(isSelected ? "selected" : "")"
-                                @onclick="@(() => CreateNode(node))"
-                                data-node-index="@index"
-                                aria-label="Create @node.Name node">
-                                    <div class="node-content">
-                                        <span class="node-name">@((MarkupString)HighlightMatch(TypeHelpers.AddSpacesToPascalCase(node.Name), searchQuery))</span>
-                                    </div>
-                                    @if (isSelected)
+                                @foreach (var sub in subs)
+                                {
+                                    var isSubActive = selectedSubsection == sub;
+                                    <button class="nav-subsection @(isSubActive ? "nav-subsection--active" : "")"
+                                            @onclick="@(() => SelectSubsection(sub))">
+                                        @sub
+                                    </button>
+                                }
+                            }
+                        }
+                    </div>
+                    <div class="add-node-body" @ref="nodeListRef">
+                        @if (selectedSection != null)
+                        {
+                            var sectionTitle = selectedSubsection ?? selectedSection;
+                            var desc = selectedSubsection != null
+                                ? NodeRegistry.GetSectionDescription($"{selectedSection}.{selectedSubsection}")
+                                : NodeRegistry.GetSectionDescription(selectedSection);
+
+                            <div class="add-node-body-header">
+                                <h3 class="add-node-body-title">@sectionTitle</h3>
+                                @if (desc != null)
+                                {
+                                    <p class="add-node-section-desc">@desc</p>
+                                }
+                            </div>
+
+                            var nodesList = FilteredNodes.ToList();
+                            if (nodesList.Any())
+                            {
+                                <div class="node-grid">
+                                    @for (int i = 0; i < nodesList.Count; i++)
                                     {
-                                        <svg class="node-selected-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <polyline points="9 11 12 14 22 4"></polyline>
-                                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-                                        </svg>
+                                        var node = nodesList[i];
+                                        var index = i;
+                                        var isSelected = selectedNodeIndex == index;
+                                        <button class="node-card @(isSelected ? "node-card--selected" : "")"
+                                                @onclick="@(() => HandleNodePickerSelect(node))"
+                                                data-node-index="@index">
+                                            <span class="node-card-icon">f</span>
+                                            <span class="node-card-name">@(TypeHelpers.AddSpacesToPascalCase(node.Name))</span>
+                                        </button>
                                     }
-                                </button>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="add-node-empty">
+                                    <p>No nodes in this section</p>
+                                </div>
                             }
                         }
                         else
                         {
-                            <div class="no-results">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <path d="M12 8v4"></path>
-                                    <path d="M12 16h.01"></path>
-                                </svg>
-                                <p>No nodes found</p>
-                                @if (!string.IsNullOrWhiteSpace(searchQuery))
-                                {
-                                    <button class="btn btn-sm btn-outline-secondary mt-2" @onclick="ClearSearch">Clear search</button>
-                                }
+                            <div class="add-node-empty">
+                                <p>Select a category to browse nodes</p>
                             </div>
                         }
-                    }
+                    </div>
                 </div>
-            </div>
+            }
         </div>
-    }
-
-    <div id="@ElementId" class="drawflow-host" style="@(Style ?? "height:500px;")"></div>
-</div>
+    </div>
+}
 
 @if (!string.IsNullOrWhiteSpace(_exportJson))
 {
@@ -220,63 +266,48 @@
     private List<Node> _nodes = [];
     private bool showModal = false;
     private bool showImportModal = false;
+    private bool showNodePicker = false;
     private Node? editNode = null;
 
     private string searchQuery = string.Empty;
-    private string? selectedCategory = null;
+    private string? selectedSection = null;
+    private string? selectedSubsection = null;
     private int selectedNodeIndex = -1;
     private ElementReference searchInputRef;
     private ElementReference nodeListRef;
 
-    private IEnumerable<string> Categories => _nodes
-        .Select(n => n.Section)
+    private static string GetTopSection(string section) =>
+        section.Contains('.') ? section.Substring(0, section.IndexOf('.')) : section;
+
+    private static string? GetSubsection(string section) =>
+        section.Contains('.') ? section.Substring(section.IndexOf('.') + 1) : null;
+
+    private IEnumerable<string> AllTopSections => _nodes
+        .Select(n => GetTopSection(n.Section))
         .Distinct()
         .OrderBy(s => s);
 
-    private IEnumerable<string> MatchingCategories
+    private IEnumerable<string> GetSubsectionsFor(string topSection) => _nodes
+        .Where(n => GetTopSection(n.Section) == topSection && GetSubsection(n.Section) != null)
+        .Select(n => GetSubsection(n.Section)!)
+        .Distinct()
+        .OrderBy(s => s);
+
+    private IEnumerable<Node> AllFilteredNodes
     {
         get
         {
-            if (string.IsNullOrWhiteSpace(searchQuery))
-            {
-                return Categories;
-            }
-
+            if (string.IsNullOrWhiteSpace(searchQuery)) return Enumerable.Empty<Node>();
             var query = searchQuery.ToLower();
-            return _nodes
-                .Where(n =>
-                {
-                    var originalName = n.BackingMethod.Name.ToLower();
-                    var displayName = TypeHelpers.AddSpacesToPascalCase(n.Name).ToLower();
-                    var section = n.Section.ToLower();
-
-                    return ContainsFuzzy(displayName, query) ||
-                           ContainsFuzzy(originalName, query) ||
-                           section.Contains(query);
-                })
-                .Select(n => n.Section)
-                .Distinct()
-                .OrderBy(s => s);
-        }
-    }
-
-    private string? EffectiveSelectedCategory
-    {
-        get
-        {
-            // If explicitly selected, use that
-            if (selectedCategory != null)
-                return selectedCategory;
-
-            // If searching and only one section matches, auto-select it
-            if (!string.IsNullOrWhiteSpace(searchQuery))
+            return _nodes.Where(n =>
             {
-                var matches = MatchingCategories.ToList();
-                if (matches.Count == 1)
-                    return matches[0];
-            }
-
-            return null;
+                var displayName = TypeHelpers.AddSpacesToPascalCase(n.Name).ToLower();
+                var originalName = n.Name.ToLower();
+                var section = n.Section.ToLower();
+                return ContainsFuzzy(displayName, query) ||
+                       ContainsFuzzy(originalName, query) ||
+                       section.Contains(query);
+            }).OrderBy(n => n.Name);
         }
     }
 
@@ -286,14 +317,17 @@
         {
             var filtered = _nodes.AsEnumerable();
 
-            // Filter by effective category
-            var effectiveCategory = EffectiveSelectedCategory;
-            if (effectiveCategory != null)
+            if (selectedSubsection != null && selectedSection != null)
             {
-                filtered = filtered.Where(n => n.Section == effectiveCategory);
+                var fullSection = $"{selectedSection}.{selectedSubsection}";
+                filtered = filtered.Where(n => n.Section == fullSection);
+            }
+            else if (selectedSection != null)
+            {
+                // No subsections - match top-level exactly
+                filtered = filtered.Where(n => n.Section == selectedSection);
             }
 
-            // Then filter by search within that category
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
                 var query = searchQuery.ToLower();
@@ -351,76 +385,30 @@
 
     private async Task HandleSearchKeyDown(KeyboardEventArgs e)
     {
-        if (EffectiveSelectedCategory == null)
-        {
-            // We're showing sections
-            var sections = MatchingCategories.ToList();
+        var isSearching = !string.IsNullOrWhiteSpace(searchQuery);
+        var nodeList = isSearching ? AllFilteredNodes.ToList() : FilteredNodes.ToList();
 
-            if (e.Key == "ArrowDown")
-            {
-                if (sections.Any())
-                {
-                    selectedNodeIndex = (selectedNodeIndex + 1) % sections.Count;
-                    await ScrollToSelectedNode();
-                }
-            }
-            else if (e.Key == "ArrowUp")
-            {
-                if (sections.Any())
-                {
-                    selectedNodeIndex = selectedNodeIndex <= 0 ? sections.Count - 1 : selectedNodeIndex - 1;
-                    await ScrollToSelectedNode();
-                }
-            }
-            else if (e.Key == "Enter" && selectedNodeIndex >= 0 && selectedNodeIndex < sections.Count)
-            {
-                SelectSection(sections[selectedNodeIndex]);
-            }
-            else if (e.Key == "Escape")
-            {
-                ClearSearch();
-            }
-            else
-            {
-                // Reset selection when typing
-                selectedNodeIndex = -1;
-            }
+        if (e.Key == "ArrowDown" && nodeList.Any())
+        {
+            selectedNodeIndex = (selectedNodeIndex + 1) % nodeList.Count;
+            await ScrollToSelectedNode();
+        }
+        else if (e.Key == "ArrowUp" && nodeList.Any())
+        {
+            selectedNodeIndex = selectedNodeIndex <= 0 ? nodeList.Count - 1 : selectedNodeIndex - 1;
+            await ScrollToSelectedNode();
+        }
+        else if (e.Key == "Enter" && selectedNodeIndex >= 0 && selectedNodeIndex < nodeList.Count)
+        {
+            await HandleNodePickerSelect(nodeList[selectedNodeIndex]);
+        }
+        else if (e.Key == "Escape")
+        {
+            CloseNodePicker();
         }
         else
         {
-            // We're showing nodes within a section
-            var filteredList = FilteredNodes.ToList();
-
-            if (e.Key == "ArrowDown")
-            {
-                if (filteredList.Any())
-                {
-                    selectedNodeIndex = (selectedNodeIndex + 1) % filteredList.Count;
-                    await ScrollToSelectedNode();
-                }
-            }
-            else if (e.Key == "ArrowUp")
-            {
-                if (filteredList.Any())
-                {
-                    selectedNodeIndex = selectedNodeIndex <= 0 ? filteredList.Count - 1 : selectedNodeIndex - 1;
-                    await ScrollToSelectedNode();
-                }
-            }
-            else if (e.Key == "Enter" && selectedNodeIndex >= 0 && selectedNodeIndex < filteredList.Count)
-            {
-                await CreateNode(filteredList[selectedNodeIndex]);
-                selectedNodeIndex = -1;
-            }
-            else if (e.Key == "Escape")
-            {
-                BackToSections();
-            }
-            else
-            {
-                // Reset selection when typing
-                selectedNodeIndex = -1;
-            }
+            selectedNodeIndex = -1;
         }
     }
 
@@ -429,8 +417,8 @@
         try
         {
             await JS.InvokeVoidAsync("eval", $@"
-                const container = document.querySelector('.node-list');
-                const selected = container?.querySelector('.node-item.selected');
+                const container = document.querySelector('.add-node-body');
+                const selected = container?.querySelector('.picker-item--selected, .section-card--selected, .node-card--selected');
                 if (selected && container) {{
                     const rect = selected.getBoundingClientRect();
                     const parentRect = container.getBoundingClientRect();
@@ -449,22 +437,49 @@
     private void ClearSearch()
     {
         searchQuery = string.Empty;
-        selectedCategory = null;
+        selectedSection = null;
+        selectedSubsection = null;
         selectedNodeIndex = -1;
     }
 
-    private void SelectSection(string section)
+    private void SelectTopSection(string section)
     {
-        selectedCategory = section;
+        selectedSection = section;
         selectedNodeIndex = -1;
-        searchQuery = string.Empty;
+        // Auto-select first subsection if any exist
+        var subs = GetSubsectionsFor(section).ToList();
+        selectedSubsection = subs.Any() ? subs[0] : null;
     }
 
-    private void BackToSections()
+    private void SelectSubsection(string subsection)
     {
-        selectedCategory = null;
+        selectedSubsection = subsection;
         selectedNodeIndex = -1;
+    }
+
+    private void OpenNodePicker()
+    {
+        showNodePicker = true;
         searchQuery = string.Empty;
+        selectedNodeIndex = -1;
+        // Auto-select the first section so the right panel has content immediately
+        var first = AllTopSections.FirstOrDefault();
+        if (first != null) SelectTopSection(first);
+    }
+
+    private void CloseNodePicker()
+    {
+        showNodePicker = false;
+        searchQuery = string.Empty;
+        selectedSection = null;
+        selectedSubsection = null;
+        selectedNodeIndex = -1;
+    }
+
+    private async Task HandleNodePickerSelect(Node node)
+    {
+        await CreateNode(node);
+        CloseNodePicker();
     }
 
     private async Task SaveChanges()

@@ -225,6 +225,75 @@
     transform: translateX(4px);
 }
 
+.workflow-item-new {
+    border-style: dashed;
+    border-color: rgba(99, 102, 241, 0.3);
+    background: transparent;
+}
+
+.workflow-item-new:hover {
+    border-color: var(--bw-primary-color);
+    background: rgba(99, 102, 241, 0.06);
+}
+
+.workflow-item-new-inner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--bw-text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.workflow-item-new:hover .workflow-item-new-inner {
+    color: var(--bw-primary-color);
+}
+
+.workflow-item-new-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.workflow-item-new--expanded {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.new-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: transparent;
+    border: none;
+    color: var(--bw-text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    text-align: left;
+    width: 100%;
+    font-family: inherit;
+}
+
+.new-option:first-child {
+    border-bottom: 1px solid var(--bw-border-color);
+}
+
+.new-option:hover {
+    background: rgba(99, 102, 241, 0.08);
+    color: var(--bw-primary-color);
+}
+
+.new-option-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
 .workflow-item.selected {
     background: rgba(99, 102, 241, 0.15);
     border-color: var(--bw-primary-color);
@@ -243,11 +312,105 @@
     font-weight: 600;
     margin: 0;
     color: var(--bw-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.workflow-item-header-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
 }
 
 .workflow-item-header small {
     font-size: 12px;
     color: var(--bw-text-secondary);
+}
+
+.workflow-item-menu-anchor {
+    position: relative;
+}
+
+.workflow-item-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--bw-text-secondary);
+    cursor: pointer;
+    transition: all 0.12s ease;
+    opacity: 0;
+}
+
+.workflow-item:hover .workflow-item-menu-btn,
+.workflow-item.selected .workflow-item-menu-btn {
+    opacity: 1;
+}
+
+.workflow-item-menu-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--bw-text-primary);
+}
+
+.workflow-item-menu-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.workflow-item-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    min-width: 150px;
+    background: var(--bw-surface-elevated);
+    border: 1px solid var(--bw-border-color);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+    overflow: hidden;
+}
+
+.workflow-item-menu-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 14px;
+    border: none;
+    background: transparent;
+    color: var(--bw-text-primary);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.1s ease;
+    text-align: left;
+}
+
+.workflow-item-menu-option:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.workflow-item-menu-option--danger {
+    color: var(--bw-danger-color, #ef4444);
+}
+
+.workflow-item-menu-option--danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.menu-option-icon {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
 }
 
 .workflow-desc {
@@ -301,12 +464,78 @@
 }
 
 .detail-header {
-    padding: 32px;
+    padding: 24px 32px;
     border-bottom: 1px solid var(--bw-border-color);
     background: var(--bw-surface-elevated);
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.detail-header-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.detail-icon-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.detail-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--bw-border-color);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--bw-text-secondary);
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+.detail-icon-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.detail-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--bw-primary-color);
+    color: var(--bw-text-primary);
+}
+
+.detail-run-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: var(--bw-success-color, #22c55e);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    flex-shrink: 0;
+}
+
+.detail-run-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.detail-run-btn:hover {
+    filter: brightness(1.15);
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.35);
 }
 
 .detail-header h2 {
@@ -365,9 +594,11 @@
 }
 
 .workflow-name-input {
-    font-size: 24px;
+    flex: 1;
+    min-width: 0;
+    font-size: 22px;
     font-weight: 700;
-    padding: 8px 12px;
+    padding: 6px 10px;
     background: var(--bw-surface);
     border: 1px solid var(--bw-border-color);
     border-radius: var(--bw-radius);
@@ -788,6 +1019,65 @@
 
 .output-content code {
     color: var(--bw-text-primary);
+}
+
+.execution-logs summary {
+    font-size: 13.6px;
+    color: var(--bw-text-secondary);
+    cursor: pointer;
+    user-select: none;
+    margin-top: 8px;
+}
+
+.log-content {
+    margin-top: 8px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--bw-radius-md);
+    font-family: monospace;
+    font-size: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.log-entry {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    line-height: 1.5;
+}
+
+.log-time {
+    color: var(--bw-text-secondary);
+    opacity: 0.6;
+    flex-shrink: 0;
+    font-size: 11px;
+}
+
+.log-node {
+    color: var(--color-info, #6ea0ff);
+    flex-shrink: 0;
+    font-size: 11px;
+}
+
+.log-node::before {
+    content: "[";
+}
+
+.log-node::after {
+    content: "]";
+}
+
+.log-message {
+    color: var(--bw-text-primary);
+    word-break: break-word;
+}
+
+.log-error .log-message {
+    color: #f87171;
 }
 
 .empty-message {

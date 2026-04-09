@@ -1,6 +1,5 @@
 using System.Reflection;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using BlazorWorkflow.Helpers;
 using BlazorWorkflow.Services;
@@ -50,8 +49,6 @@ namespace BlazorWorkflow.Models.NodeV2
                     NodeInputToMethodInputMap = node.NodeInputToMethodInputMap,
                     MethodOutputToNodeOutputMap = node.MethodOutputToNodeOutputMap,
                     DictionaryParameterMappings = node.DictionaryParameterMappings,
-                    Input = node.Input,
-                    Result = node.Result,
                     MergeOutputWithInput = node.MergeOutputWithInput,
                     DeclaredOutputPorts = node.DeclaredOutputPorts,
                     InputNodeIds = node.InputNodes.Select(n => nodeIdMap[n]).ToList(),
@@ -137,8 +134,6 @@ namespace BlazorWorkflow.Models.NodeV2
                     NodeInputToMethodInputMap = serNode.NodeInputToMethodInputMap ?? new List<PathMapEntry>(),
                     MethodOutputToNodeOutputMap = serNode.MethodOutputToNodeOutputMap ?? new List<PathMapEntry>(),
                     DictionaryParameterMappings = serNode.DictionaryParameterMappings ?? new Dictionary<string, List<PathMapEntry>>(),
-                    Input = serNode.Input,
-                    Result = serNode.Result,
                     MergeOutputWithInput = serNode.MergeOutputWithInput,
                     DeclaredOutputPorts = serNode.DeclaredOutputPorts ?? new List<string>(),
                     ParentWorkflowId = serNode.ParentWorkflowId,
@@ -286,8 +281,6 @@ namespace BlazorWorkflow.Models.NodeV2
         public List<PathMapEntry> NodeInputToMethodInputMap { get; set; } = new();
         public List<PathMapEntry> MethodOutputToNodeOutputMap { get; set; } = new();
         public Dictionary<string, List<PathMapEntry>> DictionaryParameterMappings { get; set; } = new();
-        public JsonObject? Input { get; set; }
-        public JsonObject? Result { get; set; }
         public bool MergeOutputWithInput { get; set; }
         public List<string> DeclaredOutputPorts { get; set; } = new();
         public List<string> InputNodeIds { get; set; } = new();

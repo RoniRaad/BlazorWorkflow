@@ -20,19 +20,19 @@ namespace BlazorWorkflow.Flow.BaseNodes
         // BASIC COLLECTION OPERATIONS
         // ==========================================
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Access")]
         public static int CountStrings(List<string> collection)
         {
             return collection?.Count ?? 0;
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Access")]
         public static int CountNumbers(List<int> collection)
         {
             return collection?.Count ?? 0;
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Access")]
         public static string GetStringAtIndex(List<string> collection, int index)
         {
             if (collection == null || index < 0 || index >= collection.Count)
@@ -41,7 +41,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return collection[index];
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Access")]
         public static int GetNumberAtIndex(List<int> collection, int index)
         {
             if (collection == null || index < 0 || index >= collection.Count)
@@ -50,7 +50,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return collection[index];
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Modify")]
         public static List<string> AddString(List<string> collection, string item)
         {
             var result = collection?.ToList() ?? new List<string>();
@@ -58,7 +58,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return result;
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Modify")]
         public static List<int> AddNumber(List<int> collection, int item)
         {
             var result = collection?.ToList() ?? new List<int>();
@@ -70,21 +70,21 @@ namespace BlazorWorkflow.Flow.BaseNodes
         // MAP - Transform each element
         // ==========================================
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Transform")]
         public static List<int> MapToLength(List<string> collection)
         {
             if (collection == null) return new List<int>();
             return collection.Select(s => s?.Length ?? 0).ToList();
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Transform")]
         public static List<string> MapToUpperCase(List<string> collection)
         {
             if (collection == null) return new List<string>();
             return collection.Select(s => s?.ToUpper() ?? "").ToList();
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Transform")]
         public static List<string> MapToLowerCase(List<string> collection)
         {
             if (collection == null) return new List<string>();
@@ -95,28 +95,28 @@ namespace BlazorWorkflow.Flow.BaseNodes
         // FILTER - Select elements that match condition
         // ==========================================
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Transform")]
         public static List<int> FilterGreaterThan(List<int> collection, int threshold)
         {
             if (collection == null) return new List<int>();
             return collection.Where(x => x > threshold).ToList();
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Transform")]
         public static List<int> FilterLessThan(List<int> collection, int threshold)
         {
             if (collection == null) return new List<int>();
             return collection.Where(x => x < threshold).ToList();
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Transform")]
         public static List<string> FilterContains(List<string> collection, string substring)
         {
             if (collection == null) return new List<string>();
             return collection.Where(s => s?.Contains(substring, StringComparison.OrdinalIgnoreCase) ?? false).ToList();
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Transform")]
         public static List<string> FilterNotEmpty(List<string> collection)
         {
             if (collection == null) return new List<string>();
@@ -127,37 +127,35 @@ namespace BlazorWorkflow.Flow.BaseNodes
         // REDUCE/AGGREGATE - Combine elements
         // ==========================================
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Aggregate")]
         public static int Sum(List<int> collection)
         {
             if (collection == null) return 0;
             return collection.Sum();
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Aggregate")]
         public static double Average(List<int> collection)
         {
             if (collection == null || collection.Count == 0) return 0;
             return collection.Average();
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Aggregate")]
         public static int Max(List<int> collection)
         {
-            if (collection == null || collection.Count == 0)
-                throw new InvalidOperationException("Collection is empty");
+            if (collection == null || collection.Count == 0) return 0;
             return collection.Max();
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Aggregate")]
         public static int Min(List<int> collection)
         {
-            if (collection == null || collection.Count == 0)
-                throw new InvalidOperationException("Collection is empty");
+            if (collection == null || collection.Count == 0) return 0;
             return collection.Min();
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Aggregate")]
         public static string Join(List<string> collection, string separator)
         {
             if (collection == null) return "";
@@ -165,10 +163,10 @@ namespace BlazorWorkflow.Flow.BaseNodes
         }
 
         // ==========================================
-        // UTILITY
+        // TRANSFORM - Reorder and slice
         // ==========================================
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Transform")]
         public static List<string> ReverseStrings(List<string> collection)
         {
             if (collection == null) return new List<string>();
@@ -177,7 +175,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return result;
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Transform")]
         public static List<int> ReverseNumbers(List<int> collection)
         {
             if (collection == null) return new List<int>();
@@ -186,49 +184,49 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return result;
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Transform")]
         public static List<string> TakeStrings(List<string> collection, int count)
         {
             if (collection == null) return new List<string>();
             return collection.Take(count).ToList();
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Transform")]
         public static List<int> TakeNumbers(List<int> collection, int count)
         {
             if (collection == null) return new List<int>();
             return collection.Take(count).ToList();
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Transform")]
         public static List<string> SkipStrings(List<string> collection, int count)
         {
             if (collection == null) return new List<string>();
             return collection.Skip(count).ToList();
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Transform")]
         public static List<int> SkipNumbers(List<int> collection, int count)
         {
             if (collection == null) return new List<int>();
             return collection.Skip(count).ToList();
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Transform")]
         public static List<string> DistinctStrings(List<string> collection)
         {
             if (collection == null) return new List<string>();
             return collection.Distinct().ToList();
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Transform")]
         public static List<int> DistinctNumbers(List<int> collection)
         {
             if (collection == null) return new List<int>();
             return collection.Distinct().ToList();
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Modify")]
         public static List<string> Split(string input, string separator)
         {
             if (string.IsNullOrEmpty(input)) return new List<string>();
@@ -239,7 +237,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
         // RANGE GENERATION
         // ==========================================
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Modify")]
         public static List<int> Range(int start, int count)
         {
             if (count < 0)
@@ -248,7 +246,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return Enumerable.Range(start, count).ToList();
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Modify")]
         public static List<int> RangeBetween(int start, int end)
         {
             if (end < start)
@@ -261,28 +259,28 @@ namespace BlazorWorkflow.Flow.BaseNodes
         // SORTING
         // ==========================================
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Transform")]
         public static List<string> SortStrings(List<string> collection)
         {
             if (collection == null) return new List<string>();
             return collection.OrderBy(s => s).ToList();
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Transform")]
         public static List<string> SortStringsDescending(List<string> collection)
         {
             if (collection == null) return new List<string>();
             return collection.OrderByDescending(s => s).ToList();
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Transform")]
         public static List<int> SortNumbers(List<int> collection)
         {
             if (collection == null) return new List<int>();
             return collection.OrderBy(n => n).ToList();
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Transform")]
         public static List<int> SortNumbersDescending(List<int> collection)
         {
             if (collection == null) return new List<int>();
@@ -293,7 +291,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
         // ELEMENT ACCESS
         // ==========================================
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Access")]
         public static string FirstString(List<string> collection)
         {
             if (collection == null || collection.Count == 0)
@@ -301,7 +299,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return collection[0];
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Access")]
         public static int FirstNumber(List<int> collection)
         {
             if (collection == null || collection.Count == 0)
@@ -309,7 +307,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return collection[0];
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Access")]
         public static string LastString(List<string> collection)
         {
             if (collection == null || collection.Count == 0)
@@ -317,7 +315,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return collection[collection.Count - 1];
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Access")]
         public static int LastNumber(List<int> collection)
         {
             if (collection == null || collection.Count == 0)
@@ -329,41 +327,41 @@ namespace BlazorWorkflow.Flow.BaseNodes
         // SEARCH & CHECK
         // ==========================================
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Search")]
         public static bool ContainsString(List<string> collection, string value)
         {
             if (collection == null) return false;
             return collection.Contains(value);
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Search")]
         public static bool ContainsNumber(List<int> collection, int value)
         {
             if (collection == null) return false;
             return collection.Contains(value);
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Search")]
         public static int IndexOfString(List<string> collection, string value)
         {
             if (collection == null) return -1;
             return collection.IndexOf(value);
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Search")]
         public static int IndexOfNumber(List<int> collection, int value)
         {
             if (collection == null) return -1;
             return collection.IndexOf(value);
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
-        public static bool IsEmpty(List<string> collection)
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Search")]
+        public static bool IsEmptyStrings(List<string> collection)
         {
             return collection == null || collection.Count == 0;
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Search")]
         public static bool IsEmptyNumbers(List<int> collection)
         {
             return collection == null || collection.Count == 0;
@@ -373,7 +371,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
         // CONCATENATE & MERGE
         // ==========================================
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Modify")]
         public static List<string> ConcatStrings(List<string> first, List<string> second)
         {
             var result = first?.ToList() ?? new List<string>();
@@ -382,7 +380,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return result;
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Modify")]
         public static List<int> ConcatNumbers(List<int> first, List<int> second)
         {
             var result = first?.ToList() ?? new List<int>();
@@ -395,7 +393,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
         // COLLECTION MODIFICATION
         // ==========================================
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Modify")]
         public static List<string> RemoveStringAt(List<string> collection, int index)
         {
             if (collection == null || index < 0 || index >= collection.Count)
@@ -406,7 +404,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return result;
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Modify")]
         public static List<int> RemoveNumberAt(List<int> collection, int index)
         {
             if (collection == null || index < 0 || index >= collection.Count)
@@ -417,7 +415,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return result;
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Modify")]
         public static List<string> InsertStringAt(List<string> collection, int index, string value)
         {
             var result = collection?.ToList() ?? new List<string>();
@@ -429,7 +427,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return result;
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Modify")]
         public static List<int> InsertNumberAt(List<int> collection, int index, int value)
         {
             var result = collection?.ToList() ?? new List<int>();
