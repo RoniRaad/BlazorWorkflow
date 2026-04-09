@@ -17,7 +17,7 @@ namespace TestRunner
         public async Task TestConcatenateEmptyStrings()
         {
             var graph = new NodeGraphBuilder();
-            graph.AddNode("concat", typeof(BaseNodeCollection), "StringConcat")
+            graph.AddNode("concat", typeof(BaseNodeCollection), "JoinWith")
                 .MapInput("input1", "")
                 .MapInput("input2", "")
                 .AutoMapOutputs();
@@ -30,7 +30,7 @@ namespace TestRunner
         public async Task TestConcatenateWithNull()
         {
             var graph = new NodeGraphBuilder();
-            graph.AddNode("concat", typeof(BaseNodeCollection), "StringConcat")
+            graph.AddNode("concat", typeof(BaseNodeCollection), "JoinWith")
                 .MapInput("input1", "Hello")
                 .MapInput("input2", "")
                 .AutoMapOutputs();
@@ -137,7 +137,7 @@ namespace TestRunner
         public async Task TestStringWithUnicode()
         {
             var graph = new NodeGraphBuilder();
-            graph.AddNode("concat", typeof(BaseNodeCollection), "StringConcat")
+            graph.AddNode("concat", typeof(BaseNodeCollection), "JoinWith")
                 .MapInput("input1", "Hello ")
                 .MapInput("input2", "世界")
                 .AutoMapOutputs();
@@ -150,7 +150,7 @@ namespace TestRunner
         public async Task TestStringWithEmoji()
         {
             var graph = new NodeGraphBuilder();
-            graph.AddNode("concat", typeof(BaseNodeCollection), "StringConcat")
+            graph.AddNode("concat", typeof(BaseNodeCollection), "JoinWith")
                 .MapInput("input1", "Hello ")
                 .MapInput("input2", "😀")
                 .AutoMapOutputs();
@@ -163,7 +163,7 @@ namespace TestRunner
         public async Task TestStringWithSpecialCharacters()
         {
             var graph = new NodeGraphBuilder();
-            graph.AddNode("concat", typeof(BaseNodeCollection), "StringConcat")
+            graph.AddNode("concat", typeof(BaseNodeCollection), "JoinWith")
                 .MapInput("input1", "Line1\n")
                 .MapInput("input2", "Line2\t")
                 .AutoMapOutputs();

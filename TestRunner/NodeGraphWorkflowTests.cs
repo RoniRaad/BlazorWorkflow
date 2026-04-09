@@ -266,7 +266,7 @@ namespace TestRunner
         {
             var graph = new NodeGraphBuilder();
 
-            graph.AddNode("concat", typeof(BaseNodeCollection), "StringConcat")
+            graph.AddNode("concat", typeof(BaseNodeCollection), "JoinWith")
                 .MapInput("input1", "Hello")
                 .MapInput("input2", " World")
                 .AutoMapOutputs();
@@ -467,7 +467,7 @@ namespace TestRunner
                 .MapInput("input", "hello")
                 .AutoMapOutputs();
 
-            graph.AddNode("concat", typeof(BaseNodeCollection), "StringConcat")
+            graph.AddNode("concat", typeof(BaseNodeCollection), "JoinWith")
                 .MapInput("input1", "input.result")
                 .MapInput("input2", " WORLD")
                 .AutoMapOutputs();

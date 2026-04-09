@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using BlazorWorkflow.Flow.Attributes;
 using BlazorWorkflow.Helpers;
 
@@ -17,47 +19,47 @@ namespace BlazorWorkflow.Flow.BaseNodes
     {
         // ---------- Arithmetic (int) ----------
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Arithmetic")]
         public static int Add(int input1, int input2) => input1 + input2;
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Arithmetic")]
         public static int Subtract(int input1, int input2) => input1 - input2;
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Arithmetic")]
         public static int Multiply(int input1, int input2) => input1 * input2;
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Arithmetic")]
         public static int Divide(int numerator, int denominator)
         {
             if (denominator == 0) throw new DivideByZeroException("Denominator cannot be zero.");
             return numerator / denominator;
         }
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Arithmetic")]
         public static int Modulo(int input1, int input2)
         {
             if (input2 == 0) throw new DivideByZeroException("Modulo by zero is not allowed.");
             return input1 % input2;
         }
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Range")]
         public static double Min(double a, double b) => Math.Min(a, b);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Range")]
         public static double Max(double a, double b) => Math.Max(a, b);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Range")]
         public static int Clamp(int value, int min, int max)
         {
             if (min > max) (min, max) = (max, min);
             return Math.Min(Math.Max(value, min), max);
         }
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Arithmetic")]
         public static int Abs(int value) => Math.Abs(value);
 
         // Map value from one range to another
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Range")]
         public static double MapRange(
             double value,
             [BlazorFlowInputField] double inMin,
@@ -73,16 +75,16 @@ namespace BlazorWorkflow.Flow.BaseNodes
 
         // ---------- Floating-point helpers ----------
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Floating Point")]
         public static double AddD(double input1, double input2) => input1 + input2;
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Floating Point")]
         public static double SubtractD(double input1, double input2) => input1 - input2;
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Floating Point")]
         public static double MultiplyD(double input1, double input2) => input1 * input2;
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Floating Point")]
         public static double DivideD(double numerator, double denominator)
         {
             if (Math.Abs(denominator) < double.Epsilon)
@@ -90,52 +92,60 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return numerator / denominator;
         }
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Floating Point")]
         public static double Pow(double @base, double exponent) => Math.Pow(@base, exponent);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Floating Point")]
         public static double Sqrt(double value) => Math.Sqrt(value);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Trigonometry")]
         public static double Sin(double value) => Math.Sin(value);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Trigonometry")]
         public static double Cos(double value) => Math.Cos(value);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Trigonometry")]
         public static double Tan(double value) => Math.Tan(value);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Floating Point")]
+        public static double Log(double value) => Math.Log(value);
+
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Floating Point")]
+        public static double Log10(double value) => Math.Log10(value);
+
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Floating Point")]
+        public static double Exp(double value) => Math.Exp(value);
+
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Arithmetic")]
+        public static double Negate(double value) => -value;
+
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Range")]
         public static double ClampD(double value, double min, double max)
         {
             if (min > max) (min, max) = (max, min);
             return Math.Min(Math.Max(value, min), max);
         }
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Floating Point")]
         public static double AbsD(double value) => Math.Abs(value);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Floating Point")]
         public static double RoundD(double value, int digits = 0) => Math.Round(value, digits);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Floating Point")]
         public static double FloorD(double value) => Math.Floor(value);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Floating Point")]
         public static double CeilingD(double value) => Math.Ceiling(value);
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Range")]
         public static double Lerp(double start, double end, double t)
             => start + (end - start) * ClampD(t, 0.0, 1.0);
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Range")]
         public static double Sign(double input)
             => Math.Sign(input);
 
         // ---------- Strings ----------
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Strings")]
-        public static string StringConcat(string input1, string input2)
-            => (input1 ?? "") + (input2 ?? "");
 
         [BlazorFlowNodeMethod(Models.NodeType.Function, "Strings")]
         public static string JoinWith(string input1, string input2, [BlazorFlowInputField] string separator = "")
@@ -201,14 +211,6 @@ namespace BlazorWorkflow.Flow.BaseNodes
             => (input ?? string.Empty).Replace(oldValue ?? string.Empty, newValue ?? string.Empty);
 
         [BlazorFlowNodeMethod(Models.NodeType.Function, "Strings")]
-        public static string[] Split(string input, [BlazorFlowInputField] string separator)
-        {
-            if (input == null) return Array.Empty<string>();
-            separator ??= ",";
-            return input.Split(separator, StringSplitOptions.None);
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Strings")]
         public static int IndexOf(string input, string value, [BlazorFlowInputField] bool ignoreCase = false)
         {
             if (input == null || value == null) return -1;
@@ -216,6 +218,34 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return input.IndexOf(value, comparison);
         }
 
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Strings")]
+        public static bool RegexMatch(string input, [BlazorFlowInputField] string pattern)
+        {
+            if (input == null || pattern == null) return false;
+            return Regex.IsMatch(input, pattern);
+        }
+
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Strings")]
+        public static string RegexReplace(string input, [BlazorFlowInputField] string pattern, string replacement)
+        {
+            if (input == null) return string.Empty;
+            if (pattern == null) return input;
+            return Regex.Replace(input, pattern, replacement ?? string.Empty);
+        }
+
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Strings")]
+        public static string Base64Encode(string input)
+        {
+            if (input == null) return string.Empty;
+            return Convert.ToBase64String(Encoding.UTF8.GetBytes(input));
+        }
+
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Strings")]
+        public static string Base64Decode(string input)
+        {
+            if (input == null) return string.Empty;
+            return Encoding.UTF8.GetString(Convert.FromBase64String(input));
+        }
 
         // ---------- Parsing / Conversion ----------
 
@@ -256,14 +286,38 @@ namespace BlazorWorkflow.Flow.BaseNodes
         [BlazorFlowNodeMethod(Models.NodeType.Function, "Convert")]
         public static string ToStringInvariant(double value) => value.ToString(CultureInfo.InvariantCulture);
 
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Convert")]
+        public static string ToString(object? value) => value?.ToString() ?? string.Empty;
+
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Convert")]
+        public static object? GetProperty(JsonNode? input, [BlazorFlowInputField] string path)
+        {
+            if (input == null || string.IsNullOrWhiteSpace(path)) return null;
+            var segments = path.Split('.');
+            JsonNode? current = input;
+            foreach (var segment in segments)
+            {
+                if (current is JsonObject obj)
+                {
+                    if (!obj.TryGetPropertyValue(segment, out current))
+                        return null;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            return current;
+        }
+
         // ---------- Random ----------
 
-        private static readonly Random _random = new();
+        private static Random _random => Random.Shared;
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility.Random")]
         public static int RandomInteger() => _random.Next();
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility.Random")]
         public static int RandomIntegerRange([BlazorFlowInputField] int min, [BlazorFlowInputField] int max)
         {
             if (min == max) return min;
@@ -271,10 +325,10 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return _random.Next(min, max);
         }
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility.Random")]
         public static double RandomDouble() => _random.NextDouble();
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Utility.Random")]
         public static bool RandomBool() => _random.Next(0, 2) == 1;
 
         // ---------- Date/Time ----------
@@ -324,9 +378,9 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return dateTime.ToString(format);
         }
 
-        // ---------- Math Utilities ----------
+        // ---------- Math Aggregate ----------
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Aggregate")]
         public static double Average(JsonArray numbers)
         {
             if (numbers == null || numbers.Count == 0) return 0;
@@ -334,7 +388,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return values.Length > 0 ? values.Average() : 0;
         }
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Aggregate")]
         public static double Sum(JsonArray numbers)
         {
             if (numbers == null || numbers.Count == 0) return 0;
@@ -342,13 +396,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return values.Sum();
         }
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
-        public static double AbsDiff(double a, double b)
-        {
-            return Math.Abs(a - b);
-        }
-
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Aggregate")]
         public static double MinOf(JsonArray numbers)
         {
             if (numbers == null || numbers.Count == 0) return 0;
@@ -356,7 +404,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
             return values.Length > 0 ? values.Min() : 0;
         }
 
-        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math.Aggregate")]
         public static double MaxOf(JsonArray numbers)
         {
             if (numbers == null || numbers.Count == 0) return 0;

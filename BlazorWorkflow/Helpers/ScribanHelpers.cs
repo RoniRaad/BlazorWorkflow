@@ -33,12 +33,14 @@ namespace BlazorWorkflow.Helpers
             }
 
             // Fall back to template rendering for complex expressions
+            // Clone the payload so we don't permanently mutate the caller's input
+            var mergedPayload = inputPayload.DeepClone().AsObject();
             if (executionContext is not null)
             {
-                inputPayload.Merge(executionContext.SharedContext);
+                mergedPayload.Merge(executionContext.SharedContext);
             }
 
-            var modelDict = inputPayload.ToPlainObject()!;
+            var modelDict = mergedPayload.ToPlainObject()!;
 
             var scriptObject = new ScriptObject();
             scriptObject.Import(modelDict);

@@ -25,7 +25,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
         /// <summary>
         /// Prompts the user for input during workflow execution. The workflow will pause until the user provides a value.
         /// </summary>
-        [BlazorFlowNodeMethod(NodeType.Function, "Utility")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Utility.Misc")]
         public static async Task<string> PromptUser(IServiceProvider serviceProvider, [BlazorFlowInputField] string promptMessage, [BlazorFlowInputField] string defaultValue = "")
         {
             if (string.IsNullOrWhiteSpace(promptMessage))
@@ -47,7 +47,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
         /// Routes execution based on a boolean condition.
         /// Connects to "true" port if condition is true, otherwise "false" port.
         /// </summary>
-        [BlazorFlowNodeMethod(NodeType.BooleanOperation, "Logic")]
+        [BlazorFlowNodeMethod(NodeType.BooleanOperation, "Logic.Flow")]
         [NodeFlowPorts("true", "false")]
         public static Task If(NodeContext ctx, bool condition)
         {
@@ -123,19 +123,19 @@ namespace BlazorWorkflow.Flow.BaseNodes
         // BOOLEAN LOGIC
         // ==========================================
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic.Boolean")]
         public static bool And(bool a, bool b) => a && b;
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic.Boolean")]
         public static bool Or(bool a, bool b) => a || b;
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic.Boolean")]
         public static bool Xor(bool a, bool b) => a ^ b;
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic.Boolean")]
         public static bool Not(bool value) => !value;
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic.Boolean")]
         public static object? Ternary(bool condition, object? trueValue, object? falseValue)
         {
             return condition ? trueValue : falseValue;
@@ -148,7 +148,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
         /// <summary>
         /// Compares two objects for equality. Handles numbers, strings, nulls, and other types intelligently.
         /// </summary>
-        [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic.Comparison")]
         public static bool Equal(object? a, object? b)
         {
             // Handle nulls
@@ -185,13 +185,13 @@ namespace BlazorWorkflow.Flow.BaseNodes
             }
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic.Comparison")]
         public static bool NotEqual(object? a, object? b) => !Equal(a, b);
 
         /// <summary>
         /// Checks if first value is greater than second. Works with numbers, dates, and strings.
         /// </summary>
-        [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic.Comparison")]
         public static bool GreaterThan(object? a, object? b)
         {
             if (a == null || b == null) return false;
@@ -235,19 +235,19 @@ namespace BlazorWorkflow.Flow.BaseNodes
             }
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic.Comparison")]
         public static bool GreaterOrEqual(object? a, object? b)
         {
             return Equal(a, b) || GreaterThan(a, b);
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic.Comparison")]
         public static bool LessThan(object? a, object? b)
         {
             return !GreaterOrEqual(a, b);
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic.Comparison")]
         public static bool LessOrEqual(object? a, object? b)
         {
             return !GreaterThan(a, b);
@@ -256,7 +256,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
         /// <summary>
         /// Compares two numeric values with a tolerance for floating point precision.
         /// </summary>
-        [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic.Comparison")]
         public static bool EqualWithTolerance(object? a, object? b, [BlazorFlowInputField] double tolerance = 0.0)
         {
             try
@@ -275,7 +275,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
             }
         }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Logic")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic.Comparison")]
         public static bool StringEquals(string a, string b, [BlazorFlowInputField] bool ignoreCase = false)
         {
             var comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
@@ -292,20 +292,40 @@ namespace BlazorWorkflow.Flow.BaseNodes
         }
 
         // ==========================================
+        // NULL HANDLING
+        // ==========================================
+
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic.Comparison")]
+        public static bool IsNull(object? value) => value == null;
+
+        [BlazorFlowNodeMethod(NodeType.Function, "Logic.Comparison")]
+        public static object? DefaultIfNull(object? value, object? fallback) => value ?? fallback;
+
+        // ==========================================
         // UTILITY
         // ==========================================
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Utility")]
-        public static void Log(string message) => Console.WriteLine(message);
+        [BlazorFlowNodeMethod(NodeType.Function, "Utility.Logging")]
+        public static void Log(string message, NodeContext context)
+        {
+            Console.WriteLine(message);
+            context.CurrentNode.SharedExecutionContext?.AddLog(
+                message, "info", context.CurrentNode.NameOverride ?? context.CurrentNode.BackingMethod?.Name);
+        }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Utility")]
-        public static void LogError(string message) => Console.Error.WriteLine("[ERROR] " + message);
+        [BlazorFlowNodeMethod(NodeType.Function, "Utility.Logging")]
+        public static void LogError(string message, NodeContext context)
+        {
+            Console.Error.WriteLine("[ERROR] " + message);
+            context.CurrentNode.SharedExecutionContext?.AddLog(
+                message, "error", context.CurrentNode.NameOverride ?? context.CurrentNode.BackingMethod?.Name);
+        }
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Utility")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Utility.Misc")]
         public static async Task Wait([BlazorFlowInputField] int timeMs)
             => await Task.Delay(Math.Max(0, timeMs)).ConfigureAwait(false);
 
-        [BlazorFlowNodeMethod(NodeType.Function, "Utility")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Utility.Misc")]
         public static string NewGuid() => Guid.NewGuid().ToString("D");
     }
 }

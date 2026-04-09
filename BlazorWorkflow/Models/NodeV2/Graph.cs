@@ -49,22 +49,59 @@ namespace BlazorWorkflow.Models.NodeV2
         }
     }
 
+    public class LogEntry
+    {
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public string Level { get; set; } = "info";
+        public string Message { get; set; } = string.Empty;
+        public string? NodeName { get; set; }
+    }
+
     public class GraphExecutionContext
     {
         private JsonObject _sharedContext = new JsonObject();
+        private readonly List<LogEntry> _logs = new();
+        private readonly object _logLock = new();
+
         public DateTimeOffset StartTime { get; set; } = DateTimeOffset.Now;
         public FrozenDictionary<string, string> Parameters { get; set; } = new Dictionary<string, string>().ToFrozenDictionary();
         public FrozenDictionary<string, string> EnvironmentVariables { get; set; } = new Dictionary<string, string>().ToFrozenDictionary();
+
+        public IReadOnlyList<LogEntry> Logs
+        {
+            get { lock (_logLock) { return _logs.ToList().AsReadOnly(); } }
+        }
+
+        public void AddLog(string message, string level = "info", string? nodeName = null)
+        {
+            lock (_logLock)
+            {
+                _logs.Add(new LogEntry
+                {
+                    Timestamp = DateTime.UtcNow,
+                    Level = level,
+                    Message = message,
+                    NodeName = nodeName
+                });
+            }
+        }
+        private bool _contextInitialized;
+
         public JsonObject SharedContext {
             get
             {
-                // Add workflow object with parameters
-                var workflowObj = new JsonObject();
-                _sharedContext.TryAdd("workflow", workflowObj);
-                workflowObj.TryAdd("parameters", JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(Parameters))!);
+                if (!_contextInitialized)
+                {
+                    // Add workflow object with parameters
+                    var workflowObj = new JsonObject();
+                    workflowObj["parameters"] = JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(Parameters))!;
+                    _sharedContext["workflow"] = workflowObj;
 
-                // Add environment variables at root level
-                _sharedContext.TryAdd("environment", JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(EnvironmentVariables))!);
+                    // Add environment variables at root level
+                    _sharedContext["environment"] = JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(EnvironmentVariables))!;
+
+                    _contextInitialized = true;
+                }
 
                 return _sharedContext;
             }

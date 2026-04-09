@@ -40,7 +40,7 @@ namespace BlazorWorkflow.Models.NodeV2
         private readonly object _pendingPortsLock = new();
 
         private bool _disposed;
-        private bool _portsInitialized;
+        private volatile bool _portsInitialized;
         private bool _isPortDriven;
 
         [JsonConverter(typeof(MethodInfoJsonConverter))]
@@ -174,16 +174,21 @@ namespace BlazorWorkflow.Models.NodeV2
         /// Recursively clears results for this node and all downstream nodes connected to a specific port.
         /// This allows re-execution of a subgraph.
         /// </summary>
-        public void ClearDownstreamResults(string? portName = null)
+        public void ClearDownstreamResults(string? portName = null, HashSet<Node>? visited = null)
         {
+            visited ??= [];
+
             var targets = portName == null
                 ? OutputNodes
                 : (OutputPorts.TryGetValue(portName, out var list) ? list : new List<Node>());
 
             foreach (var target in targets)
             {
+                if (!visited.Add(target))
+                    continue; // Already cleared — skip to avoid infinite recursion on cycles
+
                 target.ClearResult();
-                target.ClearDownstreamResults(); // Recursively clear
+                target.ClearDownstreamResults(null, visited);
             }
         }
 
@@ -302,7 +307,7 @@ namespace BlazorWorkflow.Models.NodeV2
             catch (Exception ex)
             {
                 HandleExecutionException(ex);
-                return Result!;
+                return Result ?? [];
             }
             finally
             {

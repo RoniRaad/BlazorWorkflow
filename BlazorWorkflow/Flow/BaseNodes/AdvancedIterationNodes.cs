@@ -22,7 +22,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
         /// After all iterations complete, executes the "done" port with collected results.
         /// </summary>
         [NodeFlowPorts("item", "done")]
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Iteration")]
         public static async Task<ForEachResult> ForEachString(List<string> collection, NodeContext context)
         {
             var results = new List<JsonNode?>();
@@ -83,7 +83,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
             }
 
             // Execute the "done" port with all results
-            await context.ExecutePortAsync("done");
+            await context.ExecutePortAsync("done").ConfigureAwait(false);
 
             return new ForEachResult
             {
@@ -99,7 +99,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
         /// After all iterations complete, executes the "done" port with collected results.
         /// </summary>
         [NodeFlowPorts("item", "done")]
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Iteration")]
         public static async Task<ForEachResult> ForEachNumber(List<int> collection, NodeContext context)
         {
             var results = new List<JsonNode?>();
@@ -153,7 +153,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
                 }
             }
 
-            await context.ExecutePortAsync("done");
+            await context.ExecutePortAsync("done").ConfigureAwait(false);
 
             return new ForEachResult
             {
@@ -167,7 +167,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
         /// Maximum iterations can be specified to prevent infinite loops.
         /// </summary>
         [NodeFlowPorts("loop", "done")]
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Iteration")]
         public static async Task<WhileResult> WhileLoop(
             bool initialCondition,
             [BlazorFlowInputField] int maxIterations,
@@ -206,7 +206,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
                 }
             }
 
-            await context.ExecutePortAsync("done");
+            await context.ExecutePortAsync("done").ConfigureAwait(false);
 
             return new WhileResult
             {
@@ -221,7 +221,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
         /// The transformed collection is available in the "done" port output.
         /// </summary>
         [NodeFlowPorts("transform", "done")]
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Iteration")]
         public static async Task<MapResult> MapStrings(
             List<string> collection,
             NodeContext context)
@@ -236,6 +236,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
 
             // OPTIMIZATION: Cache downstream nodes once
             var downstreamNodes = context.CurrentNode.GetDownstreamNodes("transform");
+            var transformTargets = context.CurrentNode.OutputPorts.TryGetValue("transform", out var targets) ? targets : new List<Node>();
             var outputData = new JsonObject();
             var iterationOutput = new JsonObject { ["output"] = outputData };
 
@@ -257,7 +258,9 @@ namespace BlazorWorkflow.Flow.BaseNodes
                 {
                     await context.ExecutePortAsync("transform").ConfigureAwait(false);
 
-                    results.Add(JsonSerializer.SerializeToNode(item));
+                    // Collect the transformed result from the downstream node
+                    var transformedValue = GetTransformResult(transformTargets) ?? JsonSerializer.SerializeToNode(item);
+                    results.Add(transformedValue);
                 }
                 finally
                 {
@@ -265,7 +268,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
                 }
             }
 
-            await context.ExecutePortAsync("done");
+            await context.ExecutePortAsync("done").ConfigureAwait(false);
 
             return new MapResult { TransformedItems = results };
         }
@@ -276,7 +279,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
         /// The transformed collection is available in the "done" port output.
         /// </summary>
         [NodeFlowPorts("transform", "done")]
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Iteration")]
         public static async Task<MapResult> MapNumbers(
             List<int> collection,
             NodeContext context)
@@ -291,6 +294,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
 
             // OPTIMIZATION: Cache downstream nodes once
             var downstreamNodes = context.CurrentNode.GetDownstreamNodes("transform");
+            var transformTargets = context.CurrentNode.OutputPorts.TryGetValue("transform", out var targets) ? targets : new List<Node>();
             var outputData = new JsonObject();
             var iterationOutput = new JsonObject { ["output"] = outputData };
 
@@ -312,7 +316,9 @@ namespace BlazorWorkflow.Flow.BaseNodes
                 {
                     await context.ExecutePortAsync("transform").ConfigureAwait(false);
 
-                    results.Add(JsonSerializer.SerializeToNode(item));
+                    // Collect the transformed result from the downstream node
+                    var transformedValue = GetTransformResult(transformTargets) ?? JsonSerializer.SerializeToNode(item);
+                    results.Add(transformedValue);
                 }
                 finally
                 {
@@ -320,7 +326,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
                 }
             }
 
-            await context.ExecutePortAsync("done");
+            await context.ExecutePortAsync("done").ConfigureAwait(false);
 
             return new MapResult { TransformedItems = results };
         }
@@ -333,7 +339,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
         /// Use this for arrays of objects, mixed-type arrays, or any complex JSON data.
         /// </summary>
         [NodeFlowPorts("item", "done")]
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Iteration")]
         public static async Task<ForEachResult> ForEachJson(List<JsonNode> collection, NodeContext context)
         {
             var results = new List<JsonNode?>();
@@ -361,7 +367,8 @@ namespace BlazorWorkflow.Flow.BaseNodes
                 Node.ClearNodes(downstreamNodes);
 
                 // Update output data (reuse object)
-                outputData["currentItem"] = item;
+                // Clone the item to avoid detaching it from the source collection
+                outputData["currentItem"] = item?.DeepClone();
                 outputData["currentIndex"] = i;
                 outputData["totalCount"] = collection.Count;
                 outputData["isFirst"] = i == 0;
@@ -387,7 +394,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
                 }
             }
 
-            await context.ExecutePortAsync("done");
+            await context.ExecutePortAsync("done").ConfigureAwait(false);
 
             return new ForEachResult
             {
@@ -402,7 +409,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
         /// The transformed collection is available in the "done" port output.
         /// </summary>
         [NodeFlowPorts("transform", "done")]
-        [BlazorFlowNodeMethod(NodeType.Function, "Collections")]
+        [BlazorFlowNodeMethod(NodeType.Function, "Collections.Iteration")]
         public static async Task<MapResult> MapJson(
             List<JsonNode> collection,
             NodeContext context)
@@ -417,6 +424,7 @@ namespace BlazorWorkflow.Flow.BaseNodes
 
             // OPTIMIZATION: Cache downstream nodes once
             var downstreamNodes = context.CurrentNode.GetDownstreamNodes("transform");
+            var transformTargets = context.CurrentNode.OutputPorts.TryGetValue("transform", out var targets) ? targets : new List<Node>();
             var outputData = new JsonObject();
             var iterationOutput = new JsonObject { ["output"] = outputData };
 
@@ -428,7 +436,8 @@ namespace BlazorWorkflow.Flow.BaseNodes
                 Node.ClearNodes(downstreamNodes);
 
                 // Update output data (reuse object)
-                outputData["item"] = item;
+                // Clone the item to avoid detaching it from the source collection
+                outputData["item"] = item?.DeepClone();
                 outputData["index"] = i;
 
                 var originalResult = context.CurrentNode.Result;
@@ -438,7 +447,9 @@ namespace BlazorWorkflow.Flow.BaseNodes
                 {
                     await context.ExecutePortAsync("transform").ConfigureAwait(false);
 
-                    results.Add(item);
+                    // Collect the transformed result from the downstream node
+                    var transformedValue = GetTransformResult(transformTargets) ?? item?.DeepClone();
+                    results.Add(transformedValue);
                 }
                 finally
                 {
@@ -446,9 +457,27 @@ namespace BlazorWorkflow.Flow.BaseNodes
                 }
             }
 
-            await context.ExecutePortAsync("done");
+            await context.ExecutePortAsync("done").ConfigureAwait(false);
 
             return new MapResult { TransformedItems = results };
+        }
+
+        /// <summary>
+        /// Extracts the output from the first downstream transform node's result.
+        /// Falls back to null if no result is available.
+        /// </summary>
+        private static JsonNode? GetTransformResult(List<Node> transformTargets)
+        {
+            if (transformTargets.Count == 0) return null;
+
+            var targetResult = transformTargets[0].Result;
+            if (targetResult == null) return null;
+
+            // If the result has an "output" key, return its value
+            if (targetResult.TryGetPropertyValue("output", out var output))
+                return output?.DeepClone();
+
+            return targetResult.DeepClone();
         }
     }
 

@@ -12,8 +12,48 @@ namespace BlazorWorkflow.Helpers
     {
         private static readonly HashSet<Type> _registeredTypes = new();
         private static readonly HashSet<Assembly> _registeredAssemblies = new();
+        private static readonly Dictionary<string, string> _sectionDescriptions = new(StringComparer.OrdinalIgnoreCase);
         private static bool _includeDefaultNodes = true;
         private static bool _initialized = false;
+
+        static NodeRegistry()
+        {
+            // Top-level section descriptions
+            _sectionDescriptions["Math"] = "Arithmetic, trigonometry, and numeric operations";
+            _sectionDescriptions["Math.Arithmetic"] = "Basic integer math: add, subtract, multiply, divide";
+            _sectionDescriptions["Math.Floating Point"] = "Double-precision arithmetic, powers, logarithms, and rounding";
+            _sectionDescriptions["Math.Trigonometry"] = "Sin, cos, and tan functions";
+            _sectionDescriptions["Math.Range"] = "Clamping, interpolation, and range mapping";
+            _sectionDescriptions["Math.Aggregate"] = "Sum, average, min, and max over arrays";
+
+            _sectionDescriptions["Logic"] = "Conditions, comparisons, and boolean operations";
+            _sectionDescriptions["Logic.Boolean"] = "AND, OR, XOR, NOT, and ternary gates";
+            _sectionDescriptions["Logic.Comparison"] = "Equality, ordering, null checks, and tolerance checks";
+            _sectionDescriptions["Logic.Flow"] = "Conditional branching for workflow execution";
+
+            _sectionDescriptions["Collections"] = "Create, filter, and manipulate collections";
+            _sectionDescriptions["Collections.Access"] = "Read elements by index, count, first, or last";
+            _sectionDescriptions["Collections.Transform"] = "Map, filter, sort, reverse, and slice";
+            _sectionDescriptions["Collections.Aggregate"] = "Reduce a collection to a single value";
+            _sectionDescriptions["Collections.Search"] = "Find elements and check membership";
+            _sectionDescriptions["Collections.Modify"] = "Add, remove, insert, concat, and generate";
+            _sectionDescriptions["Collections.Iteration"] = "Loop over items with flow-control ports";
+
+            _sectionDescriptions["Strings"] = "Search, replace, regex, encoding, and text manipulation";
+            _sectionDescriptions["Convert"] = "Parse, convert between types, and access nested properties";
+            _sectionDescriptions["DateTime"] = "Dates, times, formatting, and arithmetic";
+            _sectionDescriptions["HTTP"] = "Make HTTP requests and handle web APIs";
+            _sectionDescriptions["Events"] = "Entry points that trigger workflow execution";
+            _sectionDescriptions["Loops"] = "Iterate with for, repeat, and while loops";
+
+            _sectionDescriptions["Utility"] = "Logging, randomness, and general helpers";
+            _sectionDescriptions["Utility.Logging"] = "Write messages to stdout and stderr";
+            _sectionDescriptions["Utility.Random"] = "Generate random numbers and booleans";
+            _sectionDescriptions["Utility.Misc"] = "Delays, GUIDs, and user prompts";
+
+            _sectionDescriptions["Workflow"] = "Compose and run nested workflows";
+            _sectionDescriptions["Examples"] = "Sample nodes to learn from";
+        }
 
         /// <summary>
         /// Register a specific type that contains static methods marked with [BlazorFlowNodeMethod].
@@ -74,6 +114,28 @@ namespace BlazorWorkflow.Helpers
         }
 
         /// <summary>
+        /// Register a description for a node section.
+        /// Descriptions appear in the Add Node modal to help users understand what each section contains.
+        /// </summary>
+        /// <param name="section">The section name (case-insensitive match)</param>
+        /// <param name="description">A short description of the section</param>
+        public static void RegisterSectionDescription(string section, string description)
+        {
+            if (string.IsNullOrWhiteSpace(section))
+                throw new ArgumentException("Section name cannot be empty", nameof(section));
+
+            _sectionDescriptions[section] = description;
+        }
+
+        /// <summary>
+        /// Get the description for a section, or null if none is registered.
+        /// </summary>
+        public static string? GetSectionDescription(string section)
+        {
+            return _sectionDescriptions.TryGetValue(section, out var desc) ? desc : null;
+        }
+
+        /// <summary>
         /// Clear all registered types and assemblies.
         /// Useful for testing scenarios.
         /// </summary>
@@ -81,6 +143,7 @@ namespace BlazorWorkflow.Helpers
         {
             _registeredTypes.Clear();
             _registeredAssemblies.Clear();
+            _sectionDescriptions.Clear();
             _includeDefaultNodes = true;
             _initialized = false;
         }

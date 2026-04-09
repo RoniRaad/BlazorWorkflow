@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Reflection;
 using System.Text.Json.Nodes;
 using BlazorWorkflow.Helpers;
@@ -81,18 +82,31 @@ namespace BlazorWorkflow.Testing
 
         /// <summary>
         /// Executes the graph starting from the specified node.
+        /// Initializes SharedExecutionContext to match production behavior.
         /// </summary>
-        public async Task<GraphExecutionResult> ExecuteAsync(string startNodeName)
+        public async Task<GraphExecutionResult> ExecuteAsync(string startNodeName,
+            Dictionary<string, string>? parameters = null,
+            Dictionary<string, string>? environmentVariables = null)
         {
             var startNode = GetNode(startNodeName);
 
-            // Clear previous results
+            // Initialize SharedExecutionContext like production Graph.Run() does
+            var executionContext = new GraphExecutionContext
+            {
+                Parameters = (parameters ?? new Dictionary<string, string>()).ToFrozenDictionary(),
+                EnvironmentVariables = (environmentVariables ?? new Dictionary<string, string>()).ToFrozenDictionary()
+            };
+
+            // Clear previous results and assign shared context
             foreach (var node in _nodes)
+            {
                 node.Result = null;
+                node.SharedExecutionContext = executionContext;
+            }
 
             await startNode.ExecuteNode();
 
-            return new GraphExecutionResult(_nodesByName);
+            return new GraphExecutionResult(_nodesByName, executionContext);
         }
 
         /// <summary>
@@ -227,10 +241,45 @@ namespace BlazorWorkflow.Testing
     public class GraphExecutionResult
     {
         private readonly Dictionary<string, Node> _nodes;
+        private readonly GraphExecutionContext? _context;
 
-        internal GraphExecutionResult(Dictionary<string, Node> nodes)
+        internal GraphExecutionResult(Dictionary<string, Node> nodes, GraphExecutionContext? context = null)
         {
             _nodes = nodes;
+            _context = context;
+        }
+
+        /// <summary>
+        /// Gets the shared execution context for cross-node state inspection.
+        /// </summary>
+        public GraphExecutionContext? ExecutionContext => _context;
+
+        /// <summary>
+        /// Gets a value from the shared context by path.
+        /// </summary>
+        public JsonNode? GetSharedContextValue(string path)
+        {
+            return _context?.SharedContext.GetByPath(path);
+        }
+
+        /// <summary>
+        /// Checks whether a node encountered an error during execution.
+        /// </summary>
+        public bool HasError(string nodeName)
+        {
+            if (!_nodes.TryGetValue(nodeName, out var node))
+                throw new ArgumentException($"Node '{nodeName}' not found.", nameof(nodeName));
+            return node.HasError;
+        }
+
+        /// <summary>
+        /// Gets the error message for a node, or null if no error.
+        /// </summary>
+        public string? GetErrorMessage(string nodeName)
+        {
+            if (!_nodes.TryGetValue(nodeName, out var node))
+                throw new ArgumentException($"Node '{nodeName}' not found.", nameof(nodeName));
+            return node.ErrorMessage;
         }
 
         /// <summary>

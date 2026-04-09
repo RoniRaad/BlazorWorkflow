@@ -329,8 +329,8 @@ namespace TestRunner
         {
             var graph = new NodeGraphBuilder();
             graph.AddNode("max", typeof(BaseNodeCollection), "Max")
-                .MapInput("input1", "-10")
-                .MapInput("input2", "-5")
+                .MapInput("a", "-10")
+                .MapInput("b", "-5")
                 .AutoMapOutputs();
 
             var result = await graph.ExecuteAsync("max");
@@ -407,7 +407,8 @@ namespace TestRunner
                 .AutoMapOutputs();
 
             var result = await graph.ExecuteAsync("lerp");
-            Assert.Equal(30.0, result.GetOutput<double>("lerp", "result"));
+            // Lerp clamps t to [0, 1], so t=2 behaves as t=1
+            Assert.Equal(20.0, result.GetOutput<double>("lerp", "result"));
         }
 
         [Fact]
@@ -421,7 +422,8 @@ namespace TestRunner
                 .AutoMapOutputs();
 
             var result = await graph.ExecuteAsync("lerp");
-            Assert.Equal(5.0, result.GetOutput<double>("lerp", "result"));
+            // Lerp clamps t to [0, 1], so t=-0.5 behaves as t=0
+            Assert.Equal(10.0, result.GetOutput<double>("lerp", "result"));
         }
 
         [Fact]
