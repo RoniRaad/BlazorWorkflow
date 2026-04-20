@@ -429,7 +429,7 @@
                         <div class="section-content">
                             @if (EnvironmentVariables.Any())
                             {
-                                @foreach (var envVar in EnvironmentVariables.OrderBy(kv => kv.Key))
+                                @foreach (var envVar in EnvironmentVariables)
                                 {
                                     <div class="param-row env-var-row">
                                         <div class="env-var-key-container">
@@ -836,9 +836,7 @@
         if (string.IsNullOrWhiteSpace(newKey) || oldKey == newKey)
             return;
 
-        var value = EnvVarService.GetVariable(selectedEnvironment, oldKey);
-        EnvVarService.RemoveVariable(selectedEnvironment, oldKey);
-        EnvVarService.SetVariable(selectedEnvironment, newKey, value ?? string.Empty);
+        EnvVarService.RenameVariable(selectedEnvironment, oldKey, newKey);
         StateHasChanged();
     }
 

@@ -47,6 +47,11 @@ namespace BlazorWorkflow.Services
         void RemoveVariable(string environmentName, string key);
 
         /// <summary>
+        /// Renames a variable key while preserving its position in the collection.
+        /// </summary>
+        void RenameVariable(string environmentName, string oldKey, string newKey);
+
+        /// <summary>
         /// Checks if a variable exists.
         /// </summary>
         bool VariableExists(string environmentName, string key);

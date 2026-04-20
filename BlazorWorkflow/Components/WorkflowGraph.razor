@@ -444,6 +444,15 @@
 
     private void SelectTopSection(string section)
     {
+        if (selectedSection == section)
+        {
+            // Collapse if clicking the already-selected section
+            selectedSection = null;
+            selectedSubsection = null;
+            selectedNodeIndex = -1;
+            return;
+        }
+
         selectedSection = section;
         selectedNodeIndex = -1;
         // Auto-select first subsection if any exist

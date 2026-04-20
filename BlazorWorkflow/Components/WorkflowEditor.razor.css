@@ -2,7 +2,7 @@
 /* CSS Variables are defined globally in app.css */
 
 /* Page Layout */
-.page-container {
+.bw-page-container {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -154,7 +154,7 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .page-container {
+    .bw-page-container {
         padding: 16px;
         gap: 16px;
     }
