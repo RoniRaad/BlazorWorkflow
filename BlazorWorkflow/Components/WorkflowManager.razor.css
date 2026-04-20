@@ -128,18 +128,20 @@
 }
 
 .sidebar-header {
-    padding: 24px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--bw-border-color);
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
 }
 
 .sidebar-header h5 {
     margin: 0;
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--bw-text-primary);
+    white-space: nowrap;
 }
 
 .sidebar-header small {
@@ -147,28 +149,31 @@
     font-size: 14px;
 }
 
-.environment-selector-compact {
-    padding: 16px 24px;
-    border-bottom: 1px solid var(--bw-border-color);
-    background: var(--bw-surface-elevated);
+.environment-inline-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
-.environment-selector-compact label {
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+.environment-inline-icon {
+    font-size: 13px;
     color: var(--bw-text-secondary);
-    margin: 0 0 8px 0;
-    display: block;
 }
 
-.environment-selector-compact .environment-dropdown {
-    width: 100%;
+.environment-dropdown-inline {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--bw-border-color);
+    background: var(--bw-surface-elevated);
+    color: var(--bw-text-primary);
+    min-width: 0;
+    max-width: 140px;
+    cursor: pointer;
 }
 
 .sidebar-search {
-    padding: 16px 24px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--bw-border-color);
     position: relative;
 }

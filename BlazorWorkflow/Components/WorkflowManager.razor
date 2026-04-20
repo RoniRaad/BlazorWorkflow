@@ -26,16 +26,15 @@
         {
             <div class="sidebar-header">
                 <h5>Workflows</h5>
-            </div>
-
-            <div class="environment-selector-compact">
-                <label>Environment</label>
-                <select class="environment-dropdown" @onchange="HandleEnvironmentChange">
-                    @foreach (var env in Environments)
-                    {
-                        <option value="@env" selected="@(env == SelectedEnvironment)">@env</option>
-                    }
-                </select>
+                <div class="environment-inline-wrapper">
+                    <i class="bi bi-globe2 environment-inline-icon"></i>
+                    <select class="environment-dropdown-inline" @onchange="HandleEnvironmentChange" title="Environment">
+                        @foreach (var env in Environments)
+                        {
+                            <option value="@env" selected="@(env == SelectedEnvironment)">@env</option>
+                        }
+                    </select>
+                </div>
             </div>
 
         <div class="sidebar-search">
@@ -270,7 +269,7 @@
                         }
                         else
                         {
-                            <p class="empty-message">No inputs defined. Add a "Get Input" node to your workflow or manually add inputs.</p>
+                            <p class="empty-message">No inputs defined. Reference an input parameter in a node and it will appear here.</p>
                         }
                     </div>
                 </div>
