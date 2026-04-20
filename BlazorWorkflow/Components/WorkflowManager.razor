@@ -12,13 +12,13 @@
 @implements IDisposable
 
 <div class="bw-lib workflow-manager">
-    <div class="workflow-sidebar">
+    <div class="workflow-sidebar @(_sidebarCollapsed ? "collapsed" : "")">
         <div class="sidebar-tabs">
-            <button class="tab-button @(activeTab == "workflows" ? "active" : "")" @onclick="@(() => SwitchTab("workflows"))">
-                <i class="bi bi-diagram-3"></i> Workflows
+            <button class="tab-button @(activeTab == "workflows" ? "active" : "")" @onclick="@(() => SwitchTab("workflows"))" title="Workflows">
+                <i class="bi bi-diagram-3"></i> <span class="tab-label">Workflows</span>
             </button>
-            <button class="tab-button @(activeTab == "config" ? "active" : "")" @onclick="@(() => SwitchTab("config"))">
-                <i class="bi bi-gear"></i> Configuration
+            <button class="tab-button @(activeTab == "config" ? "active" : "")" @onclick="@(() => SwitchTab("config"))" title="Configuration">
+                <i class="bi bi-gear"></i> <span class="tab-label">Configuration</span>
             </button>
         </div>
 
@@ -152,6 +152,10 @@
             </div>
         }
     </div>
+
+    <button class="sidebar-divider-toggle" @onclick="ToggleSidebar" title="@(_sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar")">
+        <i class="bi @(_sidebarCollapsed ? "bi-chevron-right" : "bi-chevron-left")"></i>
+    </button>
 
     <div class="workflow-detail">
         @if (activeTab == "workflows")
@@ -538,6 +542,7 @@
     private string? selectedWorkflowId = null;
     private string activeTab = "workflows";
     private string selectedEnvironment = "Development";
+    private bool _sidebarCollapsed = false;
     private System.Threading.Timer? _refreshTimer;
     private int currentExecutionPage = 0;
     private const int executionsPerPage = 10;
@@ -796,7 +801,15 @@
     private void SwitchTab(string tab)
     {
         activeTab = tab;
+        // Expand sidebar when switching tabs if collapsed
+        if (_sidebarCollapsed)
+            _sidebarCollapsed = false;
         StateHasChanged();
+    }
+
+    private void ToggleSidebar()
+    {
+        _sidebarCollapsed = !_sidebarCollapsed;
     }
 
     private void HandleAddEnvVar()
