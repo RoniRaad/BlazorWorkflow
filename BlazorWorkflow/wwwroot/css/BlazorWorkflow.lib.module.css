@@ -1677,6 +1677,15 @@
         color: var(--df-text) !important;
     }
 
+    .bw-lib .parent-drawflow {
+        display: block !important;
+    }
+
+    .bw-lib .drawflow-host > .drawflow {
+        width: 5000px !important;
+        height: 5000px !important;
+    }
+
     /* Node Base */
     .bw-lib .drawflow .drawflow-node,
     .bw-lib .drawflow-node {
