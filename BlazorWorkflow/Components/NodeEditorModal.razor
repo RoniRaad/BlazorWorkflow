@@ -178,14 +178,16 @@ role="dialog"
                                                 }
                                             </label>
                                             <div class="input-with-preview" style="position: relative;">
+                                                @{ var inputDropId = $"drop-input-{inputMapping.To}"; }
                                                 <textarea value="@inputMapping.From"
+                                                          id="@inputDropId"
                                                           @oninput="@(e => { inputMapping.From = e.Value?.ToString() ?? string.Empty; TriggerAutoSave(); })"
                                                           class="form-control form-control-sm droppable-input mapping-input"
                                                           placeholder="e.g. input.name or {{input.name}}"
                                                           aria-label="Scriban template for @inputMapping.To"
-                                                          @ondragover="@(e => HandleDragOver(e))"
+                                                          @ondragover="HandleDragOver"
                                                           @ondragover:preventDefault="true"
-                                                          @ondrop="@(e => HandleDrop(e, inputMapping))"
+                                                          @ondrop="@(e => HandleDrop(e, inputMapping, inputDropId))"
                                                           style="padding-right: 40px"
                                                           rows="1"
                                                           required
@@ -252,8 +254,11 @@ role="dialog"
                                                 var entries = ViewModel.DictionaryParameterMappings[dictParam.Name ?? string.Empty];
                                             }
 
+                                            @{ var dictEntryIdx = 0; }
                                             @foreach (var entry in entries)
                                             {
+                                                var dictDropId = $"drop-dict-{dictParam.Name}-{dictEntryIdx}";
+                                                dictEntryIdx++;
                                                 <div class="mapping-row" data-role="dictionary-entry-row">
                                                     <div class="mapping-col">
                                                         <label>Key</label>
@@ -269,14 +274,15 @@ role="dialog"
                                                     <div class="mapping-col">
                                                         <label>Value</label>
                                                         <input value="@entry.From"
+                                                               id="@dictDropId"
                                                                @oninput="@((e) => { entry.From = e.Value?.ToString() ?? ""; TriggerAutoSave(); })"
                                                                type="text"
                                                                class="form-control mapping-input droppable-input"
                                                                placeholder="e.g. input.token or {{input.token}}"
                                                                aria-label="Dictionary value"
-                                                               @ondragover="@((e) => HandleDragOver(e))"
+                                                               @ondragover="HandleDragOver"
                                                                @ondragover:preventDefault="true"
-                                                               @ondrop="@((e) => HandleDrop(e, entry))"
+                                                               @ondrop="@((e) => HandleDrop(e, entry, dictDropId))"
                                                                data-role="dictionary-value" />
                                                     </div>
                                                     <button onclick="@(() => RemoveDictionaryEntry(dictParam.Name ?? string.Empty, entry))"
@@ -451,6 +457,125 @@ role="dialog"
             {
                 // Ignore focus errors
             }
+
+            // Smart drop system for drag-and-drop into inputs
+            await JSRuntime.InvokeVoidAsync("eval", @"
+                window.__smartDrop = {
+                    _canvas: null,
+                    _lastUpdate: 0,
+                    _throttleMs: 50,
+
+                    getDropInfo: function(x, y, elementId) {
+                        var el = document.getElementById(elementId);
+                        if (!el) return { mode: 'replace', caretPos: -1 };
+
+                        var value = el.value || '';
+                        if (!value.trim()) return { mode: 'replace', caretPos: -1 };
+
+                        var rect = el.getBoundingClientRect();
+                        var style = window.getComputedStyle(el);
+                        var paddingLeft = parseFloat(style.paddingLeft) || 0;
+                        var relX = x - rect.left - paddingLeft;
+
+                        // Estimate text width using canvas measurement
+                        var canvas = this._canvas || (this._canvas = document.createElement('canvas'));
+                        var ctx = canvas.getContext('2d');
+                        ctx.font = style.fontSize + ' ' + style.fontFamily;
+                        var textWidth = ctx.measureText(value).width;
+
+                        if (textWidth > 0 && relX >= 0 && relX <= textWidth + 2) {
+                            // Mouse is over actual text - find approximate char position
+                            var charRatio = relX / textWidth;
+                            var caretPos = Math.round(charRatio * value.length);
+                            caretPos = Math.max(0, Math.min(caretPos, value.length));
+                            return { mode: 'inject', caretPos: caretPos };
+                        }
+
+                        return { mode: 'replace', caretPos: -1 };
+                    },
+
+                    showIndicator: function(el, x, y) {
+                        var value = el.value || '';
+                        el.classList.remove('drop-inject', 'drop-replace');
+                        var existingIndicator = el.parentElement.querySelector('.drop-caret-indicator');
+                        if (existingIndicator) existingIndicator.remove();
+
+                        if (!value.trim()) {
+                            el.classList.add('drop-replace');
+                            return;
+                        }
+
+                        var rect = el.getBoundingClientRect();
+                        var style = window.getComputedStyle(el);
+                        var paddingLeft = parseFloat(style.paddingLeft) || 0;
+                        var relX = x - rect.left - paddingLeft;
+
+                        var canvas = this._canvas || (this._canvas = document.createElement('canvas'));
+                        var ctx = canvas.getContext('2d');
+                        ctx.font = style.fontSize + ' ' + style.fontFamily;
+                        var textWidth = ctx.measureText(value).width;
+
+                        if (textWidth > 0 && relX >= 0 && relX <= textWidth + 2) {
+                            el.classList.add('drop-inject');
+                            // Show caret at position
+                            var charRatio = relX / textWidth;
+                            var caretPos = Math.round(charRatio * value.length);
+                            caretPos = Math.max(0, Math.min(caretPos, value.length));
+                            var textBeforeCaret = value.substring(0, caretPos);
+                            var caretX = ctx.measureText(textBeforeCaret).width;
+
+                            var indicator = document.createElement('div');
+                            indicator.className = 'drop-caret-indicator';
+                            indicator.style.left = (paddingLeft + caretX) + 'px';
+                            el.parentElement.style.position = 'relative';
+                            el.parentElement.appendChild(indicator);
+                        } else {
+                            el.classList.add('drop-replace');
+                        }
+                    },
+
+                    clearIndicator: function(elementId) {
+                        var el = typeof elementId === 'string' ? document.getElementById(elementId) : elementId;
+                        if (!el) return;
+                        el.classList.remove('drop-inject', 'drop-replace');
+                        var indicator = el.parentElement.querySelector('.drop-caret-indicator');
+                        if (indicator) indicator.remove();
+                    },
+
+                    init: function() {
+                        var self = this;
+                        // Use event delegation for all droppable inputs in the modal
+                        var modal = document.querySelector('.node-editor-modal');
+                        if (!modal) return;
+
+                        modal.addEventListener('dragover', function(e) {
+                            var el = e.target.closest('.droppable-input');
+                            if (!el || !el.id) return;
+
+                            var now = Date.now();
+                            if (now - self._lastUpdate < self._throttleMs) return;
+                            self._lastUpdate = now;
+
+                            self.showIndicator(el, e.clientX, e.clientY);
+                        });
+
+                        modal.addEventListener('dragleave', function(e) {
+                            var el = e.target.closest('.droppable-input');
+                            if (!el) return;
+                            // Only clear if actually leaving the element
+                            var related = e.relatedTarget;
+                            if (related && el.contains(related)) return;
+                            self.clearIndicator(el);
+                        });
+
+                        modal.addEventListener('drop', function(e) {
+                            var el = e.target.closest('.droppable-input');
+                            if (el) self.clearIndicator(el);
+                        });
+                    }
+                };
+                window.__smartDrop.init();
+            ");
 
             // Add event listener for tab key and auto-resize for textareas
             await JSRuntime.InvokeVoidAsync("eval", @"
@@ -1058,19 +1183,49 @@ role="dialog"
 
     private void HandleDragOver(DragEventArgs e)
     {
-        // Allow drop by preventing default
+        // Visual indicator is handled entirely in JS via native event delegation
+        // This method exists only to wire up @ondragover:preventDefault
     }
 
-    private void HandleDrop(DragEventArgs e, PathMapEntry mapping)
+    private async Task HandleDrop(DragEventArgs e, PathMapEntry mapping, string elementId)
     {
         if (!string.IsNullOrEmpty(_draggedFieldPath))
         {
-            // Wrap the path in Scriban template syntax
-            mapping.From = $"{{{{{_draggedFieldPath}}}}}";
+            var template = $"{{{{{_draggedFieldPath}}}}}";
+
+            try
+            {
+                // Query the drop position from JS at the moment of drop
+                var result = await JSRuntime.InvokeAsync<SmartDropInfo>("__smartDrop.getDropInfo", e.ClientX, e.ClientY, elementId);
+
+                if (result.mode == "inject" && result.caretPos >= 0 && !string.IsNullOrEmpty(mapping.From))
+                {
+                    var pos = Math.Min(result.caretPos, mapping.From.Length);
+                    mapping.From = mapping.From.Insert(pos, template);
+                }
+                else
+                {
+                    mapping.From = template;
+                }
+
+                await JSRuntime.InvokeVoidAsync("__smartDrop.clearIndicator", elementId);
+            }
+            catch
+            {
+                // Fallback to replace
+                mapping.From = template;
+            }
+
             _draggedFieldPath = null;
             TriggerAutoSave();
             StateHasChanged();
         }
+    }
+
+    private class SmartDropInfo
+    {
+        public string mode { get; set; } = "replace";
+        public int caretPos { get; set; } = -1;
     }
 
     // Preview methods

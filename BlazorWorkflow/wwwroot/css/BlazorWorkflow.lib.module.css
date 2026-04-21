@@ -979,6 +979,38 @@
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
     }
 
+    /* Smart drop: Replace mode - highlight entire field */
+    .bw-lib .droppable-input.drop-replace {
+        background: rgba(251, 146, 60, 0.12) !important;
+        border-color: rgba(251, 146, 60, 0.7) !important;
+        box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.15) !important;
+    }
+
+    /* Smart drop: Inject mode - subtle border indicating insertion */
+    .bw-lib .droppable-input.drop-inject {
+        background: rgba(74, 222, 128, 0.08) !important;
+        border-color: rgba(74, 222, 128, 0.7) !important;
+        box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.12) !important;
+    }
+
+    /* Caret indicator for inject mode */
+    .bw-lib .drop-caret-indicator {
+        position: absolute;
+        top: 4px;
+        bottom: 4px;
+        width: 2px;
+        background: rgba(74, 222, 128, 0.9);
+        border-radius: 1px;
+        pointer-events: none;
+        animation: drop-caret-blink 0.8s ease-in-out infinite;
+        z-index: 10;
+    }
+
+    @keyframes drop-caret-blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
+
     /* Modal Backdrop (Bootstrap override) */
     .bw-lib .modal-backdrop {
         position: fixed !important;
