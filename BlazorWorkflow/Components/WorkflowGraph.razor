@@ -35,22 +35,22 @@
     @if (IncludeControlPanel)
     {
         @* Floating toolbar - top-right *@
-        <div class="floating-toolbar">
-            <button class="toolbar-btn toolbar-btn--add" @onclick="OpenNodePicker" title="Add node">
+        <div class="bw-floating-toolbar">
+            <button class="bw-toolbar-btn bw-toolbar-btn--add" @onclick="OpenNodePicker" title="Add node">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 <span>Add Node</span>
             </button>
-            <div class="toolbar-divider"></div>
-            <button class="toolbar-btn toolbar-btn--run" @onclick="Run" title="Run workflow">
+            <div class="bw-toolbar-divider"></div>
+            <button class="bw-toolbar-btn bw-toolbar-btn--run" @onclick="Run" title="Run workflow">
                 <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             </button>
-            <button class="toolbar-btn" @onclick="Clear" title="Clear">
+            <button class="bw-toolbar-btn" @onclick="Clear" title="Clear">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             </button>
-            <button class="toolbar-btn" @onclick="() => showImportModal = true" title="Import">
+            <button class="bw-toolbar-btn" @onclick="() => showImportModal = true" title="Import">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </button>
-            <button class="toolbar-btn" @onclick="ExportCSharp" title="Export">
+            <button class="bw-toolbar-btn" @onclick="ExportCSharp" title="Export">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             </button>
         </div>
@@ -61,16 +61,16 @@
 @if (showNodePicker)
 {
     <div class="bw-lib">
-        <div class="add-node-backdrop" @onclick="CloseNodePicker"></div>
-        <div class="add-node-modal" @onclick:stopPropagation="true">
-            <div class="add-node-header">
-                <div class="add-node-search">
-                    <svg class="add-node-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <div class="bw-add-node-backdrop" @onclick="CloseNodePicker"></div>
+        <div class="bw-add-node-modal" @onclick:stopPropagation="true">
+            <div class="bw-add-node-header">
+                <div class="bw-add-node-search">
+                    <svg class="bw-add-node-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
                     </svg>
                     <input @ref="searchInputRef"
                            type="text"
-                           class="add-node-search-input"
+                           class="bw-add-node-search-input"
                            placeholder="Search nodes..."
                            @bind="searchQuery"
                            @bind:event="oninput"
@@ -78,14 +78,14 @@
                            autocomplete="off" />
                     @if (!string.IsNullOrWhiteSpace(searchQuery))
                     {
-                        <button class="add-node-search-clear" @onclick="() => { searchQuery = string.Empty; }">
+                        <button class="bw-add-node-search-clear" @onclick="() => { searchQuery = string.Empty; }">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                             </svg>
                         </button>
                     }
                 </div>
-                <button class="add-node-close" @onclick="CloseNodePicker" aria-label="Close">
+                <button class="bw-add-node-close" @onclick="CloseNodePicker" aria-label="Close">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                     </svg>
@@ -95,25 +95,25 @@
             @if (!string.IsNullOrWhiteSpace(searchQuery))
             {
                 @* Search mode — flat list of all matching nodes *@
-                <div class="add-node-body" @ref="nodeListRef">
+                <div class="bw-add-node-body" @ref="nodeListRef">
                     @{
                         var searchResults = AllFilteredNodes.ToList();
                     }
                     @if (searchResults.Any())
                     {
-                        <div class="node-grid">
+                        <div class="bw-node-grid">
                             @for (int i = 0; i < searchResults.Count; i++)
                             {
                                 var node = searchResults[i];
                                 var index = i;
                                 var isSelected = selectedNodeIndex == index;
-                                <button class="node-card @(isSelected ? "node-card--selected" : "")"
+                                <button class="bw-node-card @(isSelected ?"bw-node-card--selected" : "")"
                                         @onclick="@(() => HandleNodePickerSelect(node))"
                                         data-node-index="@index">
-                                    <span class="node-card-icon">f</span>
-                                    <div class="node-card-text">
-                                        <span class="node-card-name">@((MarkupString)HighlightMatch(TypeHelpers.AddSpacesToPascalCase(node.Name), searchQuery))</span>
-                                        <span class="node-card-section">@node.Section</span>
+                                    <span class="bw-node-card-icon">f</span>
+                                    <div class="bw-node-card-text">
+                                        <span class="bw-node-card-name">@((MarkupString)HighlightMatch(TypeHelpers.AddSpacesToPascalCase(node.Name), searchQuery))</span>
+                                        <span class="bw-node-card-section">@node.Section</span>
                                     </div>
                                 </button>
                             }
@@ -121,7 +121,7 @@
                     }
                     else
                     {
-                        <div class="add-node-empty">
+                        <div class="bw-add-node-empty">
                             <p>No nodes match your search</p>
                         </div>
                     }
@@ -130,20 +130,20 @@
             else
             {
                 @* Browse mode — sidebar + node list *@
-                <div class="add-node-panels">
-                    <div class="add-node-sidebar">
+                <div class="bw-add-node-panels">
+                    <div class="bw-add-node-sidebar">
                         @foreach (var section in AllTopSections)
                         {
                             var isActive = selectedSection == section;
                             var subs = GetSubsectionsFor(section);
                             var hasSubs = subs.Any();
 
-                            <button class="nav-section @(isActive && !hasSubs ? "nav-section--active" : "") @(isActive && hasSubs ? "nav-section--expanded" : "")"
+                            <button class="bw-nav-section @(isActive && !hasSubs ?"bw-nav-section--active" : "") @(isActive && hasSubs ? "bw-nav-section--expanded" : "")"
                                     @onclick="@(() => SelectTopSection(section))">
-                                <span class="nav-section-name">@(section)</span>
+                                <span class="bw-nav-section-name">@(section)</span>
                                 @if (hasSubs)
                                 {
-                                    <svg class="nav-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                                    <svg class="bw-nav-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                                 }
                             </button>
 
@@ -152,7 +152,7 @@
                                 @foreach (var sub in subs)
                                 {
                                     var isSubActive = selectedSubsection == sub;
-                                    <button class="nav-subsection @(isSubActive ? "nav-subsection--active" : "")"
+                                    <button class="bw-nav-subsection @(isSubActive ?"bw-nav-subsection--active" : "")"
                                             @onclick="@(() => SelectSubsection(sub))">
                                         @sub
                                     </button>
@@ -160,7 +160,7 @@
                             }
                         }
                     </div>
-                    <div class="add-node-body" @ref="nodeListRef">
+                    <div class="bw-add-node-body" @ref="nodeListRef">
                         @if (selectedSection != null)
                         {
                             var sectionTitle = selectedSubsection ?? selectedSection;
@@ -168,42 +168,42 @@
                                 ? NodeRegistry.GetSectionDescription($"{selectedSection}.{selectedSubsection}")
                                 : NodeRegistry.GetSectionDescription(selectedSection);
 
-                            <div class="add-node-body-header">
-                                <h3 class="add-node-body-title">@sectionTitle</h3>
+                            <div class="bw-add-node-body-header">
+                                <h3 class="bw-add-node-body-title">@sectionTitle</h3>
                                 @if (desc != null)
                                 {
-                                    <p class="add-node-section-desc">@desc</p>
+                                    <p class="bw-add-node-section-desc">@desc</p>
                                 }
                             </div>
 
                             var nodesList = FilteredNodes.ToList();
                             if (nodesList.Any())
                             {
-                                <div class="node-grid">
+                                <div class="bw-node-grid">
                                     @for (int i = 0; i < nodesList.Count; i++)
                                     {
                                         var node = nodesList[i];
                                         var index = i;
                                         var isSelected = selectedNodeIndex == index;
-                                        <button class="node-card @(isSelected ? "node-card--selected" : "")"
+                                        <button class="bw-node-card @(isSelected ?"bw-node-card--selected" : "")"
                                                 @onclick="@(() => HandleNodePickerSelect(node))"
                                                 data-node-index="@index">
-                                            <span class="node-card-icon">f</span>
-                                            <span class="node-card-name">@(TypeHelpers.AddSpacesToPascalCase(node.Name))</span>
+                                            <span class="bw-node-card-icon">f</span>
+                                            <span class="bw-node-card-name">@(TypeHelpers.AddSpacesToPascalCase(node.Name))</span>
                                         </button>
                                     }
                                 </div>
                             }
                             else
                             {
-                                <div class="add-node-empty">
+                                <div class="bw-add-node-empty">
                                     <p>No nodes in this section</p>
                                 </div>
                             }
                         }
                         else
                         {
-                            <div class="add-node-empty">
+                            <div class="bw-add-node-empty">
                                 <p>Select a category to browse nodes</p>
                             </div>
                         }
@@ -216,15 +216,15 @@
 
 @if (!string.IsNullOrWhiteSpace(_exportJson))
 {
-    <div class="export-modal-backdrop" @onclick="() => _exportJson = null">
-        <div class="export-modal" @onclick:stopPropagation="true">
-            <div class="export-modal-header">
+    <div class="bw-export-modal-backdrop" @onclick="() => _exportJson = null">
+        <div class="bw-export-modal" @onclick:stopPropagation="true">
+            <div class="bw-export-modal-header">
                 <h3>Export</h3>
                 <button class="btn-close" @onclick="() => _exportJson = null">×</button>
             </div>
-            <div class="export-modal-body">
+            <div class="bw-export-modal-body">
                 <button class="btn btn-sm btn-primary mb-2" @onclick="CopyToClipboard">Copy to Clipboard</button>
-                <textarea class="export-textarea" readonly>@_exportJson</textarea>
+                <textarea class="bw-export-textarea" readonly>@_exportJson</textarea>
             </div>
         </div>
     </div>
@@ -232,14 +232,14 @@
 
 @if (showImportModal)
 {
-    <div class="export-modal-backdrop" @onclick="() => showImportModal = false">
-        <div class="export-modal" @onclick:stopPropagation="true">
-            <div class="export-modal-header">
+    <div class="bw-export-modal-backdrop" @onclick="() => showImportModal = false">
+        <div class="bw-export-modal" @onclick:stopPropagation="true">
+            <div class="bw-export-modal-header">
                 <h3>Import</h3>
                 <button class="btn-close" @onclick="() => showImportModal = false">×</button>
             </div>
-            <div class="export-modal-body">
-                <textarea class="export-textarea" @bind="_importJson" placeholder="Paste Flow JSON here..."></textarea>
+            <div class="bw-export-modal-body">
+                <textarea class="bw-export-textarea" @bind="_importJson" placeholder="Paste Flow JSON here..."></textarea>
                 <div class="mt-2">
                     <button class="btn btn-sm btn-primary" @onclick="ImportCSharp">Import</button>
                     <button class="btn btn-sm btn-secondary" @onclick="() => showImportModal = false">Cancel</button>
@@ -420,8 +420,8 @@
         try
         {
             await JS.InvokeVoidAsync("eval", $@"
-                const container = document.querySelector('.add-node-body');
-                const selected = container?.querySelector('.picker-item--selected, .section-card--selected, .node-card--selected');
+                const container = document.querySelector('.bw-add-node-body');
+                const selected = container?.querySelector('.picker-item--selected, .section-card--selected, .bw-node-card--selected');
                 if (selected && container) {{
                     const rect = selected.getBoundingClientRect();
                     const parentRect = container.getBoundingClientRect();

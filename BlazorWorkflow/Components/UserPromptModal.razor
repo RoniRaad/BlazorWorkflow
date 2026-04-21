@@ -5,24 +5,24 @@
 
 @if (_isVisible)
 {
-    <div class="bw-lib user-prompt-overlay" @onclick="HandleOverlayClick">
-        <div class="user-prompt-modal" @onclick:stopPropagation="true">
-            <div class="user-prompt-header">
+    <div class="bw-lib bw-user-prompt-overlay" @onclick="HandleOverlayClick">
+        <div class="bw-user-prompt-modal" @onclick:stopPropagation="true">
+            <div class="bw-user-prompt-header">
                 <h3>@_currentMessage</h3>
-                <button class="user-prompt-close" @onclick="HandleCancel">
+                <button class="bw-user-prompt-close" @onclick="HandleCancel">
                     <i class="bi bi-x"></i>
                 </button>
             </div>
-            <div class="user-prompt-body">
+            <div class="bw-user-prompt-body">
                 <input type="text"
-                       class="user-prompt-input"
+                       class="bw-user-prompt-input"
                        @bind="_inputValue"
                        @bind:event="oninput"
                        @onkeydown="HandleKeyDown"
                        placeholder="Enter your response..."
                        @ref="_inputElement" />
             </div>
-            <div class="user-prompt-footer">
+            <div class="bw-user-prompt-footer">
                 <button class="btn btn-secondary" @onclick="HandleCancel">Cancel</button>
                 <button class="btn btn-primary" @onclick="HandleSubmit">Submit</button>
             </div>
