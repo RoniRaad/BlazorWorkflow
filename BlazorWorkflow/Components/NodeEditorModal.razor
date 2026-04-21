@@ -465,6 +465,67 @@ role="dialog"
                     _lastUpdate: 0,
                     _throttleMs: 50,
 
+                    // Returns { lines, lineHeight, paddingTop, paddingLeft, scrollTop, font }
+                    _getTextLayout: function(el) {
+                        var style = window.getComputedStyle(el);
+                        var lineHeight = parseFloat(style.lineHeight);
+                        if (isNaN(lineHeight)) lineHeight = parseFloat(style.fontSize) * 1.2;
+                        return {
+                            lines: (el.value || '').split('\n'),
+                            lineHeight: lineHeight,
+                            paddingTop: parseFloat(style.paddingTop) || 0,
+                            paddingLeft: parseFloat(style.paddingLeft) || 0,
+                            scrollTop: el.scrollTop || 0,
+                            font: style.fontSize + ' ' + style.fontFamily
+                        };
+                    },
+
+                    // Given mouse coords relative to the element, find { lineIndex, charInLine, charOffset }
+                    _hitTest: function(el, x, y) {
+                        var layout = this._getTextLayout(el);
+                        var rect = el.getBoundingClientRect();
+                        var relX = x - rect.left - layout.paddingLeft;
+                        var relY = y - rect.top - layout.paddingTop + layout.scrollTop;
+
+                        var canvas = this._canvas || (this._canvas = document.createElement('canvas'));
+                        var ctx = canvas.getContext('2d');
+                        ctx.font = layout.font;
+
+                        var lineIndex = Math.floor(relY / layout.lineHeight);
+                        lineIndex = Math.max(0, Math.min(lineIndex, layout.lines.length - 1));
+
+                        var lineText = layout.lines[lineIndex];
+                        var lineWidth = ctx.measureText(lineText).width;
+
+                        // Check if mouse X is over text on this line
+                        if (lineText.length === 0 || relX < 0 || relX > lineWidth + 2) {
+                            return null; // not over text
+                        }
+
+                        // Find char position within this line
+                        var charRatio = relX / lineWidth;
+                        var charInLine = Math.round(charRatio * lineText.length);
+                        charInLine = Math.max(0, Math.min(charInLine, lineText.length));
+
+                        // Convert to absolute char offset in the full value
+                        var charOffset = 0;
+                        for (var i = 0; i < lineIndex; i++) {
+                            charOffset += layout.lines[i].length + 1; // +1 for \n
+                        }
+                        charOffset += charInLine;
+
+                        return {
+                            lineIndex: lineIndex,
+                            charInLine: charInLine,
+                            charOffset: charOffset,
+                            lineText: lineText,
+                            lineHeight: layout.lineHeight,
+                            paddingTop: layout.paddingTop,
+                            paddingLeft: layout.paddingLeft,
+                            scrollTop: layout.scrollTop
+                        };
+                    },
+
                     getDropInfo: function(x, y, elementId) {
                         var el = document.getElementById(elementId);
                         if (!el) return { mode: 'replace', caretPos: -1 };
@@ -472,25 +533,10 @@ role="dialog"
                         var value = el.value || '';
                         if (!value.trim()) return { mode: 'replace', caretPos: -1 };
 
-                        var rect = el.getBoundingClientRect();
-                        var style = window.getComputedStyle(el);
-                        var paddingLeft = parseFloat(style.paddingLeft) || 0;
-                        var relX = x - rect.left - paddingLeft;
-
-                        // Estimate text width using canvas measurement
-                        var canvas = this._canvas || (this._canvas = document.createElement('canvas'));
-                        var ctx = canvas.getContext('2d');
-                        ctx.font = style.fontSize + ' ' + style.fontFamily;
-                        var textWidth = ctx.measureText(value).width;
-
-                        if (textWidth > 0 && relX >= 0 && relX <= textWidth + 2) {
-                            // Mouse is over actual text - find approximate char position
-                            var charRatio = relX / textWidth;
-                            var caretPos = Math.round(charRatio * value.length);
-                            caretPos = Math.max(0, Math.min(caretPos, value.length));
-                            return { mode: 'inject', caretPos: caretPos };
+                        var hit = this._hitTest(el, x, y);
+                        if (hit) {
+                            return { mode: 'inject', caretPos: hit.charOffset };
                         }
-
                         return { mode: 'replace', caretPos: -1 };
                     },
 
@@ -505,28 +551,23 @@ role="dialog"
                             return;
                         }
 
-                        var rect = el.getBoundingClientRect();
-                        var style = window.getComputedStyle(el);
-                        var paddingLeft = parseFloat(style.paddingLeft) || 0;
-                        var relX = x - rect.left - paddingLeft;
-
-                        var canvas = this._canvas || (this._canvas = document.createElement('canvas'));
-                        var ctx = canvas.getContext('2d');
-                        ctx.font = style.fontSize + ' ' + style.fontFamily;
-                        var textWidth = ctx.measureText(value).width;
-
-                        if (textWidth > 0 && relX >= 0 && relX <= textWidth + 2) {
+                        var hit = this._hitTest(el, x, y);
+                        if (hit) {
                             el.classList.add('drop-inject');
-                            // Show caret at position
-                            var charRatio = relX / textWidth;
-                            var caretPos = Math.round(charRatio * value.length);
-                            caretPos = Math.max(0, Math.min(caretPos, value.length));
-                            var textBeforeCaret = value.substring(0, caretPos);
+
+                            var canvas = this._canvas || (this._canvas = document.createElement('canvas'));
+                            var ctx = canvas.getContext('2d');
+                            ctx.font = this._getTextLayout(el).font;
+                            var textBeforeCaret = hit.lineText.substring(0, hit.charInLine);
                             var caretX = ctx.measureText(textBeforeCaret).width;
+
+                            var caretTop = hit.paddingTop + (hit.lineIndex * hit.lineHeight) - hit.scrollTop;
 
                             var indicator = document.createElement('div');
                             indicator.className = 'drop-caret-indicator';
-                            indicator.style.left = (paddingLeft + caretX) + 'px';
+                            indicator.style.left = (hit.paddingLeft + caretX) + 'px';
+                            indicator.style.top = caretTop + 'px';
+                            indicator.style.height = hit.lineHeight + 'px';
                             el.parentElement.style.position = 'relative';
                             el.parentElement.appendChild(indicator);
                         } else {

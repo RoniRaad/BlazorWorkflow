@@ -996,8 +996,6 @@
     /* Caret indicator for inject mode */
     .bw-lib .drop-caret-indicator {
         position: absolute;
-        top: 4px;
-        bottom: 4px;
         width: 2px;
         background: rgba(74, 222, 128, 0.9);
         border-radius: 1px;
