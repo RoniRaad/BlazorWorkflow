@@ -1009,6 +1009,21 @@
         50% { opacity: 0.4; }
     }
 
+    /* Smart drop: Replace-scriban mode - highlight the scriban expression being replaced */
+    .bw-lib .droppable-input.drop-replace-scriban {
+        border-color: rgba(251, 191, 36, 0.7) !important;
+        box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.12) !important;
+    }
+
+    .bw-lib .drop-scriban-highlight {
+        position: absolute;
+        background: rgba(251, 191, 36, 0.25);
+        border-radius: 2px;
+        pointer-events: none;
+        z-index: 10;
+        border-bottom: 2px solid rgba(251, 191, 36, 0.8);
+    }
+
     /* Modal Backdrop (Bootstrap override) */
     .bw-lib .modal-backdrop {
         position: fixed !important;

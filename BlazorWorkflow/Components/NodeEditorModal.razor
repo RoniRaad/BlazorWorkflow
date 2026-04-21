@@ -532,25 +532,52 @@ role="dialog"
                         };
                     },
 
+                    // Find the scriban expression {{...}} that contains the given position
+                    _findScribanAt: function(value, pos) {
+                        var opens = [];
+                        for (var i = 0; i < value.length - 1; i++) {
+                            if (value[i] === '{' && value[i + 1] === '{') {
+                                opens.push(i);
+                            }
+                        }
+                        for (var o = opens.length - 1; o >= 0; o--) {
+                            var start = opens[o];
+                            // Find the matching }}
+                            var end = value.indexOf('}}', start + 2);
+                            if (end === -1) continue;
+                            end += 2; // include the }}
+                            if (pos >= start && pos <= end) {
+                                return { start: start, end: end };
+                            }
+                        }
+                        return null;
+                    },
+
                     getDropInfo: function(x, y, elementId) {
                         var el = document.getElementById(elementId);
-                        if (!el) return { mode: 'replace', caretPos: -1 };
+                        if (!el) return { mode: 'replace', caretPos: -1, scribanStart: -1, scribanEnd: -1 };
 
                         var value = el.value || '';
-                        if (!value.trim()) return { mode: 'replace', caretPos: -1 };
+                        if (!value.trim()) return { mode: 'replace', caretPos: -1, scribanStart: -1, scribanEnd: -1 };
 
                         var hit = this._hitTest(el, x, y);
                         if (hit) {
-                            return { mode: 'inject', caretPos: hit.charOffset };
+                            var scriban = this._findScribanAt(value, hit.charOffset);
+                            if (scriban) {
+                                return { mode: 'replace-scriban', caretPos: hit.charOffset, scribanStart: scriban.start, scribanEnd: scriban.end };
+                            }
+                            return { mode: 'inject', caretPos: hit.charOffset, scribanStart: -1, scribanEnd: -1 };
                         }
-                        return { mode: 'replace', caretPos: -1 };
+                        return { mode: 'replace', caretPos: -1, scribanStart: -1, scribanEnd: -1 };
                     },
 
                     showIndicator: function(el, x, y) {
                         var value = el.value || '';
-                        el.classList.remove('drop-inject', 'drop-replace');
+                        el.classList.remove('drop-inject', 'drop-replace', 'drop-replace-scriban');
                         var existingIndicator = el.parentElement.querySelector('.drop-caret-indicator');
                         if (existingIndicator) existingIndicator.remove();
+                        var existingHighlight = el.parentElement.querySelector('.drop-scriban-highlight');
+                        if (existingHighlight) existingHighlight.remove();
 
                         if (!value.trim()) {
                             el.classList.add('drop-replace');
@@ -559,23 +586,53 @@ role="dialog"
 
                         var hit = this._hitTest(el, x, y);
                         if (hit) {
-                            el.classList.add('drop-inject');
+                            var scriban = this._findScribanAt(value, hit.charOffset);
+                            if (scriban) {
+                                // Hovering over a scriban expression — show highlight over it
+                                el.classList.add('drop-replace-scriban');
+                                var layout = this._getTextLayout(el);
+                                var canvas = this._canvas || (this._canvas = document.createElement('canvas'));
+                                var ctx = canvas.getContext('2d');
+                                ctx.font = layout.font;
 
-                            var canvas = this._canvas || (this._canvas = document.createElement('canvas'));
-                            var ctx = canvas.getContext('2d');
-                            ctx.font = this._getTextLayout(el).font;
-                            var textBeforeCaret = hit.lineText.substring(0, hit.charInLine);
-                            var caretX = ctx.measureText(textBeforeCaret).width;
+                                // Find which line the scriban starts on (simplified: assume single line)
+                                var beforeScriban = value.substring(0, scriban.start);
+                                var scribanLines = beforeScriban.split('\n');
+                                var scribanLineIdx = scribanLines.length - 1;
+                                var charInLineStart = scribanLines[scribanLineIdx].length;
+                                var scribanText = value.substring(scriban.start, scriban.end);
+                                var lineText = layout.lines[scribanLineIdx] || '';
 
-                            var caretTop = hit.paddingTop + (hit.lineIndex * hit.lineHeight) - hit.scrollTop;
+                                var startX = ctx.measureText(lineText.substring(0, charInLineStart)).width;
+                                var scribanWidth = ctx.measureText(scribanText).width;
+                                var hlTop = layout.paddingTop + (scribanLineIdx * layout.lineHeight) - layout.scrollTop;
 
-                            var indicator = document.createElement('div');
-                            indicator.className = 'drop-caret-indicator';
-                            indicator.style.left = (hit.paddingLeft + caretX) + 'px';
-                            indicator.style.top = caretTop + 'px';
-                            indicator.style.height = hit.lineHeight + 'px';
-                            el.parentElement.style.position = 'relative';
-                            el.parentElement.appendChild(indicator);
+                                var highlight = document.createElement('div');
+                                highlight.className = 'drop-scriban-highlight';
+                                highlight.style.left = (layout.paddingLeft + startX) + 'px';
+                                highlight.style.top = hlTop + 'px';
+                                highlight.style.width = scribanWidth + 'px';
+                                highlight.style.height = layout.lineHeight + 'px';
+                                el.parentElement.style.position = 'relative';
+                                el.parentElement.appendChild(highlight);
+                            } else {
+                                // Hovering over plain text — show inject caret
+                                el.classList.add('drop-inject');
+                                var canvas = this._canvas || (this._canvas = document.createElement('canvas'));
+                                var ctx = canvas.getContext('2d');
+                                ctx.font = this._getTextLayout(el).font;
+                                var textBeforeCaret = hit.lineText.substring(0, hit.charInLine);
+                                var caretX = ctx.measureText(textBeforeCaret).width;
+                                var caretTop = hit.paddingTop + (hit.lineIndex * hit.lineHeight) - hit.scrollTop;
+
+                                var indicator = document.createElement('div');
+                                indicator.className = 'drop-caret-indicator';
+                                indicator.style.left = (hit.paddingLeft + caretX) + 'px';
+                                indicator.style.top = caretTop + 'px';
+                                indicator.style.height = hit.lineHeight + 'px';
+                                el.parentElement.style.position = 'relative';
+                                el.parentElement.appendChild(indicator);
+                            }
                         } else {
                             el.classList.add('drop-replace');
                         }
@@ -584,9 +641,11 @@ role="dialog"
                     clearIndicator: function(elementId) {
                         var el = typeof elementId === 'string' ? document.getElementById(elementId) : elementId;
                         if (!el) return;
-                        el.classList.remove('drop-inject', 'drop-replace');
+                        el.classList.remove('drop-inject', 'drop-replace', 'drop-replace-scriban');
                         var indicator = el.parentElement.querySelector('.drop-caret-indicator');
                         if (indicator) indicator.remove();
+                        var highlight = el.parentElement.querySelector('.drop-scriban-highlight');
+                        if (highlight) highlight.remove();
                     },
 
                     init: function() {
@@ -1245,7 +1304,14 @@ role="dialog"
                 // Query the drop position from JS at the moment of drop
                 var result = await JSRuntime.InvokeAsync<SmartDropInfo>("__smartDrop.getDropInfo", e.ClientX, e.ClientY, elementId);
 
-                if (result.mode == "inject" && result.caretPos >= 0 && !string.IsNullOrEmpty(mapping.From))
+                if (result.mode == "replace-scriban" && result.scribanStart >= 0 && result.scribanEnd >= 0 && !string.IsNullOrEmpty(mapping.From))
+                {
+                    // Replace the existing scriban expression with the new one
+                    var start = Math.Min(result.scribanStart, mapping.From.Length);
+                    var end = Math.Min(result.scribanEnd, mapping.From.Length);
+                    mapping.From = mapping.From[..start] + template + mapping.From[end..];
+                }
+                else if (result.mode == "inject" && result.caretPos >= 0 && !string.IsNullOrEmpty(mapping.From))
                 {
                     var pos = Math.Min(result.caretPos, mapping.From.Length);
                     mapping.From = mapping.From.Insert(pos, template);
@@ -1273,6 +1339,8 @@ role="dialog"
     {
         public string mode { get; set; } = "replace";
         public int caretPos { get; set; } = -1;
+        public int scribanStart { get; set; } = -1;
+        public int scribanEnd { get; set; } = -1;
     }
 
     // Preview methods
