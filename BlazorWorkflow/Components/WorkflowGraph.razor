@@ -753,8 +753,50 @@
             node.NodeInputToMethodInputMap = MappingHelpers.GenerateDefaultInputMappings(node.BackingMethod);
         }
 
+        // Find or create a start node to connect to
+        var startMethod = typeof(BlazorWorkflow.Flow.BaseNodes.CoreNodes).GetMethod(nameof(BlazorWorkflow.Flow.BaseNodes.CoreNodes.Start));
+        var isStartNode = node.BackingMethod == startMethod;
+
+        Node? startNode = null;
+        if (!isStartNode)
+        {
+            startNode = Graph.Nodes.Values.FirstOrDefault(n => n.BackingMethod == startMethod);
+
+            // No start node exists — create one first
+            if (startNode == null && startMethod != null)
+            {
+                startNode = DrawflowHelpers.CreateNodeFromMethod(startMethod);
+                startNode.PosX = 50;
+                startNode.PosY = 50;
+                startNode.NodeInputToMethodInputMap = MappingHelpers.GenerateDefaultInputMappings(startNode.BackingMethod);
+                startNode.DrawflowNodeId = (await _base.CreateNodeV2(startNode, "ƒ")).ToString();
+                Graph.Nodes[startNode.DrawflowNodeId] = startNode;
+
+                // Position new node to the right of the start node
+                node.PosX = startNode.PosX + 250;
+                node.PosY = startNode.PosY;
+            }
+        }
+
+        // Check if the only other node is the start node (auto-connect scenario)
+        var nonStartNodes = Graph.Nodes.Values.Where(n => n.BackingMethod != startMethod).ToList();
+        bool shouldAutoConnect = !isStartNode && startNode != null && nonStartNodes.Count == 0;
+
         node.DrawflowNodeId = (await _base.CreateNodeV2(node, "ƒ")).ToString();
         Graph.Nodes[node.DrawflowNodeId] = node;
+
+        if (shouldAutoConnect && startNode != null)
+        {
+            // Create visual connection in drawflow
+            await _base.Editor!.AddConnectionAsync(startNode.DrawflowNodeId, node.DrawflowNodeId, "output_1", "input_1");
+
+            // Create logical connection
+            startNode.AddOutputConnection("default", node);
+            if (!node.InputNodes.Contains(startNode))
+            {
+                node.InputNodes.Add(startNode);
+            }
+        }
 
         // Attach event handlers to new node
         AttachNodeEventHandlers();
