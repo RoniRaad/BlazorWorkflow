@@ -23,6 +23,7 @@
     <NodeEditorModal SaveRequested=SaveChanges
     CloseRequested="@(() => showModal = false)"
     ExecuteInputRequested="ExecuteInputNodes"
+    ExecuteThisNodeRequested="ExecuteSingleNode"
     EnvironmentVariables="EnvironmentVariables"
     WorkflowParameters="WorkflowParameters"
     BackingNode="@(editNode)"></NodeEditorModal>
@@ -46,10 +47,10 @@
             <button class="toolbar-btn" @onclick="Clear" title="Clear">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             </button>
-            <button class="toolbar-btn" @onclick="ExportCSharp" title="Export">
+            <button class="toolbar-btn" @onclick="() => showImportModal = true" title="Import">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </button>
-            <button class="toolbar-btn" @onclick="() => showImportModal = true" title="Import">
+            <button class="toolbar-btn" @onclick="ExportCSharp" title="Export">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             </button>
         </div>
@@ -529,6 +530,22 @@
         }).ConfigureAwait(false);
     }
 
+    private async Task ExecuteSingleNode()
+    {
+        if (editNode == null) return;
+
+        await Task.Run(async () =>
+        {
+            // Clear only this node's result so it re-executes
+            editNode.Result = null;
+            editNode.HasError = false;
+            editNode.ErrorMessage = null;
+
+            // Re-execute just this node using its existing Input data
+            await editNode.GetResult(editNode).ConfigureAwait(false);
+        }).ConfigureAwait(false);
+    }
+
     async Task SetStatusAsync(string nodeId, bool isRunning, bool hasError = false, string? errorMessage = null, int? outputPos = null, object? value = null)
     {
         var status = new NodeStatus
@@ -725,6 +742,9 @@
 
     private async Task CreateNode(Node nodeTemplate)
     {
+        // Snapshot before creating so we can undo back to the pre-creation state
+        await TakeSnapshotFromEditorAsync();
+
         var node = DrawflowHelpers.CreateNodeFromMethod(nodeTemplate.BackingMethod);
         var returnProps = TypeHelpers.GetReturnProperties(node.BackingMethod);
         node.ParentWorkflowId = nodeTemplate.ParentWorkflowId;
@@ -787,8 +807,17 @@
 
         if (shouldAutoConnect && startNode != null)
         {
-            // Create visual connection in drawflow
-            await _base.Editor!.AddConnectionAsync(startNode.DrawflowNodeId, node.DrawflowNodeId, "output_1", "input_1");
+            // Suppress events — we already took a snapshot before CreateNode
+            _suppressEvents = true;
+            try
+            {
+                // Create visual connection in drawflow
+                await _base.Editor!.AddConnectionAsync(startNode.DrawflowNodeId, node.DrawflowNodeId, "output_1", "input_1");
+            }
+            finally
+            {
+                _suppressEvents = false;
+            }
 
             // Create logical connection
             startNode.AddOutputConnection("default", node);
@@ -858,7 +887,8 @@
     {
         if (_base is null) return;
         var nodes = Graph.Nodes.Select(x => x.Value).ToList();
-        _exportJson = FlowSerializer.SerializeFlow(nodes);
+        var json = FlowSerializer.SerializeFlow(nodes);
+        _exportJson = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
     }
 
     private async Task ImportCSharp()
@@ -868,7 +898,19 @@
         try
         {
             _importError = null;
-            var nodes = FlowSerializer.DeserializeFlow(_importJson);
+
+            // Decode base64 to JSON, fall back to raw JSON for backwards compatibility
+            string json;
+            try
+            {
+                json = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(_importJson.Trim()));
+            }
+            catch (FormatException)
+            {
+                json = _importJson;
+            }
+
+            var nodes = FlowSerializer.DeserializeFlow(json);
 
             // Clear existing graph
             await _base.CallAsync<object>("clear");
@@ -881,8 +923,8 @@
             }
 
             // Import nodes to drawflow
-            var json = DrawflowExporter.ExportToDrawflowJson(nodes);
-            await _base.CallAsync("import", json);
+            var drawflowJson = DrawflowExporter.ExportToDrawflowJson(nodes);
+            await _base.CallAsync("import", drawflowJson);
             await _base.JS.InvokeVoidAsync("nextFrame");
 
             // Re-apply port labels for nodes with multiple outputs

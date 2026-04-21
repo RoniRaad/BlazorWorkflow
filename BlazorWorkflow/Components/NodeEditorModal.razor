@@ -27,6 +27,7 @@ aria-labelledby="nodeEditorLabel"
 aria-modal="true"
 role="dialog"
 @onkeydown="HandleKeyDown"
+@onclick="CloseRunMenu"
 @ref="_modalRef">
     <div class="modal-dialog node-editor-dialog">
         <div class="modal-content node-editor-content">
@@ -71,23 +72,47 @@ role="dialog"
                         }
                     }
                 </div>
-                <button type="button"
-                class="btn-execute-flow"
-                @onclick="ExecuteInput"
-                disabled="@isExecuting"
-                data-role="execute-input"
-                title="Execute Flow">
+                <div class="execute-split-btn" data-role="execute-input" @onclick:stopPropagation="true">
                     @if (isExecuting)
                     {
-                        <span class="spinner-border" role="status" aria-hidden="true" style="width: 40px; height: 40px;"></span>
+                        <div class="btn-execute-flow" disabled>
+                            <span class="spinner-border" role="status" aria-hidden="true" style="width: 40px; height: 40px;"></span>
+                        </div>
                     }
                     else
                     {
-                        <svg viewBox="0 0 24 24" fill="currentColor" style="width: 40px; height: 40px;">
-                            <path d="M8 5v14l11-7z"/>
-                        </svg>
+                        <button type="button" class="btn-execute-flow" @onclick="() => _showRunMenu = !_showRunMenu" title="Run options">
+                            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 40px; height: 40px;">
+                                <path d="M8 5v14l11-7z"/>
+                            </svg>
+                        </button>
+                        @if (_showRunMenu)
+                        {
+                            <div class="run-menu">
+                                <button class="run-menu-option" @onclick="ExecuteWorkflow">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="run-menu-icon"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                    <div class="run-menu-text">
+                                        <span class="run-menu-label">Run workflow</span>
+                                        <span class="run-menu-hint">Execute the full workflow up to this node</span>
+                                    </div>
+                                </button>
+                                @{
+                                    var hasInputData = BackingNode?.Input != null;
+                                }
+                                <button class="run-menu-option @(!hasInputData ? "run-menu-option--disabled" : "")"
+                                        @onclick="() => { if (hasInputData) ExecuteThisNode(); }"
+                                        disabled="@(!hasInputData)"
+                                        title="@(!hasInputData ? "Run the workflow first to populate input data for this node" : "Re-run this node using data from the last workflow execution")">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="run-menu-icon"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                                    <div class="run-menu-text">
+                                        <span class="run-menu-label">Run this node only</span>
+                                        <span class="run-menu-hint">@(!hasInputData ? "Workflow must be run first to get input data" : "Re-run using data from the last execution")</span>
+                                    </div>
+                                </button>
+                            </div>
+                        }
                     }
-                </button>
+                </div>
             </div>
 
             <!-- Error Alert -->
@@ -395,6 +420,9 @@ role="dialog"
     public EventCallback ExecuteInputRequested { get; set; }
 
     [Parameter]
+    public EventCallback ExecuteThisNodeRequested { get; set; }
+
+    [Parameter]
     public required Node BackingNode { get; set; } = new() { BackingMethod = null };
 
     [Parameter]
@@ -413,6 +441,7 @@ role="dialog"
     private bool isSaving = false;
     private bool saveSuccess = false;
     private bool isExecuting = false;
+    private bool _showRunMenu = false;
     private string? _draggedFieldPath = null;
     private PathMapEntry? _previewMapping = null;
     private ElementReference _previewButtonRef;
@@ -1034,8 +1063,9 @@ role="dialog"
         await HandleClose();
     }
 
-    private async Task ExecuteInput()
+    private async Task ExecuteWorkflow()
     {
+        _showRunMenu = false;
         if (isExecuting) return;
 
         isExecuting = true;
@@ -1044,25 +1074,7 @@ role="dialog"
         try
         {
             await ExecuteInputRequested.InvokeAsync();
-
-            // Refresh the payload data after execution
-            IncomingPayloadJson = BuildFullInputPayload();
-            OutputPayloadJson = BackingNode?.Result;
-
-            // Reset error dismissed state after execution if there's an error
-            if (BackingNode?.HasError == true)
-            {
-                _errorDismissed = false;
-                _lastErrorMessage = BackingNode.ErrorMessage;
-            }
-            else if (BackingNode?.HasError == false)
-            {
-                // Clear tracking when there's no error
-                _lastErrorMessage = null;
-            }
-
-            StateHasChanged();
-
+            RefreshAfterExecution();
             await Task.Delay(1000);
         }
         catch (Exception ex)
@@ -1073,6 +1085,53 @@ role="dialog"
             isExecuting = false;
             StateHasChanged();
         }
+    }
+
+    private async Task ExecuteThisNode()
+    {
+        _showRunMenu = false;
+        if (isExecuting || BackingNode?.Input == null) return;
+
+        isExecuting = true;
+        StateHasChanged();
+
+        try
+        {
+            await ExecuteThisNodeRequested.InvokeAsync();
+            RefreshAfterExecution();
+            await Task.Delay(1000);
+        }
+        catch (Exception ex)
+        {
+        }
+        finally
+        {
+            isExecuting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CloseRunMenu()
+    {
+        if (_showRunMenu) _showRunMenu = false;
+    }
+
+    private void RefreshAfterExecution()
+    {
+        IncomingPayloadJson = BuildFullInputPayload();
+        OutputPayloadJson = BackingNode?.Result;
+
+        if (BackingNode?.HasError == true)
+        {
+            _errorDismissed = false;
+            _lastErrorMessage = BackingNode.ErrorMessage;
+        }
+        else if (BackingNode?.HasError == false)
+        {
+            _lastErrorMessage = null;
+        }
+
+        StateHasChanged();
     }
 
     private void TriggerAutoSave()

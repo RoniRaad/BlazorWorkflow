@@ -386,7 +386,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 8px;
+    gap: 8px;
 }
 
 .workflow-item-header h6 {
@@ -403,48 +403,70 @@
 .workflow-item-header-right {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 2px;
     flex-shrink: 0;
 }
 
-.workflow-item-header small {
+.workflow-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.workflow-item-meta small {
     font-size: 12px;
     color: var(--bw-text-secondary);
+}
+
+.workflow-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.workflow-status-dot.success {
+    background: var(--bw-success-color, #22c55e);
+}
+
+.workflow-status-dot.error {
+    background: var(--bw-danger-color, #ef4444);
 }
 
 .workflow-item-menu-anchor {
     position: relative;
 }
 
-.workflow-item-menu-btn {
+.workflow-item-action-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
     padding: 0;
     border: none;
-    border-radius: 6px;
+    border-radius: 5px;
     background: transparent;
     color: var(--bw-text-secondary);
     cursor: pointer;
     transition: all 0.12s ease;
-    opacity: 0;
+    opacity: 0.5;
 }
 
-.workflow-item:hover .workflow-item-menu-btn,
-.workflow-item.selected .workflow-item-menu-btn {
+.workflow-item:hover .workflow-item-action-btn,
+.workflow-item.selected .workflow-item-action-btn {
     opacity: 1;
 }
 
-.workflow-item-menu-btn:hover {
+.workflow-item-action-btn:hover {
     background: rgba(255, 255, 255, 0.08);
     color: var(--bw-text-primary);
 }
 
-.workflow-item-menu-btn svg {
-    width: 16px;
-    height: 16px;
+.workflow-item-action-btn svg {
+    width: 14px;
+    height: 14px;
 }
 
 .workflow-item-menu {
