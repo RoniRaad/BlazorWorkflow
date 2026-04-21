@@ -424,6 +424,15 @@ role="dialog"
     private System.Threading.Timer? _autoSaveTimer;
     private readonly int _autoSaveDelayMs = 500; // 500ms debounce
 
+    // Modal-level undo/redo for field changes
+    private readonly Stack<ViewModelSnapshot> _modalUndoStack = new();
+    private readonly Stack<ViewModelSnapshot> _modalRedoStack = new();
+    private const int MaxUndoSteps = 50;
+    private bool _isUndoRedoing = false;
+    private ViewModelSnapshot? _lastSnapshotState = null;
+    private DotNetObjectReference<NodeEditorModal>? _modalDotNetRef;
+    private Node? _undoInitializedForNode;
+
     // JSON preview controls
     private string _jsonSearchTerm = "";
     private string _jsonFilterMode = "Input";
@@ -751,6 +760,44 @@ role="dialog"
                     observer.observe(modalContainer, { childList: true, subtree: true });
                 }
             ");
+
+            // Setup modal-level Ctrl+Z/Y handler that prevents browser default
+            _modalDotNetRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("eval", @"
+                window.__modalUndoRedo = {
+                    _handler: null,
+                    _dotNetRef: null,
+                    setup: function(dotNetRef) {
+                        this._dotNetRef = dotNetRef;
+                        this._handler = function(e) {
+                            var modal = document.querySelector('.node-editor-modal');
+                            if (!modal) return;
+
+                            var isCtrl = e.ctrlKey || e.metaKey;
+                            if (!isCtrl) return;
+
+                            if (e.key === 'z' && !e.shiftKey) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                dotNetRef.invokeMethodAsync('OnModalUndoRequested');
+                            } else if (e.key === 'y' || (e.key === 'Z' && e.shiftKey)) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                dotNetRef.invokeMethodAsync('OnModalRedoRequested');
+                            }
+                        };
+                        document.addEventListener('keydown', this._handler, true);
+                    },
+                    teardown: function() {
+                        if (this._handler) {
+                            document.removeEventListener('keydown', this._handler, true);
+                            this._handler = null;
+                        }
+                        this._dotNetRef = null;
+                    }
+                };
+            ");
+            await JSRuntime.InvokeVoidAsync("__modalUndoRedo.setup", _modalDotNetRef);
         }
     }
 
@@ -758,11 +805,22 @@ role="dialog"
     {
         base.OnParametersSet();
 
-        // Create a fresh ViewModel each time to avoid stale data
-        ViewModel = new NodeEditorModalViewModel();
-        ViewModel.NodeInputToMethodInputMap = BackingNode.NodeInputToMethodInputMap;
-        ViewModel.MethodOutputToNodeOutputMap = BackingNode.MethodOutputToNodeOutputMap;
-        ViewModel.DictionaryParameterMappings = new Dictionary<string, List<PathMapEntry>>(BackingNode.DictionaryParameterMappings);
+        var nodeChanged = !ReferenceEquals(BackingNode, _undoInitializedForNode);
+
+        if (nodeChanged)
+        {
+            // Create a fresh ViewModel only when the node changes (not on every re-render)
+            ViewModel = new NodeEditorModalViewModel();
+            ViewModel.NodeInputToMethodInputMap = BackingNode.NodeInputToMethodInputMap;
+            ViewModel.MethodOutputToNodeOutputMap = BackingNode.MethodOutputToNodeOutputMap;
+            ViewModel.DictionaryParameterMappings = new Dictionary<string, List<PathMapEntry>>(BackingNode.DictionaryParameterMappings);
+
+            // Initialize undo/redo state for this modal session
+            _modalUndoStack.Clear();
+            _modalRedoStack.Clear();
+            _lastSnapshotState = TakeViewModelSnapshot();
+            _undoInitializedForNode = BackingNode;
+        }
 
         OutputPayloadJson = BackingNode?.Result;
         IncomingPayloadJson = BuildFullInputPayload();
@@ -1019,6 +1077,12 @@ role="dialog"
 
     private void TriggerAutoSave()
     {
+        // Push undo snapshot before changes are saved (skip if this is an undo/redo operation)
+        if (!_isUndoRedoing)
+        {
+            PushUndoSnapshot();
+        }
+
         // Cancel previous timer if exists
         _autoSaveTimer?.Dispose();
 
@@ -1071,12 +1135,14 @@ role="dialog"
     private void RemoveMethodOutputToNodeOutputMap(PathMapEntry viewModel)
     {
         ViewModel.MethodOutputToNodeOutputMap.Remove(viewModel);
+        TriggerAutoSave();
         StateHasChanged();
     }
 
     private void RemoveNodeInputToMethodInputMap(PathMapEntry viewModel)
     {
         ViewModel.NodeInputToMethodInputMap.Remove(viewModel);
+        TriggerAutoSave();
         StateHasChanged();
     }
 
@@ -1104,6 +1170,7 @@ role="dialog"
                 From = defaultValue,
                 To = unmappedParam.Name ?? string.Empty
             });
+            TriggerAutoSave();
             StateHasChanged();
         }
         // Don't add empty mapping if all parameters are already mapped
@@ -1129,6 +1196,7 @@ role="dialog"
                     From = unmappedProp.Name,
                     To = unmappedProp.Name
                 });
+                TriggerAutoSave();
                 StateHasChanged();
             }
             // Don't add empty mapping if all properties are already mapped
@@ -1144,6 +1212,7 @@ role="dialog"
                     From = "result",
                     To = "result"
                 });
+                TriggerAutoSave();
                 StateHasChanged();
             }
             // Don't add empty mapping if "result" is already mapped
@@ -1424,6 +1493,18 @@ role="dialog"
         {
             // Ignore errors if JS isn't loaded yet
         }
+    }
+
+    [JSInvokable]
+    public void OnModalUndoRequested()
+    {
+        ModalUndo();
+    }
+
+    [JSInvokable]
+    public void OnModalRedoRequested()
+    {
+        ModalRedo();
     }
 
     [JSInvokable]
@@ -2043,8 +2124,118 @@ role="dialog"
         };
     }
 
+    // Undo/redo snapshot for modal field changes
+    private class ViewModelSnapshot
+    {
+        public List<(string From, string To, bool ExposeAsWorkflowOutput)> InputMappings { get; set; } = new();
+        public List<(string From, string To, bool ExposeAsWorkflowOutput)> OutputMappings { get; set; } = new();
+        public Dictionary<string, List<(string From, string To)>> DictionaryMappings { get; set; } = new();
+    }
+
+    private ViewModelSnapshot TakeViewModelSnapshot()
+    {
+        return new ViewModelSnapshot
+        {
+            InputMappings = ViewModel.NodeInputToMethodInputMap
+                .Select(m => (m.From, m.To, m.ExposeAsWorkflowOutput)).ToList(),
+            OutputMappings = ViewModel.MethodOutputToNodeOutputMap
+                .Select(m => (m.From, m.To, m.ExposeAsWorkflowOutput)).ToList(),
+            DictionaryMappings = ViewModel.DictionaryParameterMappings
+                .ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value.Select(e => (e.From, e.To)).ToList()
+                )
+        };
+    }
+
+    private void RestoreViewModelSnapshot(ViewModelSnapshot snapshot)
+    {
+        ViewModel.NodeInputToMethodInputMap = snapshot.InputMappings
+            .Select(m => new PathMapEntry { From = m.From, To = m.To, ExposeAsWorkflowOutput = m.ExposeAsWorkflowOutput }).ToList();
+        ViewModel.MethodOutputToNodeOutputMap = snapshot.OutputMappings
+            .Select(m => new PathMapEntry { From = m.From, To = m.To, ExposeAsWorkflowOutput = m.ExposeAsWorkflowOutput }).ToList();
+        ViewModel.DictionaryParameterMappings = snapshot.DictionaryMappings
+            .ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value.Select(e => new PathMapEntry { From = e.From, To = e.To }).ToList()
+            );
+    }
+
+    private void PushUndoSnapshot()
+    {
+        if (_isUndoRedoing) return;
+
+        if (_lastSnapshotState != null)
+        {
+            _modalUndoStack.Push(_lastSnapshotState);
+            _modalRedoStack.Clear();
+
+            // Limit stack size
+            if (_modalUndoStack.Count > MaxUndoSteps)
+            {
+                var items = _modalUndoStack.ToArray();
+                _modalUndoStack.Clear();
+                for (int i = items.Length - MaxUndoSteps; i < items.Length; i++)
+                    _modalUndoStack.Push(items[i]);
+            }
+        }
+
+        // Update last known state to current (post-mutation) state
+        _lastSnapshotState = TakeViewModelSnapshot();
+    }
+
+    private void ModalUndo()
+    {
+        if (_modalUndoStack.Count == 0) return;
+
+        _isUndoRedoing = true;
+        try
+        {
+            // Save current state for redo
+            _modalRedoStack.Push(TakeViewModelSnapshot());
+            // Restore previous state
+            var previous = _modalUndoStack.Pop();
+            RestoreViewModelSnapshot(previous);
+            _lastSnapshotState = TakeViewModelSnapshot();
+            TriggerAutoSave();
+            StateHasChanged();
+        }
+        finally
+        {
+            _isUndoRedoing = false;
+        }
+    }
+
+    private void ModalRedo()
+    {
+        if (_modalRedoStack.Count == 0) return;
+
+        _isUndoRedoing = true;
+        try
+        {
+            // Save current state for undo
+            _modalUndoStack.Push(TakeViewModelSnapshot());
+            // Restore next state
+            var next = _modalRedoStack.Pop();
+            RestoreViewModelSnapshot(next);
+            _lastSnapshotState = TakeViewModelSnapshot();
+            TriggerAutoSave();
+            StateHasChanged();
+        }
+        finally
+        {
+            _isUndoRedoing = false;
+        }
+    }
+
     public void Dispose()
     {
         _autoSaveTimer?.Dispose();
+        try
+        {
+            _ = JSRuntime.InvokeVoidAsync("__modalUndoRedo.teardown");
+        }
+        catch { }
+        _modalDotNetRef?.Dispose();
     }
 }
