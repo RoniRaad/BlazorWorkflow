@@ -23,6 +23,8 @@
     <NodeEditorModal SaveRequested=SaveChanges
     CloseRequested="@(() => showModal = false)"
     ExecuteInputRequested="ExecuteInputNodes"
+    EnvironmentVariables="EnvironmentVariables"
+    WorkflowParameters="WorkflowParameters"
     BackingNode="@(editNode)"></NodeEditorModal>
 }
 

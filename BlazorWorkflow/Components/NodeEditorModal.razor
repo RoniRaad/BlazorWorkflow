@@ -398,6 +398,12 @@ role="dialog"
     public required Node BackingNode { get; set; } = new() { BackingMethod = null };
 
     [Parameter]
+    public Dictionary<string, string> EnvironmentVariables { get; set; } = new();
+
+    [Parameter]
+    public Dictionary<string, string> WorkflowParameters { get; set; } = new();
+
+    [Parameter]
     public JsonNode? IncomingPayloadJson { get; set; }
 
     [Parameter]
@@ -700,7 +706,7 @@ role="dialog"
         ViewModel.DictionaryParameterMappings = new Dictionary<string, List<PathMapEntry>>(BackingNode.DictionaryParameterMappings);
 
         OutputPayloadJson = BackingNode?.Result;
-        IncomingPayloadJson = BackingNode?.Input;
+        IncomingPayloadJson = BuildFullInputPayload();
 
         // Reset error dismissed state when a new error occurs
         if (BackingNode?.HasError == true && BackingNode.ErrorMessage != _lastErrorMessage)
@@ -923,7 +929,7 @@ role="dialog"
             await ExecuteInputRequested.InvokeAsync();
 
             // Refresh the payload data after execution
-            IncomingPayloadJson = BackingNode?.Input;
+            IncomingPayloadJson = BuildFullInputPayload();
             OutputPayloadJson = BackingNode?.Result;
 
             // Reset error dismissed state after execution if there's an error
@@ -1393,6 +1399,43 @@ role="dialog"
     /// <summary>
     /// Delegate for JSON filters. Returns true if the node should be included, false to exclude it.
     /// </summary>
+    /// <summary>
+    /// Builds the full input payload by merging node Input with SharedContext (environment, workflow, nodes).
+    /// Falls back to component parameters for environment/workflow when SharedContext isn't available yet.
+    /// </summary>
+    private JsonNode? BuildFullInputPayload()
+    {
+        var input = BackingNode?.Input;
+        var sharedContext = BackingNode?.SharedExecutionContext?.SharedContext;
+
+        var merged = input != null ? input.DeepClone().AsObject() : new JsonObject();
+
+        if (sharedContext != null)
+        {
+            foreach (var kvp in sharedContext.AsEnumerable())
+            {
+                if (kvp.Key == "input") continue;
+                if (!merged.ContainsKey(kvp.Key))
+                    merged[kvp.Key] = kvp.Value?.DeepClone();
+            }
+        }
+        else
+        {
+            // Before execution, build constants from parameters
+            if (EnvironmentVariables.Count > 0 && !merged.ContainsKey("environment"))
+                merged["environment"] = JsonNode.Parse(JsonSerializer.Serialize(EnvironmentVariables))!;
+
+            if (WorkflowParameters.Count > 0 && !merged.ContainsKey("workflow"))
+            {
+                var workflowObj = new JsonObject();
+                workflowObj["parameters"] = JsonNode.Parse(JsonSerializer.Serialize(WorkflowParameters))!;
+                merged["workflow"] = workflowObj;
+            }
+        }
+
+        return merged.Count > 0 ? merged : null;
+    }
+
     private delegate bool JsonFilter(JsonNode? node, string key, int depth);
 
     /// <summary>
@@ -1605,6 +1648,18 @@ role="dialog"
         }
     }
 
+    private string GetEmptyPayloadMessage()
+    {
+        return _jsonFilterMode switch
+        {
+            "Workflow" => "No workflow parameters configured",
+            "Environment" => "No environment variables configured",
+            "Nodes" => "Run the workflow to see node outputs",
+            "Input" => "Run the previous node to see input data",
+            _ => "Run the workflow to see data"
+        };
+    }
+
     /// <summary>
     /// Renders draggable JSON. Assumes the node is already filtered.
     /// Only handles display modes (compact, keys).
@@ -1613,11 +1668,11 @@ role="dialog"
     {
         return builder =>
         {
-            if (node == null)
+            if (node == null || (node is JsonObject emptyCheck && emptyCheck.Count == 0 && string.IsNullOrEmpty(path)))
             {
                 if (string.IsNullOrEmpty(path))
                 {
-                    builder.AddContent(0, "Execute the previous node to see the input");
+                    builder.AddContent(0, GetEmptyPayloadMessage());
                 }
                 else
                 {
