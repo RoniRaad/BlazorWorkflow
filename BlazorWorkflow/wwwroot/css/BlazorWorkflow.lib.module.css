@@ -114,6 +114,9 @@
     text-transform: none !important;
     letter-spacing: normal !important;
     text-decoration: none !important;
+    box-sizing: border-box !important;
+    visibility: visible !important;
+    min-height: 0 !important;
 }
 
 /* Inputs & selects - Bootstrap/Tailwind aggressively style these */
@@ -1621,6 +1624,38 @@
         .bw-lib .btn:active:not(:disabled) {
             transform: translateY(0) !important;
         }
+
+    /* New workflow option buttons — protect from consumer button resets */
+    .bw-lib .bw-new-option {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        padding: 14px 16px !important;
+        background: transparent !important;
+        border: none !important;
+        border-bottom: 1px solid var(--bw-border-color) !important;
+        color: inherit !important;
+        font-size: 14px !important;
+        cursor: pointer !important;
+        text-align: left !important;
+        width: 100% !important;
+    }
+
+    .bw-lib .bw-new-option:last-child {
+        border-bottom: none !important;
+    }
+
+    .bw-lib .bw-new-option:hover {
+        background: rgba(99, 102, 241, 0.08) !important;
+        color: var(--bw-primary-color) !important;
+    }
+
+    .bw-lib .bw-workflow-item-new--expanded {
+        padding: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+    }
 
     /* ==========================================================================
    Light theme component overrides (lifted “not-dark”)
