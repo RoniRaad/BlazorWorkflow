@@ -1534,12 +1534,8 @@
         min-width: 200px !important;
         max-width: 350px !important;
         animation: popoverSlideIn 0.2s ease !important;
-        pointer-events: none !important;
+        outline: none !important;
     }
-
-        .bw-lib .bw-preview-popover > * {
-            pointer-events: auto !important;
-        }
 
     .bw-lib .bw-preview-popover-arrow {
         position: absolute !important;

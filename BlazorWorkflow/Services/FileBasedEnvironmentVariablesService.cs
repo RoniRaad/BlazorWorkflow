@@ -13,12 +13,14 @@ namespace BlazorWorkflow.Services
         private readonly ILogger<FileBasedEnvironmentVariablesService>? _logger;
         private readonly JsonSerializerOptions _jsonOptions;
         private readonly object _lock = new();
+        private readonly Dictionary<string, Dictionary<string, string>>? _defaultEnvironments;
         private Dictionary<string, Dictionary<string, string>> _environments;
 
-        public FileBasedEnvironmentVariablesService(string filePath, ILogger<FileBasedEnvironmentVariablesService>? logger = null)
+        public FileBasedEnvironmentVariablesService(string filePath, ILogger<FileBasedEnvironmentVariablesService>? logger = null, Dictionary<string, Dictionary<string, string>>? defaultEnvironments = null)
         {
             _filePath = filePath;
             _logger = logger;
+            _defaultEnvironments = defaultEnvironments;
             _jsonOptions = new JsonSerializerOptions
             {
                 WriteIndented = true,
@@ -190,29 +192,15 @@ namespace BlazorWorkflow.Services
                 _logger?.LogError(ex, "Failed to load environment variables from file: {FilePath}", _filePath);
             }
 
-            // Return default environments if file doesn't exist or failed to load
-            _logger?.LogInformation("Initializing default environments");
-            return new Dictionary<string, Dictionary<string, string>>
+            // Return configured defaults if provided, otherwise empty
+            if (_defaultEnvironments != null && _defaultEnvironments.Count > 0)
             {
-                ["Development"] = new Dictionary<string, string>
-                {
-                    ["API_URL"] = "https://dev-api.example.com",
-                    ["TIMEOUT"] = "30",
-                    ["MAX_RETRIES"] = "3"
-                },
-                ["Staging"] = new Dictionary<string, string>
-                {
-                    ["API_URL"] = "https://staging-api.example.com",
-                    ["TIMEOUT"] = "60",
-                    ["MAX_RETRIES"] = "5"
-                },
-                ["Production"] = new Dictionary<string, string>
-                {
-                    ["API_URL"] = "https://api.example.com",
-                    ["TIMEOUT"] = "120",
-                    ["MAX_RETRIES"] = "10"
-                }
-            };
+                _logger?.LogInformation("Initializing with configured default environments");
+                return new Dictionary<string, Dictionary<string, string>>(_defaultEnvironments);
+            }
+
+            _logger?.LogInformation("No default environments configured, starting empty");
+            return new Dictionary<string, Dictionary<string, string>>();
         }
 
         private void SaveToFile()
