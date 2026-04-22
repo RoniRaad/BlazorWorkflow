@@ -61,8 +61,16 @@ namespace BlazorWorkflow.Helpers
                 string defaultValue;
                 if (hasInputFieldAttr)
                 {
-                    // For input fields, provide a placeholder literal value
-                    defaultValue = GeneratePlaceholderLiteral(param.ParameterType, param.Name);
+                    // For input fields, use the parameter's declared default value if available,
+                    // otherwise generate a placeholder literal
+                    if (param.HasDefaultValue && param.DefaultValue != null)
+                    {
+                        defaultValue = param.DefaultValue.ToString() ?? GeneratePlaceholderLiteral(param.ParameterType, param.Name);
+                    }
+                    else
+                    {
+                        defaultValue = GeneratePlaceholderLiteral(param.ParameterType, param.Name);
+                    }
                 }
                 else
                 {

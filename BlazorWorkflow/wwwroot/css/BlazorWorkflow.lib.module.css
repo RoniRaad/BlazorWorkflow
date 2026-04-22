@@ -643,6 +643,119 @@
         padding-right: 15px !important;
     }
 
+    /* Scriban syntax highlight — backdrop div sits behind textarea */
+    .bw-lib .bw-scriban-backdrop {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        pointer-events: none !important;
+        overflow: hidden !important;
+        white-space: pre-wrap !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        z-index: 0 !important;
+        border: 1px solid transparent !important;
+        border-radius: 4px !important;
+        background-color: rgba(51, 65, 85, 0.4) !important;
+    }
+
+    /* Textarea with highlight active — transparent text so backdrop shows through */
+    .bw-lib .bw-mapping-input.bw-hl-active {
+        background: transparent !important;
+        color: transparent !important;
+        caret-color: var(--color-text-primary, #e5e7eb) !important;
+        position: relative !important;
+        z-index: 1 !important;
+    }
+
+    /* Selection highlight for highlighted textarea */
+    .bw-lib .bw-mapping-input.bw-hl-active::selection {
+        background: rgba(59, 130, 246, 0.35) !important;
+        color: transparent !important;
+    }
+
+    /* Plain text in backdrop — mirrors the textarea color */
+    .bw-lib .bw-scriban-backdrop .bw-hl-plain {
+        color: var(--color-text-primary, #e5e7eb) !important;
+    }
+
+    /* Scriban token highlight {{ ... }} */
+    .bw-lib .bw-scriban-backdrop .bw-hl-token {
+        color: #fbbf24 !important;
+        background: rgba(251, 191, 36, 0.13) !important;
+        border-radius: 2px !important;
+        border-bottom: 1.5px solid rgba(251, 191, 36, 0.45) !important;
+    }
+
+    /* Hover tooltip for scriban preview */
+    .bw-scriban-tooltip {
+        position: fixed !important;
+        z-index: 100000 !important;
+        background: rgba(15, 23, 42, 0.96) !important;
+        border: 1px solid rgba(251, 191, 36, 0.4) !important;
+        border-radius: 6px !important;
+        padding: 5px 10px !important;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+        font-size: 11px !important;
+        color: #e5e7eb !important;
+        pointer-events: none !important;
+        max-width: 320px !important;
+        word-break: break-all !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+        backdrop-filter: blur(8px) !important;
+        line-height: 1.4 !important;
+        opacity: 0 !important;
+        transition: opacity 0.15s ease !important;
+    }
+
+    .bw-scriban-tooltip.bw-visible {
+        opacity: 1 !important;
+    }
+
+    .bw-scriban-tooltip-label {
+        font-size: 9px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        color: rgba(251, 191, 36, 0.7) !important;
+        margin-bottom: 2px !important;
+    }
+
+    .bw-scriban-tooltip-expr {
+        color: #fbbf24 !important;
+        font-size: 10px !important;
+        margin-bottom: 3px !important;
+        opacity: 0.7 !important;
+    }
+
+    .bw-scriban-tooltip-value {
+        color: #a5f3fc !important;
+    }
+
+    /* Light theme adjustments */
+    .bw-lib[data-theme="light"] .bw-scriban-backdrop .bw-hl-plain,
+    [data-theme="light"] .bw-lib .bw-scriban-backdrop .bw-hl-plain {
+        color: var(--color-text-primary, #1e293b) !important;
+    }
+
+    .bw-lib[data-theme="light"] .bw-mapping-input.bw-hl-active,
+    [data-theme="light"] .bw-lib .bw-mapping-input.bw-hl-active {
+        caret-color: var(--color-text-primary, #1e293b) !important;
+    }
+
+    .bw-lib[data-theme="light"] .bw-scriban-backdrop,
+    [data-theme="light"] .bw-lib .bw-scriban-backdrop {
+        background-color: rgba(226, 232, 240, 0.6) !important;
+    }
+
+    .bw-lib[data-theme="light"] .bw-scriban-backdrop .bw-hl-token,
+    [data-theme="light"] .bw-lib .bw-scriban-backdrop .bw-hl-token {
+        color: #b45309 !important;
+        background: rgba(251, 191, 36, 0.15) !important;
+        border-bottom-color: rgba(180, 83, 9, 0.5) !important;
+    }
+
     /* Label row */
     .bw-lib .bw-simple-mapping-label-row {
         display: flex !important;

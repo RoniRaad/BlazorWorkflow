@@ -204,6 +204,7 @@ role="dialog"
                                             </label>
                                             <div class="bw-input-with-preview" style="position: relative;">
                                                 @{ var inputDropId = $"drop-input-{inputMapping.To}"; }
+                                                <div class="bw-scriban-backdrop" id="@($"hl-{inputDropId}")" aria-hidden="true"></div>
                                                 <textarea value="@inputMapping.From"
                                                           id="@inputDropId"
                                                           @oninput="@(e => { inputMapping.From = e.Value?.ToString() ?? string.Empty; TriggerAutoSave(); })"
@@ -216,7 +217,10 @@ role="dialog"
                                                           style="padding-right: 40px"
                                                           rows="1"
                                                           required
-                                                          data-role="payload-path"></textarea>
+                                                          spellcheck="false"
+                                                          autocomplete="off"
+                                                          data-role="payload-path"
+                                                          data-backdrop="@($"hl-{inputDropId}")"></textarea>
                                                 <div class="bw-preview-button-container">
                                                     <button type="button"
                                                             class="bw-btn-preview bw-eye-icon-button"
@@ -293,22 +297,30 @@ role="dialog"
                                                                class="form-control bw-mapping-input"
                                                                placeholder="e.g. Authorization, Content-Type"
                                                                aria-label="Key"
+                                                               spellcheck="false"
+                                                               autocomplete="off"
                                                                data-role="dictionary-key" />
                                                     </div>
                                                     <div class="bw-mapping-arrow">→</div>
-                                                    <div class="bw-mapping-col">
+                                                    <div class="bw-mapping-col" style="position: relative;">
                                                         <label>Value</label>
-                                                        <input value="@entry.From"
-                                                               id="@dictDropId"
-                                                               @oninput="@((e) => { entry.From = e.Value?.ToString() ?? ""; TriggerAutoSave(); })"
-                                                               type="text"
-                                                               class="form-control bw-mapping-input bw-droppable-input"
-                                                               placeholder="e.g. input.token or {{input.token}}"
-                                                               aria-label="Dictionary value"
-                                                               @ondragover="HandleDragOver"
-                                                               @ondragover:preventDefault="true"
-                                                               @ondrop="@((e) => HandleDrop(e, entry, dictDropId))"
-                                                               data-role="dictionary-value" />
+                                                        <div style="position: relative;">
+                                                            <div class="bw-scriban-backdrop" id="@($"hl-{dictDropId}")" aria-hidden="true"></div>
+                                                            <input value="@entry.From"
+                                                                   id="@dictDropId"
+                                                                   @oninput="@((e) => { entry.From = e.Value?.ToString() ?? ""; TriggerAutoSave(); })"
+                                                                   type="text"
+                                                                   class="form-control bw-mapping-input bw-droppable-input"
+                                                                   placeholder="e.g. input.token or {{input.token}}"
+                                                                   aria-label="Dictionary value"
+                                                                   @ondragover="HandleDragOver"
+                                                                   @ondragover:preventDefault="true"
+                                                                   @ondrop="@((e) => HandleDrop(e, entry, dictDropId))"
+                                                                   spellcheck="false"
+                                                                   autocomplete="off"
+                                                                   data-role="dictionary-value"
+                                                                   data-backdrop="@($"hl-{dictDropId}")" />
+                                                        </div>
                                                     </div>
                                                     <button onclick="@(() => RemoveDictionaryEntry(dictParam.Name ?? string.Empty, entry))"
                                                             type="button"
@@ -364,6 +376,8 @@ role="dialog"
                                                                    class="form-control form-control-sm bw-mapping-input"
                                                                    placeholder="e.g. output.name"
                                                                    required
+                                                                   spellcheck="false"
+                                                                   autocomplete="off"
                                                                    rows="1"
                                                                    data-role="target-payload-path" />
                                                 </div>
@@ -765,7 +779,7 @@ role="dialog"
                     autoResizeTextarea(textarea);
                 });
 
-                // Also observe for new textareas being added (for dynamic content)
+                // Also observe for new textareas/inputs being added (for dynamic content)
                 var observer = new MutationObserver(function(mutations) {
                     mutations.forEach(function(mutation) {
                         mutation.addedNodes.forEach(function(node) {
@@ -779,6 +793,13 @@ role="dialog"
                                         autoResizeTextarea(textarea);
                                     }
                                 });
+                                // Update scriban highlights for new fields
+                                if (window.__scribanHL) {
+                                    var fields = node.matches && node.matches('.bw-mapping-input[data-backdrop]')
+                                        ? [node]
+                                        : (node.querySelectorAll ? Array.from(node.querySelectorAll('.bw-mapping-input[data-backdrop]')) : []);
+                                    fields.forEach(function(f) { window.__scribanHL.updateBackdrop(f); });
+                                }
                             }
                         });
                     });
@@ -790,8 +811,254 @@ role="dialog"
                 }
             ");
 
-            // Setup modal-level Ctrl+Z/Y handler that prevents browser default
+            // ── Scriban syntax highlighting system ──
             _modalDotNetRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("eval", @"
+                window.__scribanHL = (function() {
+                    var _dotNetRef = null;
+                    var _tooltip = null;
+                    var _hoverTimer = null;
+                    var _currentExpr = null;
+                    var _listeners = [];
+
+                    // Parse text into segments: plain and {{ ... }} tokens
+                    function parseSegments(text) {
+                        var segs = [];
+                        var re = /\{\{[\s\S]*?\}\}/g;
+                        var last = 0;
+                        var m;
+                        while ((m = re.exec(text)) !== null) {
+                            if (m.index > last) {
+                                segs.push({ type: 'plain', text: text.substring(last, m.index) });
+                            }
+                            segs.push({ type: 'token', text: m[0], start: m.index, end: m.index + m[0].length });
+                            last = m.index + m[0].length;
+                        }
+                        if (last < text.length) {
+                            segs.push({ type: 'plain', text: text.substring(last) });
+                        }
+                        return segs;
+                    }
+
+                    // Escape HTML in text
+                    function esc(s) {
+                        var d = document.createElement('div');
+                        d.textContent = s;
+                        return d.innerHTML;
+                    }
+
+                    // Update a single backdrop div to reflect the textarea/input value
+                    function updateBackdrop(el) {
+                        var bdId = el.getAttribute('data-backdrop');
+                        if (!bdId) return;
+                        var bd = document.getElementById(bdId);
+                        if (!bd) return;
+
+                        var val = el.value || '';
+                        var segs = parseSegments(val);
+                        var hasTokens = segs.some(function(s) { return s.type === 'token'; });
+
+                        if (!hasTokens) {
+                            // No scriban — remove highlight mode
+                            el.classList.remove('bw-hl-active');
+                            bd.innerHTML = '';
+                            bd.style.display = 'none';
+                            return;
+                        }
+
+                        el.classList.add('bw-hl-active');
+                        bd.style.display = '';
+
+                        // Build highlighted HTML
+                        var html = '';
+                        for (var i = 0; i < segs.length; i++) {
+                            var s = segs[i];
+                            if (s.type === 'token') {
+                                html += '<span class=""bw-hl-token"">' + esc(s.text) + '</span>';
+                            } else {
+                                html += '<span class=""bw-hl-plain"">' + esc(s.text) + '</span>';
+                            }
+                        }
+                        // Add trailing space so backdrop height matches textarea with trailing newline
+                        if (val.endsWith('\n') || val.endsWith('\r')) html += ' ';
+                        bd.innerHTML = html;
+
+                        // Sync computed styles from textarea to backdrop
+                        var cs = window.getComputedStyle(el);
+                        bd.style.fontSize = cs.fontSize;
+                        bd.style.fontFamily = cs.fontFamily;
+                        bd.style.lineHeight = cs.lineHeight;
+                        bd.style.padding = cs.padding;
+                        bd.style.borderWidth = cs.borderWidth;
+                        bd.style.letterSpacing = cs.letterSpacing;
+                        bd.style.wordSpacing = cs.wordSpacing;
+                        bd.style.textIndent = cs.textIndent;
+                        bd.style.whiteSpace = cs.whiteSpace;
+                        bd.style.tabSize = cs.tabSize;
+                        bd.style.scrollTop = el.scrollTop;
+
+                        // For textarea, sync scroll
+                        bd.scrollTop = el.scrollTop;
+                    }
+
+                    // Update all highlighted fields in the modal
+                    function updateAll() {
+                        var fields = document.querySelectorAll('.bw-node-editor-modal .bw-mapping-input[data-backdrop]');
+                        fields.forEach(updateBackdrop);
+                    }
+
+                    // Find which scriban token the mouse is over
+                    function findTokenAtMouse(el, clientX, clientY) {
+                        var val = el.value || '';
+                        if (!val) return null;
+
+                        var segs = parseSegments(val);
+                        var tokens = segs.filter(function(s) { return s.type === 'token'; });
+                        if (tokens.length === 0) return null;
+
+                        // Use the backdrop's token spans for hit-testing
+                        var bdId = el.getAttribute('data-backdrop');
+                        if (!bdId) return null;
+                        var bd = document.getElementById(bdId);
+                        if (!bd) return null;
+
+                        var spans = bd.querySelectorAll('.bw-hl-token');
+                        for (var i = 0; i < spans.length; i++) {
+                            var rect = spans[i].getBoundingClientRect();
+                            if (clientX >= rect.left && clientX <= rect.right &&
+                                clientY >= rect.top && clientY <= rect.bottom) {
+                                return tokens[i] ? tokens[i].text : null;
+                            }
+                        }
+                        return null;
+                    }
+
+                    // Show/position the tooltip
+                    function showTooltip(expr, previewValue, x, y) {
+                        if (!_tooltip) {
+                            _tooltip = document.createElement('div');
+                            _tooltip.className = 'bw-scriban-tooltip';
+                            _tooltip.innerHTML = '<div class=""bw-scriban-tooltip-label"">Preview</div>' +
+                                                 '<div class=""bw-scriban-tooltip-expr""></div>' +
+                                                 '<div class=""bw-scriban-tooltip-value""></div>';
+                            document.body.appendChild(_tooltip);
+                        }
+                        _tooltip.querySelector('.bw-scriban-tooltip-expr').textContent = expr;
+                        _tooltip.querySelector('.bw-scriban-tooltip-value').textContent = previewValue;
+                        _tooltip.style.left = x + 'px';
+                        _tooltip.style.top = (y - 50) + 'px';
+                        _tooltip.classList.add('bw-visible');
+                    }
+
+                    function hideTooltip() {
+                        if (_tooltip) _tooltip.classList.remove('bw-visible');
+                        _currentExpr = null;
+                        if (_hoverTimer) { clearTimeout(_hoverTimer); _hoverTimer = null; }
+                    }
+
+                    function setup(dotNetRef) {
+                        _dotNetRef = dotNetRef;
+                        var modal = document.querySelector('.bw-node-editor-modal');
+                        if (!modal) return;
+
+                        // Input handler — update backdrop on typing
+                        function onInput(e) {
+                            var el = e.target.closest('.bw-mapping-input[data-backdrop]');
+                            if (el) {
+                                updateBackdrop(el);
+                                // Also re-run auto-resize then sync backdrop height
+                                setTimeout(function() { updateBackdrop(el); }, 0);
+                            }
+                        }
+
+                        // Scroll sync for textareas
+                        function onScroll(e) {
+                            var el = e.target;
+                            if (!el.matches || !el.matches('.bw-mapping-input[data-backdrop]')) return;
+                            var bdId = el.getAttribute('data-backdrop');
+                            var bd = bdId ? document.getElementById(bdId) : null;
+                            if (bd) bd.scrollTop = el.scrollTop;
+                        }
+
+                        // Mousemove for hover preview
+                        function onMouseMove(e) {
+                            var el = e.target.closest('.bw-mapping-input[data-backdrop]');
+                            if (!el || !el.classList.contains('bw-hl-active')) {
+                                hideTooltip();
+                                return;
+                            }
+
+                            var expr = findTokenAtMouse(el, e.clientX, e.clientY);
+                            if (!expr) {
+                                hideTooltip();
+                                return;
+                            }
+
+                            // Same expression — just reposition
+                            if (expr === _currentExpr) {
+                                if (_tooltip && _tooltip.classList.contains('bw-visible')) {
+                                    _tooltip.style.left = e.clientX + 'px';
+                                    _tooltip.style.top = (e.clientY - 50) + 'px';
+                                }
+                                return;
+                            }
+
+                            hideTooltip();
+                            _currentExpr = expr;
+
+                            // Debounce the evaluation
+                            _hoverTimer = setTimeout(function() {
+                                if (!_dotNetRef) return;
+                                _dotNetRef.invokeMethodAsync('EvaluateScribanExpression', expr)
+                                    .then(function(result) {
+                                        if (_currentExpr === expr) {
+                                            showTooltip(expr, result, e.clientX, e.clientY);
+                                        }
+                                    })
+                                    .catch(function() {});
+                            }, 200);
+                        }
+
+                        function onMouseLeave(e) {
+                            if (e.target.matches && e.target.matches('.bw-mapping-input')) {
+                                hideTooltip();
+                            }
+                        }
+
+                        modal.addEventListener('input', onInput, true);
+                        modal.addEventListener('scroll', onScroll, true);
+                        modal.addEventListener('mousemove', onMouseMove);
+                        modal.addEventListener('mouseleave', onMouseLeave, true);
+
+                        _listeners = [
+                            ['input', onInput, true],
+                            ['scroll', onScroll, true],
+                            ['mousemove', onMouseMove, false],
+                            ['mouseleave', onMouseLeave, true]
+                        ];
+
+                        // Initial update for all existing fields
+                        updateAll();
+                    }
+
+                    function teardown() {
+                        var modal = document.querySelector('.bw-node-editor-modal');
+                        if (modal) {
+                            _listeners.forEach(function(l) { modal.removeEventListener(l[0], l[1], l[2]); });
+                        }
+                        _listeners = [];
+                        hideTooltip();
+                        if (_tooltip && _tooltip.parentNode) _tooltip.parentNode.removeChild(_tooltip);
+                        _tooltip = null;
+                        _dotNetRef = null;
+                    }
+
+                    return { setup: setup, teardown: teardown, updateAll: updateAll, updateBackdrop: updateBackdrop };
+                })();
+            ");
+            await JSRuntime.InvokeVoidAsync("__scribanHL.setup", _modalDotNetRef);
+
+            // Setup modal-level Ctrl+Z/Y handler that prevents browser default
             await JSRuntime.InvokeVoidAsync("eval", @"
                 window.__modalUndoRedo = {
                     _handler: null,
@@ -828,6 +1095,9 @@ role="dialog"
             ");
             await JSRuntime.InvokeVoidAsync("__modalUndoRedo.setup", _modalDotNetRef);
         }
+
+        // Sync scriban highlight backdrops after every render (Blazor may have updated values)
+        try { await JSRuntime.InvokeVoidAsync("__scribanHL.updateAll"); } catch { }
     }
 
     protected override void OnParametersSet()
@@ -1579,6 +1849,24 @@ role="dialog"
         StateHasChanged();
     }
 
+    [JSInvokable]
+    public string EvaluateScribanExpression(string expression)
+    {
+        if (string.IsNullOrWhiteSpace(expression) || IncomingPayloadJson is null)
+            return "…";
+
+        try
+        {
+            var obj = ScribanHelpers.GetScribanObject(expression, (JsonObject)IncomingPayloadJson.DeepClone(), null, typeof(string));
+            var result = obj?.ToString();
+            return string.IsNullOrEmpty(result) ? "null" : result;
+        }
+        catch (Exception ex)
+        {
+            return $"Error: {ex.Message}";
+        }
+    }
+
     private string GetScribanPreviewValue(PathMapEntry pathMapEntry)
     {
         var templateString = pathMapEntry.From;
@@ -2293,6 +2581,7 @@ role="dialog"
         try
         {
             _ = JSRuntime.InvokeVoidAsync("__modalUndoRedo.teardown");
+            _ = JSRuntime.InvokeVoidAsync("__scribanHL.teardown");
         }
         catch { }
         _modalDotNetRef?.Dispose();
