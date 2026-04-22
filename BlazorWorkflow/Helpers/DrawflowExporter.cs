@@ -231,15 +231,15 @@ namespace BlazorWorkflow.Helpers
         {
             var displayName = node.Name;
             return $"""
-                    <div class='node-type-id-container'>
-                        <h5 class='node-type-id'>
+                    <div class='bw-node-type-id-container'>
+                        <h5 class='bw-node-type-id'>
                             ƒ
                         </h5>
                     </div>
-                    <div class='title-container'>
-                        <div class='title' style='text-align: center;'>{node.Name}</div>
+                    <div class='bw-title-container'>
+                        <div class='bw-title' style='text-align: center;'>{node.Name}</div>
                     </div>
-                    <div class='main-content' style='min-width:200px'>
+                    <div class='bw-main-content' style='min-width:200px'>
                     </div>
                     """;
         }

@@ -13,13 +13,13 @@
 @inject IWorkflowService WorkflowService
 @inject IEnvironmentVariablesService EnvVarService
 
-<div class="bw-lib page-container">
-    <div class="page-header">
+<div class="bw-lib bw-page-container">
+    <div class="bw-page-header">
         <div>
             @if (isEditingWorkflowName)
             {
                 <input type="text"
-                       class="workflow-name-input-editor"
+                       class="bw-workflow-name-input-editor"
                        value="@editingWorkflowName"
                        @oninput="@(e => editingWorkflowName = e.Value?.ToString() ?? string.Empty)"
                        @onblur="HandleWorkflowNameBlur"
@@ -29,14 +29,14 @@
             }
             else
             {
-                <div class="workflow-name-display-editor">
-                    <h1 class="page-title">@GetWorkflowTitle()</h1>
-                    <button class="btn-icon-edit-small" @onclick="StartEditingWorkflowName" title="Edit workflow name">
+                <div class="bw-workflow-name-display-editor">
+                    <h1 class="bw-page-title">@GetWorkflowTitle()</h1>
+                    <button class="bw-btn-icon-edit-small" @onclick="StartEditingWorkflowName" title="Edit workflow name">
                         <i class="bi bi-pencil"></i>
                     </button>
                 </div>
             }
-            <p class="page-description">@GetWorkflowDescription()</p>
+            <p class="bw-page-description">@GetWorkflowDescription()</p>
         </div>
         <div style="display: flex; gap: 8px;">
             <button class="btn btn-sm btn-outline-secondary" @onclick="BackToWorkflows">
@@ -48,8 +48,8 @@
         </div>
     </div>
 
-    <div class="canvas-container">
-        <div class="canvas-wrapper">
+    <div class="bw-canvas-container">
+        <div class="bw-canvas-wrapper">
             @if (_graph is not null)
             {
                 <WorkflowGraph Id="@($"BlazorWorkflow-{WorkflowId}")"

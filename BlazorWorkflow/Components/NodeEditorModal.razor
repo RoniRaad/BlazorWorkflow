@@ -20,19 +20,20 @@
 <div class="modal-backdrop fade show" @onclick="HandleBackdropClick"></div>
 
 <!-- Node editor modal -->
-<div style="display:block;" class="bw-lib modal fade show node-editor-modal"
+<div style="display:block;" class="bw-lib modal fade show bw-node-editor-modal"
 id="nodeEditorModal"
 tabindex="-1"
 aria-labelledby="nodeEditorLabel"
 aria-modal="true"
 role="dialog"
 @onkeydown="HandleKeyDown"
+@onclick="CloseRunMenu"
 @ref="_modalRef">
-    <div class="modal-dialog node-editor-dialog">
-        <div class="modal-content node-editor-content">
-            <div class="modal-header node-editor-header">
+    <div class="modal-dialog bw-node-editor-dialog">
+        <div class="modal-content bw-node-editor-content">
+            <div class="modal-header bw-node-editor-header">
                 <button type="button"
-                        class="btn-close-modal"
+                        class="bw-btn-close-modal"
                         @onclick="HandleClose"
                         title="Close modal">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -40,11 +41,11 @@ role="dialog"
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                 </button>
-                <div class="node-title-container">
+                <div class="bw-node-title-container">
                     @if (_isEditingNodeName)
                     {
                         <input type="text"
-                               class="node-name-input"
+                               class="bw-node-name-input"
                                @bind="_editingNodeName"
                                @bind:event="oninput"
                                @onblur="SaveNodeName"
@@ -54,11 +55,11 @@ role="dialog"
                     }
                     else
                     {
-                        <div class="node-name-display">
+                        <div class="bw-node-name-display">
                             <h5 class="modal-title" id="nodeEditorLabel" @onclick="StartEditingNodeName">
                                 @(BackingNode?.NameOverride ?? BackingNode?.Name ?? "Unknown")
                             </h5>
-                            <button type="button" class="btn-edit-node-name" @onclick="StartEditingNodeName" title="Edit node name">
+                            <button type="button" class="bw-btn-edit-node-name" @onclick="StartEditingNodeName" title="Edit node name">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -67,73 +68,97 @@ role="dialog"
                         </div>
                         @if (!string.IsNullOrEmpty(BackingNode?.NameOverride))
                         {
-                            <p class="node-type-subtitle">Type: @(TypeHelpers.AddSpacesToPascalCase(BackingNode?.BackingMethod?.Name) ?? BackingNode?.Name ?? "Unknown")</p>
+                            <p class="bw-node-type-subtitle">Type: @(TypeHelpers.AddSpacesToPascalCase(BackingNode?.BackingMethod?.Name) ?? BackingNode?.Name ?? "Unknown")</p>
                         }
                     }
                 </div>
-                <button type="button"
-                class="btn-execute-flow"
-                @onclick="ExecuteInput"
-                disabled="@isExecuting"
-                data-role="execute-input"
-                title="Execute Flow">
+                <div class="bw-execute-split-btn" data-role="execute-input" @onclick:stopPropagation="true">
                     @if (isExecuting)
                     {
-                        <span class="spinner-border" role="status" aria-hidden="true" style="width: 40px; height: 40px;"></span>
+                        <div class="bw-btn-execute-flow" disabled>
+                            <span class="spinner-border" role="status" aria-hidden="true" style="width: 40px; height: 40px;"></span>
+                        </div>
                     }
                     else
                     {
-                        <svg viewBox="0 0 24 24" fill="currentColor" style="width: 40px; height: 40px;">
-                            <path d="M8 5v14l11-7z"/>
-                        </svg>
+                        <button type="button" class="bw-btn-execute-flow" @onclick="() => _showRunMenu = !_showRunMenu" title="Run options">
+                            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 40px; height: 40px;">
+                                <path d="M8 5v14l11-7z"/>
+                            </svg>
+                        </button>
+                        @if (_showRunMenu)
+                        {
+                            <div class="bw-run-menu">
+                                <button class="bw-run-menu-option" @onclick="ExecuteWorkflow">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="bw-run-menu-icon"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                    <div class="bw-run-menu-text">
+                                        <span class="bw-run-menu-label">Run workflow</span>
+                                        <span class="bw-run-menu-hint">Execute the full workflow up to this node</span>
+                                    </div>
+                                </button>
+                                @{
+                                    var hasInputData = BackingNode?.Input != null;
+                                }
+                                <button class="bw-run-menu-option @(!hasInputData ?"bw-run-menu-option--disabled" : "")"
+                                        @onclick="() => { if (hasInputData) ExecuteThisNode(); }"
+                                        disabled="@(!hasInputData)"
+                                        title="@(!hasInputData ? "Run the workflow first to populate input data for this node" : "Re-run this node using data from the last workflow execution")">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="bw-run-menu-icon"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                                    <div class="bw-run-menu-text">
+                                        <span class="bw-run-menu-label">Run this node only</span>
+                                        <span class="bw-run-menu-hint">@(!hasInputData ? "Workflow must be run first to get input data" : "Re-run using data from the last execution")</span>
+                                    </div>
+                                </button>
+                            </div>
+                        }
                     }
-                </button>
+                </div>
             </div>
 
             <!-- Error Alert -->
             @if (BackingNode?.HasError == true && !_errorDismissed)
             {
-                <div class="alert alert-danger node-error-alert" role="alert">
-                    <div class="error-header">
-                        <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <div class="alert alert-danger bw-node-error-alert" role="alert">
+                    <div class="bw-error-header">
+                        <svg class="bw-error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="12" y1="8" x2="12" y2="12"></line>
                             <line x1="12" y1="16" x2="12.01" y2="16"></line>
                         </svg>
                         <strong>Execution Error</strong>
-                        <button type="button" class="error-dismiss-btn" @onclick="DismissError" title="Dismiss error">
+                        <button type="button" class="bw-error-dismiss-btn" @onclick="DismissError" title="Dismiss error">
                             ✕
                         </button>
                     </div>
-                    <p class="error-message">@BackingNode.ErrorMessage</p>
+                    <p class="bw-error-message">@BackingNode.ErrorMessage</p>
                     @if (BackingNode.LastException != null)
                     {
-                        <details class="error-details">
+                        <details class="bw-error-details">
                             <summary>View stack trace</summary>
-                            <pre class="error-stack">@BackingNode.LastException.StackTrace</pre>
+                            <pre class="bw-error-stack">@BackingNode.LastException.StackTrace</pre>
                         </details>
                     }
                 </div>
             }
 
-            <div class="modal-body node-editor-body">
-                <div class="node-editor-grid">
+            <div class="modal-body bw-node-editor-body">
+                <div class="bw-node-editor-grid">
                     <!-- INPUT PANEL -->
-                    <section class="node-editor-panel node-editor-panel-input">
-                        <header class="panel-header">
+                    <section class="bw-node-editor-panel bw-node-editor-panel-input">
+                        <header class="bw-panel-header">
                             <h6>Incoming payload</h6>
-                            <p class="panel-caption">Preview the payload that arrives at this node.</p>
+                            <p class="bw-panel-caption">Preview the payload that arrives at this node.</p>
                         </header>
-                        <div class="panel-body">
+                        <div class="bw-panel-body">
                             <!-- Search and Filter Controls -->
-                            <div class="json-controls">
+                            <div class="bw-json-controls">
                                 <input type="text"
-                                       class="form-control form-control-sm json-search"
+                                       class="form-control form-control-sm bw-json-search"
                                        placeholder="Search in JSON..."
                                        @bind="_jsonSearchTerm"
                                        @bind:event="oninput"
                                        data-role="json-search" />
-                                <select class="form-select form-select-sm json-filter"
+                                <select class="form-select form-select-sm bw-json-filter"
                                         @bind="_jsonFilterMode"
                                         data-role="json-filter">
                                     @foreach (var filter in GetAvailableFilters())
@@ -144,55 +169,61 @@ role="dialog"
                                 </select>
                             </div>
 
-                            <div class="payload-preview draggable-json selectable-json" data-role="payload-preview">
+                            <div class="bw-payload-preview bw-draggable-json bw-selectable-json" data-role="payload-preview">
                                 @RenderDraggableJson(GetFilteredJson(), "")
                             </div>
                         </div>
                     </section>
 
                     <!-- PROCESSING PANEL -->
-                    <section class="node-editor-panel node-editor-panel-processing">
-                        <header class="panel-header">
+                    <section class="bw-node-editor-panel bw-node-editor-panel-processing">
+                        <header class="bw-panel-header">
                             <h6>Function mapping</h6>
-                            <p class="panel-caption">Map payload fields into your function and back out again.</p>
+                            <p class="bw-panel-caption">Map payload fields into your function and back out again.</p>
                         </header>
 
-                        <div class="panel-body panel-body-scroll">
+                        <div class="bw-panel-body bw-panel-body-scroll">
                             <!-- Function input map -->
-                            <div class="panel-section" data-role="function-input-map">
-                                <div class="panel-section-header">
+                            <div class="bw-panel-section" data-role="function-input-map">
+                                <div class="bw-panel-section-header">
                                     <span>Function inputs</span>
                                 </div>
 
-                                <div class="simple-mapping-list" data-role="input-mapping-list">
+                                <div class="bw-simple-mapping-list" data-role="input-mapping-list">
                                     @foreach (var inputMapping in ViewModel.NodeInputToMethodInputMap)
                                     {
                                         var param = GetParameterInfo(inputMapping.To);
                                         var formattedType = param != null ? FormatTypeName(param.ParameterType) : "unknown";
-                                        <div class="simple-mapping-item" data-role="input-mapping-row">
-                                            <label class="simple-mapping-label" title="@formattedType">
+                                        <div class="bw-simple-mapping-item" data-role="input-mapping-row">
+                                            <label class="bw-simple-mapping-label" title="@formattedType">
                                                 @inputMapping.To
                                                 @if (param != null)
                                                 {
-                                                    <span class="param-type-hint">(@formattedType)</span>
+                                                    <span class="bw-param-type-hint">(@formattedType)</span>
                                                 }
                                             </label>
-                                            <div class="input-with-preview" style="position: relative;">
+                                            <div class="bw-input-with-preview" style="position: relative;">
+                                                @{ var inputDropId = $"drop-input-{inputMapping.To}"; }
+                                                <div class="bw-scriban-backdrop" id="@($"hl-{inputDropId}")" aria-hidden="true"></div>
                                                 <textarea value="@inputMapping.From"
+                                                          id="@inputDropId"
                                                           @oninput="@(e => { inputMapping.From = e.Value?.ToString() ?? string.Empty; TriggerAutoSave(); })"
-                                                          class="form-control form-control-sm droppable-input mapping-input"
+                                                          class="form-control form-control-sm bw-droppable-input bw-mapping-input"
                                                           placeholder="e.g. input.name or {{input.name}}"
                                                           aria-label="Scriban template for @inputMapping.To"
-                                                          @ondragover="@(e => HandleDragOver(e))"
+                                                          @ondragover="HandleDragOver"
                                                           @ondragover:preventDefault="true"
-                                                          @ondrop="@(e => HandleDrop(e, inputMapping))"
+                                                          @ondrop="@(e => HandleDrop(e, inputMapping, inputDropId))"
                                                           style="padding-right: 40px"
                                                           rows="1"
                                                           required
-                                                          data-role="payload-path"></textarea>
-                                                <div class="preview-button-container">
+                                                          spellcheck="false"
+                                                          autocomplete="off"
+                                                          data-role="payload-path"
+                                                          data-backdrop="@($"hl-{inputDropId}")"></textarea>
+                                                <div class="bw-preview-button-container">
                                                     <button type="button"
-                                                            class="btn-preview eye-icon-button"
+                                                            class="bw-btn-preview bw-eye-icon-button"
                                                             @onclick="@(e => TogglePreview(inputMapping, e))"
                                                             @onclick:stopPropagation="true"
                                                             title="Toggle preview">
@@ -203,11 +234,11 @@ role="dialog"
                                                     </button>
                                                     @if (_previewMapping == inputMapping)
                                                     {
-                                                        <div class="preview-popover">
-                                                            <div class="preview-popover-arrow"></div>
-                                                            <div class="preview-popover-content">
-                                                                <div class="preview-popover-label">Preview</div>
-                                                                <div class="preview-popover-value">@GetScribanPreviewValue(inputMapping)</div>
+                                                        <div class="bw-preview-popover">
+                                                            <div class="bw-preview-popover-arrow"></div>
+                                                            <div class="bw-preview-popover-content">
+                                                                <div class="bw-preview-popover-label">Preview</div>
+                                                                <div class="bw-preview-popover-value">@GetScribanPreviewValue(inputMapping)</div>
                                                             </div>
                                                         </div>
                                                     }
@@ -224,15 +255,15 @@ role="dialog"
                             }
                             @if (dictParams.Any())
                             {
-                                <hr class="panel-divider" />
+                                <hr class="bw-panel-divider" />
 
                                 @foreach (var dictParam in dictParams)
                                 {
-                                    <div class="panel-section" data-role="dictionary-parameter-map">
-                                        <div class="panel-section-header">
+                                    <div class="bw-panel-section" data-role="dictionary-parameter-map">
+                                        <div class="bw-panel-section-header">
                                             <span>@dictParam.Name</span>
                                             <button onclick="@(() => AddDictionaryEntry(dictParam.Name ?? string.Empty))" type="button"
-                                                    class="btn-add-entry"
+                                                    class="bw-btn-add-entry"
                                                     data-role="add-dictionary-entry">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                     <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -242,7 +273,7 @@ role="dialog"
                                             </button>
                                         </div>
 
-                                        <div class="mapping-list" data-role="dictionary-entry-list">
+                                        <div class="bw-mapping-list" data-role="dictionary-entry-list">
                                             @{
                                                 if (!ViewModel.DictionaryParameterMappings.ContainsKey(dictParam.Name ?? string.Empty))
                                                 {
@@ -252,36 +283,48 @@ role="dialog"
                                                 var entries = ViewModel.DictionaryParameterMappings[dictParam.Name ?? string.Empty];
                                             }
 
+                                            @{ var dictEntryIdx = 0; }
                                             @foreach (var entry in entries)
                                             {
-                                                <div class="mapping-row" data-role="dictionary-entry-row">
-                                                    <div class="mapping-col">
+                                                var dictDropId = $"drop-dict-{dictParam.Name}-{dictEntryIdx}";
+                                                dictEntryIdx++;
+                                                <div class="bw-mapping-row" data-role="dictionary-entry-row">
+                                                    <div class="bw-mapping-col">
                                                         <label>Key</label>
                                                         <input value="@entry.To"
                                                                @oninput="@((e) => { entry.To = e.Value?.ToString() ?? ""; TriggerAutoSave(); })"
                                                                type="text"
-                                                               class="form-control mapping-input"
+                                                               class="form-control bw-mapping-input"
                                                                placeholder="e.g. Authorization, Content-Type"
                                                                aria-label="Key"
+                                                               spellcheck="false"
+                                                               autocomplete="off"
                                                                data-role="dictionary-key" />
                                                     </div>
-                                                    <div class="mapping-arrow">→</div>
-                                                    <div class="mapping-col">
+                                                    <div class="bw-mapping-arrow">→</div>
+                                                    <div class="bw-mapping-col" style="position: relative;">
                                                         <label>Value</label>
-                                                        <input value="@entry.From"
-                                                               @oninput="@((e) => { entry.From = e.Value?.ToString() ?? ""; TriggerAutoSave(); })"
-                                                               type="text"
-                                                               class="form-control mapping-input droppable-input"
-                                                               placeholder="e.g. input.token or {{input.token}}"
-                                                               aria-label="Dictionary value"
-                                                               @ondragover="@((e) => HandleDragOver(e))"
-                                                               @ondragover:preventDefault="true"
-                                                               @ondrop="@((e) => HandleDrop(e, entry))"
-                                                               data-role="dictionary-value" />
+                                                        <div style="position: relative;">
+                                                            <div class="bw-scriban-backdrop" id="@($"hl-{dictDropId}")" aria-hidden="true"></div>
+                                                            <input value="@entry.From"
+                                                                   id="@dictDropId"
+                                                                   @oninput="@((e) => { entry.From = e.Value?.ToString() ?? ""; TriggerAutoSave(); })"
+                                                                   type="text"
+                                                                   class="form-control bw-mapping-input bw-droppable-input"
+                                                                   placeholder="e.g. input.token or {{input.token}}"
+                                                                   aria-label="Dictionary value"
+                                                                   @ondragover="HandleDragOver"
+                                                                   @ondragover:preventDefault="true"
+                                                                   @ondrop="@((e) => HandleDrop(e, entry, dictDropId))"
+                                                                   spellcheck="false"
+                                                                   autocomplete="off"
+                                                                   data-role="dictionary-value"
+                                                                   data-backdrop="@($"hl-{dictDropId}")" />
+                                                        </div>
                                                     </div>
                                                     <button onclick="@(() => RemoveDictionaryEntry(dictParam.Name ?? string.Empty, entry))"
                                                             type="button"
-                                                            class="btn btn-icon btn-xs"
+                                                            class="btn bw-btn-icon bw-btn-xs"
                                                             aria-label="Remove dictionary entry"
                                                             title="Remove this dictionary entry"
                                                             data-role="remove-dictionary-entry">
@@ -294,17 +337,17 @@ role="dialog"
                                 }
                             }
 
-                            <hr class="panel-divider" />
+                            <hr class="bw-panel-divider" />
 
                             <!-- Function output map -->
                             @if (BackingNode.DeclaredOutputPorts.Count == 0)
                             {
-                                <div class="panel-section" data-role="function-output-map">
-                                    <div class="panel-section-header">
+                                <div class="bw-panel-section" data-role="function-output-map">
+                                    <div class="bw-panel-section-header">
                                         <span>Function outputs</span>
                                     </div>
 
-                                    <div class="simple-mapping-list" data-role="output-mapping-list">
+                                    <div class="bw-simple-mapping-list" data-role="output-mapping-list">
                                         @{ var propInfos = GetReturnProperties(); }
                                         @if (propInfos is not null)
                                         {
@@ -313,26 +356,28 @@ role="dialog"
                                                 var propInfo = propInfos.FirstOrDefault(p => p.Name == outputMapping.From);
                                                 var hasProperty = !string.IsNullOrEmpty(propInfo.Name);
                                                 var typeDisplay = hasProperty ? propInfo.Type : TypeHelpers.FormatTypeName(BackingNode.BackingMethod.ReturnType);
-                                                <div class="simple-mapping-item" data-role="output-mapping-row">
-                                                    <div class="simple-mapping-label-row">
-                                                        <label class="simple-mapping-label" title="@typeDisplay">
+                                                <div class="bw-simple-mapping-item" data-role="output-mapping-row">
+                                                    <div class="bw-simple-mapping-label-row">
+                                                        <label class="bw-simple-mapping-label" title="@typeDisplay">
                                                             @outputMapping.From
-                                                            <span class="param-type-hint">(@typeDisplay)</span>
+                                                            <span class="bw-param-type-hint">(@typeDisplay)</span>
                                                         </label>
-                                                        <label class="workflow-output-checkbox-label" title="Expose this output to workflow.output.*">
+                                                        <label class="bw-workflow-output-checkbox-label" title="Expose this output to workflow.output.*">
                                                             <InputCheckbox Value="@outputMapping.ExposeAsWorkflowOutput"
                                                                            ValueChanged="@((bool value) => { outputMapping.ExposeAsWorkflowOutput = value; TriggerAutoSave(); })"
                                                                            ValueExpression="@(() => outputMapping.ExposeAsWorkflowOutput)"
-                                                                           class="workflow-output-checkbox"
+                                                                           class="bw-workflow-output-checkbox"
                                                                            data-role="expose-workflow-output" />
-                                                            <span class="workflow-output-checkbox-text">Workflow output</span>
+                                                            <span class="bw-workflow-output-checkbox-text">Workflow output</span>
                                                         </label>
                                                     </div>
                                                     <InputTextArea @bind-Value="outputMapping.To"
                                                                    @oninput="@(() => TriggerAutoSave())"
-                                                                   class="form-control form-control-sm mapping-input"
+                                                                   class="form-control form-control-sm bw-mapping-input"
                                                                    placeholder="e.g. output.name"
                                                                    required
+                                                                   spellcheck="false"
+                                                                   autocomplete="off"
                                                                    rows="1"
                                                                    data-role="target-payload-path" />
                                                 </div>
@@ -344,7 +389,7 @@ role="dialog"
                             else
                             {
                                 <!-- Port-driven nodes don't use output mappings -->
-                                <div class="panel-section" data-role="port-driven-info">
+                                <div class="bw-panel-section" data-role="port-driven-info">
                                     <div class="alert alert-info" style="margin: 0;">
                                         <strong>Port-Driven Node</strong>
                                         <p style="margin: 8px 0 0 0; font-size: 14px;">
@@ -360,13 +405,13 @@ role="dialog"
                     </section>
 
                     <!-- OUTPUT PANEL -->
-                    <section class="node-editor-panel node-editor-panel-output">
-                        <header class="panel-header">
+                    <section class="bw-node-editor-panel bw-node-editor-panel-output">
+                        <header class="bw-panel-header">
                             <h6>Resulting payload</h6>
-                            <p class="panel-caption">See what leaves this node after mappings.</p>
+                            <p class="bw-panel-caption">See what leaves this node after mappings.</p>
                         </header>
-                        <div class="panel-body">
-                            <div class="payload-preview payload-preview--output selectable-json"
+                        <div class="bw-panel-body">
+                            <div class="bw-payload-preview bw-payload-preview--output bw-selectable-json"
                                  data-role="output-preview">
                                 @RenderSelectableJson(OutputPayloadJson, "")
                             </div>
@@ -389,7 +434,16 @@ role="dialog"
     public EventCallback ExecuteInputRequested { get; set; }
 
     [Parameter]
+    public EventCallback ExecuteThisNodeRequested { get; set; }
+
+    [Parameter]
     public required Node BackingNode { get; set; } = new() { BackingMethod = null };
+
+    [Parameter]
+    public Dictionary<string, string> EnvironmentVariables { get; set; } = new();
+
+    [Parameter]
+    public Dictionary<string, string> WorkflowParameters { get; set; } = new();
 
     [Parameter]
     public JsonNode? IncomingPayloadJson { get; set; }
@@ -401,6 +455,7 @@ role="dialog"
     private bool isSaving = false;
     private bool saveSuccess = false;
     private bool isExecuting = false;
+    private bool _showRunMenu = false;
     private string? _draggedFieldPath = null;
     private PathMapEntry? _previewMapping = null;
     private ElementReference _previewButtonRef;
@@ -411,6 +466,15 @@ role="dialog"
     // Auto-save debouncing
     private System.Threading.Timer? _autoSaveTimer;
     private readonly int _autoSaveDelayMs = 500; // 500ms debounce
+
+    // Modal-level undo/redo for field changes
+    private readonly Stack<ViewModelSnapshot> _modalUndoStack = new();
+    private readonly Stack<ViewModelSnapshot> _modalRedoStack = new();
+    private const int MaxUndoSteps = 50;
+    private bool _isUndoRedoing = false;
+    private ViewModelSnapshot? _lastSnapshotState = null;
+    private DotNetObjectReference<NodeEditorModal>? _modalDotNetRef;
+    private Node? _undoInitializedForNode;
 
     // JSON preview controls
     private string _jsonSearchTerm = "";
@@ -452,6 +516,225 @@ role="dialog"
                 // Ignore focus errors
             }
 
+            // Smart drop system for drag-and-drop into inputs
+            await JSRuntime.InvokeVoidAsync("eval", @"
+                window.__smartDrop = {
+                    _canvas: null,
+                    _lastUpdate: 0,
+                    _throttleMs: 50,
+
+                    // Returns { lines, lineHeight, paddingTop, paddingLeft, scrollTop, font }
+                    _getTextLayout: function(el) {
+                        var style = window.getComputedStyle(el);
+                        var lineHeight = parseFloat(style.lineHeight);
+                        if (isNaN(lineHeight)) lineHeight = parseFloat(style.fontSize) * 1.2;
+                        return {
+                            lines: (el.value || '').split('\n'),
+                            lineHeight: lineHeight,
+                            paddingTop: parseFloat(style.paddingTop) || 0,
+                            paddingLeft: parseFloat(style.paddingLeft) || 0,
+                            scrollTop: el.scrollTop || 0,
+                            font: style.fontSize + ' ' + style.fontFamily
+                        };
+                    },
+
+                    // Given mouse coords relative to the element, find { lineIndex, charInLine, charOffset }
+                    _hitTest: function(el, x, y) {
+                        var layout = this._getTextLayout(el);
+                        var rect = el.getBoundingClientRect();
+                        var relX = x - rect.left - layout.paddingLeft;
+                        var relY = y - rect.top - layout.paddingTop + layout.scrollTop;
+
+                        var canvas = this._canvas || (this._canvas = document.createElement('canvas'));
+                        var ctx = canvas.getContext('2d');
+                        ctx.font = layout.font;
+
+                        var lineIndex = Math.floor(relY / layout.lineHeight);
+                        lineIndex = Math.max(0, Math.min(lineIndex, layout.lines.length - 1));
+
+                        var lineText = layout.lines[lineIndex];
+                        var lineWidth = ctx.measureText(lineText).width;
+
+                        // Check if mouse X is over text on this line
+                        if (lineText.length === 0 || relX < 0 || relX > lineWidth + 2) {
+                            return null; // not over text
+                        }
+
+                        // Find char position within this line
+                        var charRatio = relX / lineWidth;
+                        var charInLine = Math.round(charRatio * lineText.length);
+                        charInLine = Math.max(0, Math.min(charInLine, lineText.length));
+
+                        // Convert to absolute char offset in the full value
+                        var charOffset = 0;
+                        for (var i = 0; i < lineIndex; i++) {
+                            charOffset += layout.lines[i].length + 1; // +1 for \n
+                        }
+                        charOffset += charInLine;
+
+                        return {
+                            lineIndex: lineIndex,
+                            charInLine: charInLine,
+                            charOffset: charOffset,
+                            lineText: lineText,
+                            lineHeight: layout.lineHeight,
+                            paddingTop: layout.paddingTop,
+                            paddingLeft: layout.paddingLeft,
+                            scrollTop: layout.scrollTop
+                        };
+                    },
+
+                    // Find the scriban expression {{...}} that contains the given position
+                    _findScribanAt: function(value, pos) {
+                        var opens = [];
+                        for (var i = 0; i < value.length - 1; i++) {
+                            if (value[i] === '{' && value[i + 1] === '{') {
+                                opens.push(i);
+                            }
+                        }
+                        for (var o = opens.length - 1; o >= 0; o--) {
+                            var start = opens[o];
+                            // Find the matching }}
+                            var end = value.indexOf('}}', start + 2);
+                            if (end === -1) continue;
+                            end += 2; // include the }}
+                            if (pos >= start && pos <= end) {
+                                return { start: start, end: end };
+                            }
+                        }
+                        return null;
+                    },
+
+                    getDropInfo: function(x, y, elementId) {
+                        var el = document.getElementById(elementId);
+                        if (!el) return { mode: 'replace', caretPos: -1, scribanStart: -1, scribanEnd: -1 };
+
+                        var value = el.value || '';
+                        if (!value.trim()) return { mode: 'replace', caretPos: -1, scribanStart: -1, scribanEnd: -1 };
+
+                        var hit = this._hitTest(el, x, y);
+                        if (hit) {
+                            var scriban = this._findScribanAt(value, hit.charOffset);
+                            if (scriban) {
+                                return { mode: 'replace-scriban', caretPos: hit.charOffset, scribanStart: scriban.start, scribanEnd: scriban.end };
+                            }
+                            return { mode: 'inject', caretPos: hit.charOffset, scribanStart: -1, scribanEnd: -1 };
+                        }
+                        return { mode: 'replace', caretPos: -1, scribanStart: -1, scribanEnd: -1 };
+                    },
+
+                    showIndicator: function(el, x, y) {
+                        var value = el.value || '';
+                        el.classList.remove('bw-drop-inject', 'bw-drop-replace', 'bw-drop-replace-scriban');
+                        var existingIndicator = el.parentElement.querySelector('.bw-drop-caret-indicator');
+                        if (existingIndicator) existingIndicator.remove();
+                        var existingHighlight = el.parentElement.querySelector('.bw-drop-scriban-highlight');
+                        if (existingHighlight) existingHighlight.remove();
+
+                        if (!value.trim()) {
+                            el.classList.add('bw-drop-replace');
+                            return;
+                        }
+
+                        var hit = this._hitTest(el, x, y);
+                        if (hit) {
+                            var scriban = this._findScribanAt(value, hit.charOffset);
+                            if (scriban) {
+                                // Hovering over a scriban expression — show highlight over it
+                                el.classList.add('bw-drop-replace-scriban');
+                                var layout = this._getTextLayout(el);
+                                var canvas = this._canvas || (this._canvas = document.createElement('canvas'));
+                                var ctx = canvas.getContext('2d');
+                                ctx.font = layout.font;
+
+                                // Find which line the scriban starts on (simplified: assume single line)
+                                var beforeScriban = value.substring(0, scriban.start);
+                                var scribanLines = beforeScriban.split('\n');
+                                var scribanLineIdx = scribanLines.length - 1;
+                                var charInLineStart = scribanLines[scribanLineIdx].length;
+                                var scribanText = value.substring(scriban.start, scriban.end);
+                                var lineText = layout.lines[scribanLineIdx] || '';
+
+                                var startX = ctx.measureText(lineText.substring(0, charInLineStart)).width;
+                                var scribanWidth = ctx.measureText(scribanText).width;
+                                var hlTop = layout.paddingTop + (scribanLineIdx * layout.lineHeight) - layout.scrollTop;
+
+                                var highlight = document.createElement('div');
+                                highlight.className = 'bw-drop-scriban-highlight';
+                                highlight.style.left = (layout.paddingLeft + startX) + 'px';
+                                highlight.style.top = hlTop + 'px';
+                                highlight.style.width = scribanWidth + 'px';
+                                highlight.style.height = layout.lineHeight + 'px';
+                                el.parentElement.style.position = 'relative';
+                                el.parentElement.appendChild(highlight);
+                            } else {
+                                // Hovering over plain text — show inject caret
+                                el.classList.add('bw-drop-inject');
+                                var canvas = this._canvas || (this._canvas = document.createElement('canvas'));
+                                var ctx = canvas.getContext('2d');
+                                ctx.font = this._getTextLayout(el).font;
+                                var textBeforeCaret = hit.lineText.substring(0, hit.charInLine);
+                                var caretX = ctx.measureText(textBeforeCaret).width;
+                                var caretTop = hit.paddingTop + (hit.lineIndex * hit.lineHeight) - hit.scrollTop;
+
+                                var indicator = document.createElement('div');
+                                indicator.className = 'bw-drop-caret-indicator';
+                                indicator.style.left = (hit.paddingLeft + caretX) + 'px';
+                                indicator.style.top = caretTop + 'px';
+                                indicator.style.height = hit.lineHeight + 'px';
+                                el.parentElement.style.position = 'relative';
+                                el.parentElement.appendChild(indicator);
+                            }
+                        } else {
+                            el.classList.add('bw-drop-replace');
+                        }
+                    },
+
+                    clearIndicator: function(elementId) {
+                        var el = typeof elementId === 'string' ? document.getElementById(elementId) : elementId;
+                        if (!el) return;
+                        el.classList.remove('bw-drop-inject', 'bw-drop-replace', 'bw-drop-replace-scriban');
+                        var indicator = el.parentElement.querySelector('.bw-drop-caret-indicator');
+                        if (indicator) indicator.remove();
+                        var highlight = el.parentElement.querySelector('.bw-drop-scriban-highlight');
+                        if (highlight) highlight.remove();
+                    },
+
+                    init: function() {
+                        var self = this;
+                        // Use event delegation for all droppable inputs in the modal
+                        var modal = document.querySelector('.bw-node-editor-modal');
+                        if (!modal) return;
+
+                        modal.addEventListener('dragover', function(e) {
+                            var el = e.target.closest('.bw-droppable-input');
+                            if (!el || !el.id) return;
+
+                            var now = Date.now();
+                            if (now - self._lastUpdate < self._throttleMs) return;
+                            self._lastUpdate = now;
+
+                            self.showIndicator(el, e.clientX, e.clientY);
+                        });
+
+                        modal.addEventListener('dragleave', function(e) {
+                            var el = e.target.closest('.bw-droppable-input');
+                            if (!el) return;
+                            // Only clear if actually leaving the element
+                            var related = e.relatedTarget;
+                            if (related && el.contains(related)) return;
+                            self.clearIndicator(el);
+                        });
+
+                        modal.addEventListener('drop', function(e) {
+                            var el = e.target.closest('.bw-droppable-input');
+                            if (el) self.clearIndicator(el);
+                        });
+                    }
+                };
+                window.__smartDrop.init();
+            ");
+
             // Add event listener for tab key and auto-resize for textareas
             await JSRuntime.InvokeVoidAsync("eval", @"
                 // Auto-resize function
@@ -462,7 +745,7 @@ role="dialog"
 
                 // Tab key handler
                 document.addEventListener('keydown', function(e) {
-                    if (e.key === 'Tab' && e.target.tagName === 'TEXTAREA' && e.target.closest('.node-editor-modal')) {
+                    if (e.key === 'Tab' && e.target.tagName === 'TEXTAREA' && e.target.closest('.bw-node-editor-modal')) {
                         e.preventDefault();
                         var textarea = e.target;
 
@@ -485,56 +768,361 @@ role="dialog"
 
                 // Input handler for auto-resize
                 document.addEventListener('input', function(e) {
-                    if (e.target.tagName === 'TEXTAREA' && e.target.closest('.node-editor-modal')) {
+                    if (e.target.tagName === 'TEXTAREA' && e.target.closest('.bw-node-editor-modal')) {
                         autoResizeTextarea(e.target);
                     }
                 }, true);
 
                 // Initial resize for all textareas in modal
-                var textareas = document.querySelectorAll('.node-editor-modal textarea');
+                var textareas = document.querySelectorAll('.bw-node-editor-modal textarea');
                 textareas.forEach(function(textarea) {
                     autoResizeTextarea(textarea);
                 });
 
-                // Also observe for new textareas being added (for dynamic content)
+                // Also observe for new textareas/inputs being added (for dynamic content)
                 var observer = new MutationObserver(function(mutations) {
                     mutations.forEach(function(mutation) {
                         mutation.addedNodes.forEach(function(node) {
                             if (node.nodeType === 1) {
-                                if (node.tagName === 'TEXTAREA' && node.closest('.node-editor-modal')) {
+                                if (node.tagName === 'TEXTAREA' && node.closest('.bw-node-editor-modal')) {
                                     autoResizeTextarea(node);
                                 }
                                 var textareas = node.querySelectorAll ? node.querySelectorAll('textarea') : [];
                                 textareas.forEach(function(textarea) {
-                                    if (textarea.closest('.node-editor-modal')) {
+                                    if (textarea.closest('.bw-node-editor-modal')) {
                                         autoResizeTextarea(textarea);
                                     }
                                 });
+                                // Update scriban highlights for new fields
+                                if (window.__scribanHL) {
+                                    var fields = node.matches && node.matches('.bw-mapping-input[data-backdrop]')
+                                        ? [node]
+                                        : (node.querySelectorAll ? Array.from(node.querySelectorAll('.bw-mapping-input[data-backdrop]')) : []);
+                                    fields.forEach(function(f) { window.__scribanHL.updateBackdrop(f); });
+                                }
                             }
                         });
                     });
                 });
 
-                var modalContainer = document.querySelector('.node-editor-modal');
+                var modalContainer = document.querySelector('.bw-node-editor-modal');
                 if (modalContainer) {
                     observer.observe(modalContainer, { childList: true, subtree: true });
                 }
             ");
+
+            // ── Scriban syntax highlighting system ──
+            _modalDotNetRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("eval", @"
+                window.__scribanHL = (function() {
+                    var _dotNetRef = null;
+                    var _tooltip = null;
+                    var _hoverTimer = null;
+                    var _currentExpr = null;
+                    var _listeners = [];
+
+                    // Parse text into segments: plain and {{ ... }} tokens
+                    function parseSegments(text) {
+                        var segs = [];
+                        var re = /\{\{[\s\S]*?\}\}/g;
+                        var last = 0;
+                        var m;
+                        while ((m = re.exec(text)) !== null) {
+                            if (m.index > last) {
+                                segs.push({ type: 'plain', text: text.substring(last, m.index) });
+                            }
+                            segs.push({ type: 'token', text: m[0], start: m.index, end: m.index + m[0].length });
+                            last = m.index + m[0].length;
+                        }
+                        if (last < text.length) {
+                            segs.push({ type: 'plain', text: text.substring(last) });
+                        }
+                        return segs;
+                    }
+
+                    // Escape HTML in text
+                    function esc(s) {
+                        var d = document.createElement('div');
+                        d.textContent = s;
+                        return d.innerHTML;
+                    }
+
+                    // Update a single backdrop div to reflect the textarea/input value
+                    function updateBackdrop(el) {
+                        var bdId = el.getAttribute('data-backdrop');
+                        if (!bdId) return;
+                        var bd = document.getElementById(bdId);
+                        if (!bd) return;
+
+                        var val = el.value || '';
+                        var segs = parseSegments(val);
+                        var hasTokens = segs.some(function(s) { return s.type === 'token'; });
+
+                        if (!hasTokens) {
+                            // No scriban — remove highlight mode
+                            el.classList.remove('bw-hl-active');
+                            bd.innerHTML = '';
+                            bd.style.display = 'none';
+                            return;
+                        }
+
+                        el.classList.add('bw-hl-active');
+                        bd.style.display = '';
+
+                        // Build highlighted HTML
+                        var html = '';
+                        for (var i = 0; i < segs.length; i++) {
+                            var s = segs[i];
+                            if (s.type === 'token') {
+                                html += '<span class=""bw-hl-token"">' + esc(s.text) + '</span>';
+                            } else {
+                                html += '<span class=""bw-hl-plain"">' + esc(s.text) + '</span>';
+                            }
+                        }
+                        // Add trailing space so backdrop height matches textarea with trailing newline
+                        if (val.endsWith('\n') || val.endsWith('\r')) html += ' ';
+                        bd.innerHTML = html;
+
+                        // Sync computed styles from textarea to backdrop
+                        var cs = window.getComputedStyle(el);
+                        bd.style.fontSize = cs.fontSize;
+                        bd.style.fontFamily = cs.fontFamily;
+                        bd.style.lineHeight = cs.lineHeight;
+                        bd.style.padding = cs.padding;
+                        bd.style.borderWidth = cs.borderWidth;
+                        bd.style.letterSpacing = cs.letterSpacing;
+                        bd.style.wordSpacing = cs.wordSpacing;
+                        bd.style.textIndent = cs.textIndent;
+                        bd.style.whiteSpace = cs.whiteSpace;
+                        bd.style.tabSize = cs.tabSize;
+                        bd.style.scrollTop = el.scrollTop;
+
+                        // For textarea, sync scroll
+                        bd.scrollTop = el.scrollTop;
+                    }
+
+                    // Update all highlighted fields in the modal
+                    function updateAll() {
+                        var fields = document.querySelectorAll('.bw-node-editor-modal .bw-mapping-input[data-backdrop]');
+                        fields.forEach(updateBackdrop);
+                    }
+
+                    // Find which scriban token the mouse is over
+                    function findTokenAtMouse(el, clientX, clientY) {
+                        var val = el.value || '';
+                        if (!val) return null;
+
+                        var segs = parseSegments(val);
+                        var tokens = segs.filter(function(s) { return s.type === 'token'; });
+                        if (tokens.length === 0) return null;
+
+                        // Use the backdrop's token spans for hit-testing
+                        var bdId = el.getAttribute('data-backdrop');
+                        if (!bdId) return null;
+                        var bd = document.getElementById(bdId);
+                        if (!bd) return null;
+
+                        var spans = bd.querySelectorAll('.bw-hl-token');
+                        for (var i = 0; i < spans.length; i++) {
+                            var rect = spans[i].getBoundingClientRect();
+                            if (clientX >= rect.left && clientX <= rect.right &&
+                                clientY >= rect.top && clientY <= rect.bottom) {
+                                return tokens[i] ? tokens[i].text : null;
+                            }
+                        }
+                        return null;
+                    }
+
+                    // Show/position the tooltip
+                    function showTooltip(expr, previewValue, x, y) {
+                        if (!_tooltip) {
+                            _tooltip = document.createElement('div');
+                            _tooltip.className = 'bw-scriban-tooltip';
+                            _tooltip.innerHTML = '<div class=""bw-scriban-tooltip-label"">Preview</div>' +
+                                                 '<div class=""bw-scriban-tooltip-expr""></div>' +
+                                                 '<div class=""bw-scriban-tooltip-value""></div>';
+                            document.body.appendChild(_tooltip);
+                        }
+                        _tooltip.querySelector('.bw-scriban-tooltip-expr').textContent = expr;
+                        _tooltip.querySelector('.bw-scriban-tooltip-value').textContent = previewValue;
+                        _tooltip.style.left = x + 'px';
+                        _tooltip.style.top = (y - 50) + 'px';
+                        _tooltip.classList.add('bw-visible');
+                    }
+
+                    function hideTooltip() {
+                        if (_tooltip) _tooltip.classList.remove('bw-visible');
+                        _currentExpr = null;
+                        if (_hoverTimer) { clearTimeout(_hoverTimer); _hoverTimer = null; }
+                    }
+
+                    function setup(dotNetRef) {
+                        _dotNetRef = dotNetRef;
+                        var modal = document.querySelector('.bw-node-editor-modal');
+                        if (!modal) return;
+
+                        // Input handler — update backdrop on typing
+                        function onInput(e) {
+                            var el = e.target.closest('.bw-mapping-input[data-backdrop]');
+                            if (el) {
+                                updateBackdrop(el);
+                                // Also re-run auto-resize then sync backdrop height
+                                setTimeout(function() { updateBackdrop(el); }, 0);
+                            }
+                        }
+
+                        // Scroll sync for textareas
+                        function onScroll(e) {
+                            var el = e.target;
+                            if (!el.matches || !el.matches('.bw-mapping-input[data-backdrop]')) return;
+                            var bdId = el.getAttribute('data-backdrop');
+                            var bd = bdId ? document.getElementById(bdId) : null;
+                            if (bd) bd.scrollTop = el.scrollTop;
+                        }
+
+                        // Mousemove for hover preview
+                        function onMouseMove(e) {
+                            var el = e.target.closest('.bw-mapping-input[data-backdrop]');
+                            if (!el || !el.classList.contains('bw-hl-active')) {
+                                hideTooltip();
+                                return;
+                            }
+
+                            var expr = findTokenAtMouse(el, e.clientX, e.clientY);
+                            if (!expr) {
+                                hideTooltip();
+                                return;
+                            }
+
+                            // Same expression — just reposition
+                            if (expr === _currentExpr) {
+                                if (_tooltip && _tooltip.classList.contains('bw-visible')) {
+                                    _tooltip.style.left = e.clientX + 'px';
+                                    _tooltip.style.top = (e.clientY - 50) + 'px';
+                                }
+                                return;
+                            }
+
+                            hideTooltip();
+                            _currentExpr = expr;
+
+                            // Debounce the evaluation
+                            _hoverTimer = setTimeout(function() {
+                                if (!_dotNetRef) return;
+                                _dotNetRef.invokeMethodAsync('EvaluateScribanExpression', expr)
+                                    .then(function(result) {
+                                        if (_currentExpr === expr) {
+                                            showTooltip(expr, result, e.clientX, e.clientY);
+                                        }
+                                    })
+                                    .catch(function() {});
+                            }, 200);
+                        }
+
+                        function onMouseLeave(e) {
+                            if (e.target.matches && e.target.matches('.bw-mapping-input')) {
+                                hideTooltip();
+                            }
+                        }
+
+                        modal.addEventListener('input', onInput, true);
+                        modal.addEventListener('scroll', onScroll, true);
+                        modal.addEventListener('mousemove', onMouseMove);
+                        modal.addEventListener('mouseleave', onMouseLeave, true);
+
+                        _listeners = [
+                            ['input', onInput, true],
+                            ['scroll', onScroll, true],
+                            ['mousemove', onMouseMove, false],
+                            ['mouseleave', onMouseLeave, true]
+                        ];
+
+                        // Initial update for all existing fields
+                        updateAll();
+                    }
+
+                    function teardown() {
+                        var modal = document.querySelector('.bw-node-editor-modal');
+                        if (modal) {
+                            _listeners.forEach(function(l) { modal.removeEventListener(l[0], l[1], l[2]); });
+                        }
+                        _listeners = [];
+                        hideTooltip();
+                        if (_tooltip && _tooltip.parentNode) _tooltip.parentNode.removeChild(_tooltip);
+                        _tooltip = null;
+                        _dotNetRef = null;
+                    }
+
+                    return { setup: setup, teardown: teardown, updateAll: updateAll, updateBackdrop: updateBackdrop };
+                })();
+            ");
+            await JSRuntime.InvokeVoidAsync("__scribanHL.setup", _modalDotNetRef);
+
+            // Setup modal-level Ctrl+Z/Y handler that prevents browser default
+            await JSRuntime.InvokeVoidAsync("eval", @"
+                window.__modalUndoRedo = {
+                    _handler: null,
+                    _dotNetRef: null,
+                    setup: function(dotNetRef) {
+                        this._dotNetRef = dotNetRef;
+                        this._handler = function(e) {
+                            var modal = document.querySelector('.bw-node-editor-modal');
+                            if (!modal) return;
+
+                            var isCtrl = e.ctrlKey || e.metaKey;
+                            if (!isCtrl) return;
+
+                            if (e.key === 'z' && !e.shiftKey) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                dotNetRef.invokeMethodAsync('OnModalUndoRequested');
+                            } else if (e.key === 'y' || (e.key === 'Z' && e.shiftKey)) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                dotNetRef.invokeMethodAsync('OnModalRedoRequested');
+                            }
+                        };
+                        document.addEventListener('keydown', this._handler, true);
+                    },
+                    teardown: function() {
+                        if (this._handler) {
+                            document.removeEventListener('keydown', this._handler, true);
+                            this._handler = null;
+                        }
+                        this._dotNetRef = null;
+                    }
+                };
+            ");
+            await JSRuntime.InvokeVoidAsync("__modalUndoRedo.setup", _modalDotNetRef);
         }
+
+        // Sync scriban highlight backdrops after every render (Blazor may have updated values)
+        try { await JSRuntime.InvokeVoidAsync("__scribanHL.updateAll"); } catch { }
     }
 
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
 
-        // Create a fresh ViewModel each time to avoid stale data
-        ViewModel = new NodeEditorModalViewModel();
-        ViewModel.NodeInputToMethodInputMap = BackingNode.NodeInputToMethodInputMap;
-        ViewModel.MethodOutputToNodeOutputMap = BackingNode.MethodOutputToNodeOutputMap;
-        ViewModel.DictionaryParameterMappings = new Dictionary<string, List<PathMapEntry>>(BackingNode.DictionaryParameterMappings);
+        var nodeChanged = !ReferenceEquals(BackingNode, _undoInitializedForNode);
+
+        if (nodeChanged)
+        {
+            // Create a fresh ViewModel only when the node changes (not on every re-render)
+            ViewModel = new NodeEditorModalViewModel();
+            ViewModel.NodeInputToMethodInputMap = BackingNode.NodeInputToMethodInputMap;
+            ViewModel.MethodOutputToNodeOutputMap = BackingNode.MethodOutputToNodeOutputMap;
+            ViewModel.DictionaryParameterMappings = new Dictionary<string, List<PathMapEntry>>(BackingNode.DictionaryParameterMappings);
+
+            // Initialize undo/redo state for this modal session
+            _modalUndoStack.Clear();
+            _modalRedoStack.Clear();
+            _lastSnapshotState = TakeViewModelSnapshot();
+            _undoInitializedForNode = BackingNode;
+        }
 
         OutputPayloadJson = BackingNode?.Result;
-        IncomingPayloadJson = BackingNode?.Input;
+        IncomingPayloadJson = BuildFullInputPayload();
 
         // Reset error dismissed state when a new error occurs
         if (BackingNode?.HasError == true && BackingNode.ErrorMessage != _lastErrorMessage)
@@ -745,8 +1333,9 @@ role="dialog"
         await HandleClose();
     }
 
-    private async Task ExecuteInput()
+    private async Task ExecuteWorkflow()
     {
+        _showRunMenu = false;
         if (isExecuting) return;
 
         isExecuting = true;
@@ -755,25 +1344,7 @@ role="dialog"
         try
         {
             await ExecuteInputRequested.InvokeAsync();
-
-            // Refresh the payload data after execution
-            IncomingPayloadJson = BackingNode?.Input;
-            OutputPayloadJson = BackingNode?.Result;
-
-            // Reset error dismissed state after execution if there's an error
-            if (BackingNode?.HasError == true)
-            {
-                _errorDismissed = false;
-                _lastErrorMessage = BackingNode.ErrorMessage;
-            }
-            else if (BackingNode?.HasError == false)
-            {
-                // Clear tracking when there's no error
-                _lastErrorMessage = null;
-            }
-
-            StateHasChanged();
-
+            RefreshAfterExecution();
             await Task.Delay(1000);
         }
         catch (Exception ex)
@@ -786,8 +1357,61 @@ role="dialog"
         }
     }
 
+    private async Task ExecuteThisNode()
+    {
+        _showRunMenu = false;
+        if (isExecuting || BackingNode?.Input == null) return;
+
+        isExecuting = true;
+        StateHasChanged();
+
+        try
+        {
+            await ExecuteThisNodeRequested.InvokeAsync();
+            RefreshAfterExecution();
+            await Task.Delay(1000);
+        }
+        catch (Exception ex)
+        {
+        }
+        finally
+        {
+            isExecuting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CloseRunMenu()
+    {
+        if (_showRunMenu) _showRunMenu = false;
+    }
+
+    private void RefreshAfterExecution()
+    {
+        IncomingPayloadJson = BuildFullInputPayload();
+        OutputPayloadJson = BackingNode?.Result;
+
+        if (BackingNode?.HasError == true)
+        {
+            _errorDismissed = false;
+            _lastErrorMessage = BackingNode.ErrorMessage;
+        }
+        else if (BackingNode?.HasError == false)
+        {
+            _lastErrorMessage = null;
+        }
+
+        StateHasChanged();
+    }
+
     private void TriggerAutoSave()
     {
+        // Push undo snapshot before changes are saved (skip if this is an undo/redo operation)
+        if (!_isUndoRedoing)
+        {
+            PushUndoSnapshot();
+        }
+
         // Cancel previous timer if exists
         _autoSaveTimer?.Dispose();
 
@@ -840,12 +1464,14 @@ role="dialog"
     private void RemoveMethodOutputToNodeOutputMap(PathMapEntry viewModel)
     {
         ViewModel.MethodOutputToNodeOutputMap.Remove(viewModel);
+        TriggerAutoSave();
         StateHasChanged();
     }
 
     private void RemoveNodeInputToMethodInputMap(PathMapEntry viewModel)
     {
         ViewModel.NodeInputToMethodInputMap.Remove(viewModel);
+        TriggerAutoSave();
         StateHasChanged();
     }
 
@@ -873,6 +1499,7 @@ role="dialog"
                 From = defaultValue,
                 To = unmappedParam.Name ?? string.Empty
             });
+            TriggerAutoSave();
             StateHasChanged();
         }
         // Don't add empty mapping if all parameters are already mapped
@@ -898,6 +1525,7 @@ role="dialog"
                     From = unmappedProp.Name,
                     To = unmappedProp.Name
                 });
+                TriggerAutoSave();
                 StateHasChanged();
             }
             // Don't add empty mapping if all properties are already mapped
@@ -913,6 +1541,7 @@ role="dialog"
                     From = "result",
                     To = "result"
                 });
+                TriggerAutoSave();
                 StateHasChanged();
             }
             // Don't add empty mapping if "result" is already mapped
@@ -1058,19 +1687,58 @@ role="dialog"
 
     private void HandleDragOver(DragEventArgs e)
     {
-        // Allow drop by preventing default
+        // Visual indicator is handled entirely in JS via native event delegation
+        // This method exists only to wire up @ondragover:preventDefault
     }
 
-    private void HandleDrop(DragEventArgs e, PathMapEntry mapping)
+    private async Task HandleDrop(DragEventArgs e, PathMapEntry mapping, string elementId)
     {
         if (!string.IsNullOrEmpty(_draggedFieldPath))
         {
-            // Wrap the path in Scriban template syntax
-            mapping.From = $"{{{{{_draggedFieldPath}}}}}";
+            var template = $"{{{{{_draggedFieldPath}}}}}";
+
+            try
+            {
+                // Query the drop position from JS at the moment of drop
+                var result = await JSRuntime.InvokeAsync<SmartDropInfo>("__smartDrop.getDropInfo", e.ClientX, e.ClientY, elementId);
+
+                if (result.mode == "replace-scriban" && result.scribanStart >= 0 && result.scribanEnd >= 0 && !string.IsNullOrEmpty(mapping.From))
+                {
+                    // Replace the existing scriban expression with the new one
+                    var start = Math.Min(result.scribanStart, mapping.From.Length);
+                    var end = Math.Min(result.scribanEnd, mapping.From.Length);
+                    mapping.From = mapping.From[..start] + template + mapping.From[end..];
+                }
+                else if (result.mode == "inject" && result.caretPos >= 0 && !string.IsNullOrEmpty(mapping.From))
+                {
+                    var pos = Math.Min(result.caretPos, mapping.From.Length);
+                    mapping.From = mapping.From.Insert(pos, template);
+                }
+                else
+                {
+                    mapping.From = template;
+                }
+
+                await JSRuntime.InvokeVoidAsync("__smartDrop.clearIndicator", elementId);
+            }
+            catch
+            {
+                // Fallback to replace
+                mapping.From = template;
+            }
+
             _draggedFieldPath = null;
             TriggerAutoSave();
             StateHasChanged();
         }
+    }
+
+    private class SmartDropInfo
+    {
+        public string mode { get; set; } = "replace";
+        public int caretPos { get; set; } = -1;
+        public int scribanStart { get; set; } = -1;
+        public int scribanEnd { get; set; } = -1;
     }
 
     // Preview methods
@@ -1157,6 +1825,18 @@ role="dialog"
     }
 
     [JSInvokable]
+    public void OnModalUndoRequested()
+    {
+        ModalUndo();
+    }
+
+    [JSInvokable]
+    public void OnModalRedoRequested()
+    {
+        ModalRedo();
+    }
+
+    [JSInvokable]
     public void ClosePopover()
     {
         _previewMapping = null;
@@ -1167,6 +1847,24 @@ role="dialog"
     {
         _errorDismissed = true;
         StateHasChanged();
+    }
+
+    [JSInvokable]
+    public string EvaluateScribanExpression(string expression)
+    {
+        if (string.IsNullOrWhiteSpace(expression) || IncomingPayloadJson is null)
+            return "…";
+
+        try
+        {
+            var obj = ScribanHelpers.GetScribanObject(expression, (JsonObject)IncomingPayloadJson.DeepClone(), null, typeof(string));
+            var result = obj?.ToString();
+            return string.IsNullOrEmpty(result) ? "null" : result;
+        }
+        catch (Exception ex)
+        {
+            return $"Error: {ex.Message}";
+        }
     }
 
     private string GetScribanPreviewValue(PathMapEntry pathMapEntry)
@@ -1197,6 +1895,43 @@ role="dialog"
     /// <summary>
     /// Delegate for JSON filters. Returns true if the node should be included, false to exclude it.
     /// </summary>
+    /// <summary>
+    /// Builds the full input payload by merging node Input with SharedContext (environment, workflow, nodes).
+    /// Falls back to component parameters for environment/workflow when SharedContext isn't available yet.
+    /// </summary>
+    private JsonNode? BuildFullInputPayload()
+    {
+        var input = BackingNode?.Input;
+        var sharedContext = BackingNode?.SharedExecutionContext?.SharedContext;
+
+        var merged = input != null ? input.DeepClone().AsObject() : new JsonObject();
+
+        if (sharedContext != null)
+        {
+            foreach (var kvp in sharedContext.AsEnumerable())
+            {
+                if (kvp.Key == "input") continue;
+                if (!merged.ContainsKey(kvp.Key))
+                    merged[kvp.Key] = kvp.Value?.DeepClone();
+            }
+        }
+        else
+        {
+            // Before execution, build constants from parameters
+            if (EnvironmentVariables.Count > 0 && !merged.ContainsKey("environment"))
+                merged["environment"] = JsonNode.Parse(JsonSerializer.Serialize(EnvironmentVariables))!;
+
+            if (WorkflowParameters.Count > 0 && !merged.ContainsKey("workflow"))
+            {
+                var workflowObj = new JsonObject();
+                workflowObj["parameters"] = JsonNode.Parse(JsonSerializer.Serialize(WorkflowParameters))!;
+                merged["workflow"] = workflowObj;
+            }
+        }
+
+        return merged.Count > 0 ? merged : null;
+    }
+
     private delegate bool JsonFilter(JsonNode? node, string key, int depth);
 
     /// <summary>
@@ -1409,6 +2144,18 @@ role="dialog"
         }
     }
 
+    private string GetEmptyPayloadMessage()
+    {
+        return _jsonFilterMode switch
+        {
+            "Workflow" => "No workflow parameters configured",
+            "Environment" => "No environment variables configured",
+            "Nodes" => "Run the workflow to see node outputs",
+            "Input" => "Run the previous node to see input data",
+            _ => "Run the workflow to see data"
+        };
+    }
+
     /// <summary>
     /// Renders draggable JSON. Assumes the node is already filtered.
     /// Only handles display modes (compact, keys).
@@ -1417,11 +2164,11 @@ role="dialog"
     {
         return builder =>
         {
-            if (node == null)
+            if (node == null || (node is JsonObject emptyCheck && emptyCheck.Count == 0 && string.IsNullOrEmpty(path)))
             {
                 if (string.IsNullOrEmpty(path))
                 {
-                    builder.AddContent(0, "Execute the previous node to see the input");
+                    builder.AddContent(0, GetEmptyPayloadMessage());
                 }
                 else
                 {
@@ -1467,7 +2214,7 @@ role="dialog"
 
                     // Render key as draggable
                     builder.OpenElement(2, "span");
-                    builder.AddAttribute(3, "class", keyMatches ? "json-key draggable json-highlight" : "json-key draggable");
+                    builder.AddAttribute(3, "class", keyMatches ? "bw-json-key bw-draggable bw-json-highlight" : "bw-json-key bw-draggable");
                     builder.AddAttribute(4, "draggable", "true");
                     builder.AddAttribute(5, "ondragstart", EventCallback.Factory.Create<DragEventArgs>(this, e => HandleDragStart(e, $"{propPath} | object.to_json")));
                     builder.AddContent(6, $"\"{kvp.Key}\"");
@@ -1517,7 +2264,7 @@ role="dialog"
                                    jsonString.Contains(_jsonSearchTerm, StringComparison.OrdinalIgnoreCase);
 
                 builder.OpenElement(0, "span");
-                builder.AddAttribute(1, "class", valueMatches ? "json-value draggable json-highlight" : "json-value draggable");
+                builder.AddAttribute(1, "class", valueMatches ? "bw-json-value bw-draggable bw-json-highlight" : "bw-json-value bw-draggable");
                 builder.AddAttribute(2, "draggable", "true");
                 builder.AddAttribute(3, "ondragstart", EventCallback.Factory.Create<DragEventArgs>(this, e => HandleDragStart(e, path)));
                 builder.AddContent(4, jsonString);
@@ -1596,7 +2343,7 @@ role="dialog"
         _ = Task.Run(async () =>
         {
             await Task.Delay(50);
-            await JSRuntime.InvokeVoidAsync("eval", $"document.querySelector('.node-name-input')?.focus()");
+            await JSRuntime.InvokeVoidAsync("eval", $"document.querySelector('.bw-node-name-input')?.focus()");
         });
     }
 
@@ -1666,7 +2413,7 @@ role="dialog"
 
                     // Render key (styled but not draggable)
                     builder.OpenElement(2, "span");
-                    builder.AddAttribute(3, "class", "json-key");
+                    builder.AddAttribute(3, "class", "bw-json-key");
                     builder.AddAttribute(4, "style", "color: #93c5fd; font-weight: 600;");
                     builder.AddContent(5, $"\"{kvp.Key}\"");
                     builder.CloseElement();
@@ -1714,7 +2461,7 @@ role="dialog"
             {
                 // Render value (styled)
                 builder.OpenElement(0, "span");
-                builder.AddAttribute(1, "class", "json-value");
+                builder.AddAttribute(1, "class", "bw-json-value");
                 builder.AddAttribute(2, "style", "color: #a78bfa;");
 
                 var jsonString = val.ToJsonString();
@@ -1724,8 +2471,119 @@ role="dialog"
         };
     }
 
+    // Undo/redo snapshot for modal field changes
+    private class ViewModelSnapshot
+    {
+        public List<(string From, string To, bool ExposeAsWorkflowOutput)> InputMappings { get; set; } = new();
+        public List<(string From, string To, bool ExposeAsWorkflowOutput)> OutputMappings { get; set; } = new();
+        public Dictionary<string, List<(string From, string To)>> DictionaryMappings { get; set; } = new();
+    }
+
+    private ViewModelSnapshot TakeViewModelSnapshot()
+    {
+        return new ViewModelSnapshot
+        {
+            InputMappings = ViewModel.NodeInputToMethodInputMap
+                .Select(m => (m.From, m.To, m.ExposeAsWorkflowOutput)).ToList(),
+            OutputMappings = ViewModel.MethodOutputToNodeOutputMap
+                .Select(m => (m.From, m.To, m.ExposeAsWorkflowOutput)).ToList(),
+            DictionaryMappings = ViewModel.DictionaryParameterMappings
+                .ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value.Select(e => (e.From, e.To)).ToList()
+                )
+        };
+    }
+
+    private void RestoreViewModelSnapshot(ViewModelSnapshot snapshot)
+    {
+        ViewModel.NodeInputToMethodInputMap = snapshot.InputMappings
+            .Select(m => new PathMapEntry { From = m.From, To = m.To, ExposeAsWorkflowOutput = m.ExposeAsWorkflowOutput }).ToList();
+        ViewModel.MethodOutputToNodeOutputMap = snapshot.OutputMappings
+            .Select(m => new PathMapEntry { From = m.From, To = m.To, ExposeAsWorkflowOutput = m.ExposeAsWorkflowOutput }).ToList();
+        ViewModel.DictionaryParameterMappings = snapshot.DictionaryMappings
+            .ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value.Select(e => new PathMapEntry { From = e.From, To = e.To }).ToList()
+            );
+    }
+
+    private void PushUndoSnapshot()
+    {
+        if (_isUndoRedoing) return;
+
+        if (_lastSnapshotState != null)
+        {
+            _modalUndoStack.Push(_lastSnapshotState);
+            _modalRedoStack.Clear();
+
+            // Limit stack size
+            if (_modalUndoStack.Count > MaxUndoSteps)
+            {
+                var items = _modalUndoStack.ToArray();
+                _modalUndoStack.Clear();
+                for (int i = items.Length - MaxUndoSteps; i < items.Length; i++)
+                    _modalUndoStack.Push(items[i]);
+            }
+        }
+
+        // Update last known state to current (post-mutation) state
+        _lastSnapshotState = TakeViewModelSnapshot();
+    }
+
+    private void ModalUndo()
+    {
+        if (_modalUndoStack.Count == 0) return;
+
+        _isUndoRedoing = true;
+        try
+        {
+            // Save current state for redo
+            _modalRedoStack.Push(TakeViewModelSnapshot());
+            // Restore previous state
+            var previous = _modalUndoStack.Pop();
+            RestoreViewModelSnapshot(previous);
+            _lastSnapshotState = TakeViewModelSnapshot();
+            TriggerAutoSave();
+            StateHasChanged();
+        }
+        finally
+        {
+            _isUndoRedoing = false;
+        }
+    }
+
+    private void ModalRedo()
+    {
+        if (_modalRedoStack.Count == 0) return;
+
+        _isUndoRedoing = true;
+        try
+        {
+            // Save current state for undo
+            _modalUndoStack.Push(TakeViewModelSnapshot());
+            // Restore next state
+            var next = _modalRedoStack.Pop();
+            RestoreViewModelSnapshot(next);
+            _lastSnapshotState = TakeViewModelSnapshot();
+            TriggerAutoSave();
+            StateHasChanged();
+        }
+        finally
+        {
+            _isUndoRedoing = false;
+        }
+    }
+
     public void Dispose()
     {
         _autoSaveTimer?.Dispose();
+        try
+        {
+            _ = JSRuntime.InvokeVoidAsync("__modalUndoRedo.teardown");
+            _ = JSRuntime.InvokeVoidAsync("__scribanHL.teardown");
+        }
+        catch { }
+        _modalDotNetRef?.Dispose();
     }
 }

@@ -11,60 +11,59 @@
 @using System.Collections.Frozen
 @implements IDisposable
 
-<div class="bw-lib workflow-manager">
-    <div class="workflow-sidebar">
-        <div class="sidebar-tabs">
-            <button class="tab-button @(activeTab == "workflows" ? "active" : "")" @onclick="@(() => SwitchTab("workflows"))">
-                <i class="bi bi-diagram-3"></i> Workflows
+<div class="bw-lib bw-workflow-manager" @onclick="CloseOpenMenu">
+    <div class="bw-workflow-sidebar @(_sidebarCollapsed ?"bw-collapsed" : "")">
+        <div class="bw-sidebar-tabs">
+            <button class="bw-tab-button @(activeTab =="workflows" ? "bw-active" : "")" @onclick="@(() => SwitchTab("workflows"))" title="Workflows">
+                <i class="bi bi-diagram-3"></i> <span class="bw-tab-label">Workflows</span>
             </button>
-            <button class="tab-button @(activeTab == "config" ? "active" : "")" @onclick="@(() => SwitchTab("config"))">
-                <i class="bi bi-gear"></i> Configuration
+            <button class="bw-tab-button @(activeTab =="config" ? "bw-active" : "")" @onclick="@(() => SwitchTab("config"))" title="Configuration">
+                <i class="bi bi-gear"></i> <span class="bw-tab-label">Configuration</span>
             </button>
         </div>
 
         @if (activeTab == "workflows")
         {
-            <div class="sidebar-header">
+            <div class="bw-sidebar-header">
                 <h5>Workflows</h5>
+                <div class="bw-environment-inline-wrapper">
+                    <i class="bi bi-globe2 bw-environment-inline-icon"></i>
+                    <select class="bw-environment-dropdown-inline" @onchange="HandleEnvironmentChange" title="Environment">
+                        @foreach (var env in Environments)
+                        {
+                            <option value="@env" selected="@(env == SelectedEnvironment)">@env</option>
+                        }
+                    </select>
+                </div>
             </div>
 
-            <div class="environment-selector-compact">
-                <label>Environment</label>
-                <select class="environment-dropdown" @onchange="HandleEnvironmentChange">
-                    @foreach (var env in Environments)
-                    {
-                        <option value="@env" selected="@(env == SelectedEnvironment)">@env</option>
-                    }
-                </select>
-            </div>
-
-        <div class="sidebar-search">
+        <div class="bw-sidebar-search">
             <input type="text" placeholder="Search workflows..." @bind="searchQuery" @bind:event="oninput" />
             <i class="bi bi-search"></i>
         </div>
 
-        <div class="workflow-list">
+        <div class="bw-workflow-list">
             @if (string.IsNullOrWhiteSpace(searchQuery))
             {
                 @if (!_showNewOptions)
                 {
-                    <div class="workflow-item workflow-item-new" @onclick="() => _showNewOptions = true">
-                        <div class="workflow-item-new-inner">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="workflow-item-new-icon"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <div class="bw-workflow-item bw-workflow-item-new" @onclick="() => _showNewOptions = true">
+                        <div class="bw-workflow-item-new-inner">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="bw-workflow-item-new-icon"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                             <span>New workflow</span>
                         </div>
                     </div>
                 }
                 else
                 {
-                    <div class="workflow-item workflow-item-new workflow-item-new--expanded">
-                        <button class="new-option" @onclick="() => { _showNewOptions = false; HandleCreateWorkflow(); }">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="new-option-icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <div class="bw-workflow-item bw-workflow-item-new bw-workflow-item-new--expanded">
+                        <button class="bw-new-option" @onclick="() => { _showNewOptions = false; HandleCreateWorkflow(); }">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="bw-new-option-icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/></svg>
                             <span>Blank workflow</span>
                         </button>
-                        <button class="new-option" @onclick="() => { _showNewOptions = false; HandleImportWorkflow(); }">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="new-option-icon"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                            <span>Import from file</span>
+                        <button class="bw-new-option" @onclick="() => { _showNewOptions = false; HandleImportWorkflow(); }">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="bw-new-option-icon"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            <span>Import</span>
                         </button>
                     </div>
                 }
@@ -73,25 +72,27 @@
             {
                 @foreach (var workflow in FilteredWorkflows)
                 {
-                    <div class="workflow-item @(selectedWorkflowId == workflow.Id ? "selected" : "")"
+                    <div class="bw-workflow-item @(selectedWorkflowId == workflow.Id ?"selected" : "")"
                          @onclick="@(() => SelectWorkflow(workflow.Id))">
-                        <div class="workflow-item-header">
+                        <div class="bw-workflow-item-header">
                             <h6>@workflow.Name</h6>
-                            <div class="workflow-item-header-right">
-                                <small>@workflow.ModifiedAt.ToString("MMM d")</small>
-                                <div class="workflow-item-menu-anchor" @onclick:stopPropagation="true">
-                                    <button class="workflow-item-menu-btn" @onclick="@(() => ToggleItemMenu(workflow.Id))" title="More actions">
-                                        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+                            <div class="bw-workflow-item-header-right" @onclick:stopPropagation="true">
+                                <button class="bw-workflow-item-action-btn" @onclick="@(() => OnEditWorkflow.InvokeAsync(workflow.Id))" title="Edit workflow">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </button>
+                                <div class="bw-workflow-item-menu-anchor">
+                                    <button class="bw-workflow-item-action-btn" @onclick="@(() => ToggleItemMenu(workflow.Id))" title="More actions">
+                                        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
                                     </button>
                                     @if (_openMenuId == workflow.Id)
                                     {
-                                        <div class="workflow-item-menu">
-                                            <button class="workflow-item-menu-option" @onclick="@(() => { _openMenuId = null; HandleExportSpecificWorkflow(workflow.Id); })">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="menu-option-icon"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                        <div class="bw-workflow-item-menu">
+                                            <button class="bw-workflow-item-menu-option" @onclick="@(() => { _openMenuId = null; HandleExportSpecificWorkflow(workflow.Id); })">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="bw-menu-option-icon"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                                                 Export
                                             </button>
-                                            <button class="workflow-item-menu-option workflow-item-menu-option--danger" @onclick="@(() => { _openMenuId = null; HandleDeleteSpecificWorkflow(workflow.Id); })">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="menu-option-icon"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                            <button class="bw-workflow-item-menu-option bw-workflow-item-menu-option--danger" @onclick="@(() => { _openMenuId = null; HandleDeleteSpecificWorkflow(workflow.Id); })">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="bw-menu-option-icon"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                                                 Delete
                                             </button>
                                         </div>
@@ -99,29 +100,29 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="bw-workflow-item-meta">
+                            <small>@workflow.ModifiedAt.ToString("MMM d")</small>
+                            @if (workflow.PreviousExecutions.Any())
+                            {
+                                var lastExecution = workflow.PreviousExecutions.OrderByDescending(e => e.ExecutedAt).First();
+                                <span class="bw-workflow-status-dot @(lastExecution.Success ?"bw-success" : "bw-error")" title="@(lastExecution.Success ? "Last run successful" : "Last run failed")"></span>
+                            }
+                        </div>
                         @if (!string.IsNullOrWhiteSpace(workflow.Description))
                         {
-                            <p class="workflow-desc">@workflow.Description</p>
-                        }
-                        @if (workflow.PreviousExecutions.Any())
-                        {
-                            var lastExecution = workflow.PreviousExecutions.OrderByDescending(e => e.ExecutedAt).First();
-                            <div class="workflow-status @(lastExecution.Success ? "success" : "error")">
-                                <i class="bi @(lastExecution.Success ? "bi-check-circle" : "bi-x-circle")"></i>
-                                @(lastExecution.Success ? "Last run successful" : "Last run failed")
-                            </div>
+                            <p class="bw-workflow-desc">@workflow.Description</p>
                         }
                     </div>
                 }
             }
             else
             {
-                <div class="empty-state">
+                <div class="bw-empty-state">
                     <i class="bi bi-inbox"></i>
                     <p>No workflows found</p>
                     @if (string.IsNullOrWhiteSpace(searchQuery))
                     {
-                        <button class="btn-primary-custom" @onclick="HandleCreateWorkflow">Create your first workflow</button>
+                        <button class="bw-btn-primary-custom" @onclick="HandleCreateWorkflow">Create your first workflow</button>
                     }
                 </div>
             }
@@ -129,23 +130,23 @@
         }
         else
         {
-            <div class="config-sidebar-content">
-                <div class="sidebar-header">
+            <div class="bw-config-sidebar-content">
+                <div class="bw-sidebar-header">
                     <div>
                         <h5>Configuration</h5>
                         <small>Environment settings</small>
                     </div>
                 </div>
-                <div class="environment-selector">
+                <div class="bw-environment-selector">
                     <label>Environment</label>
-                    <div class="environment-controls">
-                        <select class="environment-dropdown" @onchange="HandleEnvironmentChange">
+                    <div class="bw-environment-controls">
+                        <select class="bw-environment-dropdown" @onchange="HandleEnvironmentChange">
                             @foreach (var env in Environments)
                             {
                                 <option value="@env" selected="@(env == SelectedEnvironment)">@env</option>
                             }
                         </select>
-                        <button class="btn-icon-secondary" @onclick="HandleAddEnvironment" title="Add Environment">
+                        <button class="bw-btn-icon-secondary" @onclick="HandleAddEnvironment" title="Add Environment">
                             <i class="bi bi-plus-circle"></i>
                         </button>
                     </div>
@@ -154,39 +155,43 @@
         }
     </div>
 
-    <div class="workflow-detail">
+    <button class="bw-sidebar-divider-toggle" @onclick="ToggleSidebar" title="@(_sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar")">
+        <i class="bi @(_sidebarCollapsed ?"bi-chevron-right" : "bi-chevron-left")"></i>
+    </button>
+
+    <div class="bw-workflow-detail">
         @if (activeTab == "workflows")
         {
             @if (SelectedWorkflow != null)
             {
-                <div class="detail-header">
-                <div class="detail-header-top">
+                <div class="bw-detail-header">
+                <div class="bw-detail-header-top">
                     <input type="text"
-                           class="workflow-name-input"
+                           class="bw-workflow-name-input"
                            value="@SelectedWorkflow.Name"
                            @onchange="@(e => HandleWorkflowNameChange(e.Value?.ToString() ?? string.Empty))"
                            placeholder="Workflow name..." />
-                    <div class="detail-icon-actions">
-                        <button class="detail-icon-btn" @onclick="@(() => OnEditWorkflow.InvokeAsync(SelectedWorkflow.Id))" title="Edit">
+                    <div class="bw-detail-icon-actions">
+                        <button class="bw-detail-icon-btn" @onclick="@(() => OnEditWorkflow.InvokeAsync(SelectedWorkflow.Id))" title="Edit">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
                         </button>
-                        <button class="detail-run-btn" @onclick="HandleExecuteWorkflow">
+                        <button class="bw-detail-run-btn" @onclick="HandleExecuteWorkflow">
                             <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                             Run
                         </button>
                     </div>
                 </div>
-                <textarea class="workflow-description-input"
+                <textarea class="bw-workflow-description-input"
                           value="@SelectedWorkflow.Description"
                           @onchange="@(e => HandleWorkflowDescriptionChange(e.Value?.ToString() ?? string.Empty))"
                           placeholder="Add a description..."
                           rows="2"></textarea>
             </div>
 
-            <div class="detail-meta">
+            <div class="bw-detail-meta">
                 <span><i class="bi bi-calendar"></i> Created @SelectedWorkflow.CreatedAt.ToString("MMM d, yyyy")</span>
                 <span><i class="bi bi-clock"></i> Modified @SelectedWorkflow.ModifiedAt.ToString("MMM d, yyyy 'at' h:mm tt")</span>
-                <label class="checkbox-label">
+                <label class="bw-checkbox-label">
                     <input type="checkbox"
                            checked="@SelectedWorkflow.IncludeAsNode"
                            @onchange="@(e => HandleIncludeAsNodeChange(e.Value))" />
@@ -194,16 +199,16 @@
                 </label>
             </div>
 
-            <div class="detail-body">
+            <div class="bw-detail-body">
                 <!-- Inputs Section -->
-                <div class="detail-section">
-                    <div class="section-header">
+                <div class="bw-detail-section">
+                    <div class="bw-section-header">
                         <h5>Inputs</h5>
-                        <button class="btn-secondary-custom" @onclick="HandleAddInput">
+                        <button class="bw-btn-secondary-custom" @onclick="HandleAddInput">
                             <i class="bi bi-plus-lg"></i> Add Input
                         </button>
                     </div>
-                    <div class="section-content">
+                    <div class="bw-section-content">
                         @{
                             var discoveredInputs = GetDiscoveredInputs();
                             var requiredInputs = discoveredInputs.ToList();
@@ -221,14 +226,14 @@
                                 var hasValue = SelectedWorkflow.Inputs.TryGetValue(inputName, out var value);
                                 var displayValue = hasValue ? value?.ToString() ?? string.Empty : string.Empty;
 
-                                <div class="param-row input-required">
-                                    <div class="param-key">
+                                <div class="bw-param-row bw-input-required">
+                                    <div class="bw-param-key">
                                         <input type="text"
-                                               class="input-name-input"
+                                               class="bw-input-name-input"
                                                value="@inputName"
                                                @onchange="@(e => HandleInputNameChange(inputName, e.Value?.ToString() ?? string.Empty, isRequired: true))"
                                                placeholder="Input name..." />
-                                        <span class="input-badge required">Required</span>
+                                        <span class="bw-input-badge bw-required">Required</span>
                                     </div>
                                     <input type="text"
                                            value="@displayValue"
@@ -240,7 +245,7 @@
                             @* Show extra/unused inputs *@
                             @if (extraInputs.Any())
                             {
-                                <div class="unused-inputs-divider">
+                                <div class="bw-unused-inputs-divider">
                                     <span>Unused Inputs</span>
                                 </div>
 
@@ -248,15 +253,15 @@
                                 {
                                     var value = SelectedWorkflow.Inputs[inputName];
 
-                                    <div class="param-row input-unused">
-                                        <div class="param-key">
+                                    <div class="bw-param-row bw-input-unused">
+                                        <div class="bw-param-key">
                                             <input type="text"
-                                                    class="input-name-input"
+                                                    class="bw-input-name-input"
                                                     value="@inputName"
                                                    @onchange="@(e => HandleInputNameChange(inputName, e.Value?.ToString() ?? string.Empty, isRequired: false))"
                                                    placeholder="Input name..." />
-                                            <span class="input-badge unused">Unused</span>
-                                            <button class="btn-icon-danger" @onclick="@(() => HandleRemoveInput(inputName))">
+                                            <span class="bw-input-badge bw-unused">Unused</span>
+                                            <button class="bw-btn-icon-danger" @onclick="@(() => HandleRemoveInput(inputName))">
                                                 <i class="bi bi-x-circle"></i>
                                             </button>
                                         </div>
@@ -270,21 +275,21 @@
                         }
                         else
                         {
-                            <p class="empty-message">No inputs defined. Add a "Get Input" node to your workflow or manually add inputs.</p>
+                            <p class="bw-empty-message">No inputs defined. Reference an input parameter in a node and it will appear here.</p>
                         }
                     </div>
                 </div>
 
                 <!-- Execution History Section -->
-                <div class="detail-section">
-                    <div class="section-header">
+                <div class="bw-detail-section">
+                    <div class="bw-section-header">
                         <h5>Execution History</h5>
                         @if (SelectedWorkflow.PreviousExecutions.Any())
                         {
-                            <span class="badge">@SelectedWorkflow.PreviousExecutions.Count run@(SelectedWorkflow.PreviousExecutions.Count == 1 ? "" : "s")</span>
+                            <span class="bw-badge">@SelectedWorkflow.PreviousExecutions.Count run@(SelectedWorkflow.PreviousExecutions.Count == 1 ? "" : "s")</span>
                         }
                     </div>
-                    <div class="section-content">
+                    <div class="bw-section-content">
                         @if (SelectedWorkflow.PreviousExecutions.Any())
                         {
                             var orderedExecutions = SelectedWorkflow.PreviousExecutions.OrderByDescending(e => e.ExecutedAt).ToList();
@@ -295,40 +300,40 @@
                             {
                                 @if (execution.IsRunning)
                                 {
-                                    <div class="execution-item running">
-                                        <div class="execution-header">
-                                            <i class="bi bi-arrow-repeat spinning"></i>
+                                    <div class="bw-execution-item bw-running">
+                                        <div class="bw-execution-header">
+                                            <i class="bi bi-arrow-repeat bw-spinning"></i>
                                             <div>
                                                 <strong>Running</strong>
                                                 <small>@execution.ExecutedAt.ToString("MMM d, yyyy 'at' h:mm tt")</small>
                                             </div>
-                                            <span class="badge">@FormatDuration(DateTime.Now - execution.ExecutedAt)</span>
+                                            <span class="bw-badge">@FormatDuration(DateTime.Now - execution.ExecutedAt)</span>
                                         </div>
                                     </div>
                                 }
                                 else
                                 {
-                                    <div class="execution-item @(execution.Success ? "success" : "error")">
-                                        <div class="execution-header">
-                                            <i class="bi @(execution.Success ? "bi-check-circle-fill" : "bi-x-circle-fill")"></i>
-                                            <div class="execution-info">
+                                    <div class="bw-execution-item @(execution.Success ?"bw-success" : "bw-error")">
+                                        <div class="bw-execution-header">
+                                            <i class="bi @(execution.Success ?"bi-check-circle-fill" : "bi-x-circle-fill")"></i>
+                                            <div class="bw-execution-info">
                                                 <strong>@(execution.Success ? "Success" : "Failed")</strong>
                                                 <small>@execution.ExecutedAt.ToString("MMM d, yyyy 'at' h:mm tt")</small>
                                             </div>
-                                            <span class="badge">@FormatDuration(execution.Duration)</span>
-                                            <button class="btn-icon-danger-small" @onclick="@(() => HandleRemoveExecution(execution.Id))" title="Remove from history">
+                                            <span class="bw-badge">@FormatDuration(execution.Duration)</span>
+                                            <button class="bw-btn-icon-danger-small" @onclick="@(() => HandleRemoveExecution(execution.Id))" title="Remove from history">
                                                 <i class="bi bi-x"></i>
                                             </button>
                                         </div>
                                         @if (!execution.Success && !string.IsNullOrWhiteSpace(execution.ErrorMessage))
                                         {
-                                            <div class="execution-error">@execution.ErrorMessage</div>
+                                            <div class="bw-execution-error">@execution.ErrorMessage</div>
                                         }
                                         @if (execution.Output.Any())
                                         {
-                                            <details class="execution-output">
+                                            <details class="bw-execution-output">
                                                 <summary>View output (@execution.Output.Count field@(execution.Output.Count == 1 ? "" : "s"))</summary>
-                                                <div class="output-content">
+                                                <div class="bw-output-content">
                                                     @foreach (var output in execution.Output)
                                                     {
                                                         <div><strong>@output.Key:</strong> <code>@output.Value</code></div>
@@ -338,18 +343,18 @@
                                         }
                                         @if (execution.Logs.Any())
                                         {
-                                            <details class="execution-logs">
+                                            <details class="bw-execution-logs">
                                                 <summary>View logs (@execution.Logs.Count entr@(execution.Logs.Count == 1 ? "y" : "ies"))</summary>
-                                                <div class="log-content">
+                                                <div class="bw-log-content">
                                                     @foreach (var log in execution.Logs)
                                                     {
-                                                        <div class="log-entry log-@log.Level">
-                                                            <span class="log-time">@log.Timestamp.ToString("HH:mm:ss.fff")</span>
+                                                        <div class="bw-log-entry log-@log.Level">
+                                                            <span class="bw-log-time">@log.Timestamp.ToString("HH:mm:ss.fff")</span>
                                                             @if (log.NodeName != null)
                                                             {
-                                                                <span class="log-node">@log.NodeName</span>
+                                                                <span class="bw-log-node">@log.NodeName</span>
                                                             }
-                                                            <span class="log-message">@log.Message</span>
+                                                            <span class="bw-log-message">@log.Message</span>
                                                         </div>
                                                     }
                                                 </div>
@@ -361,14 +366,14 @@
 
                             @if (totalPages > 1)
                             {
-                                <div class="pagination">
-                                    <button class="pagination-btn"
+                                <div class="bw-pagination">
+                                    <button class="bw-pagination-btn"
                                             @onclick="@(() => ChangeExecutionPage(currentExecutionPage - 1))"
                                             disabled="@(currentExecutionPage == 0)">
                                         <i class="bi bi-chevron-left"></i> Previous
                                     </button>
-                                    <span class="pagination-info">Page @(currentExecutionPage + 1) of @totalPages</span>
-                                    <button class="pagination-btn"
+                                    <span class="bw-pagination-info">Page @(currentExecutionPage + 1) of @totalPages</span>
+                                    <button class="bw-pagination-btn"
                                             @onclick="@(() => ChangeExecutionPage(currentExecutionPage + 1))"
                                             disabled="@(currentExecutionPage >= totalPages - 1)">
                                         Next <i class="bi bi-chevron-right"></i>
@@ -378,7 +383,7 @@
                         }
                         else
                         {
-                            <p class="empty-message">No execution history yet. Execute the workflow to see results here.</p>
+                            <p class="bw-empty-message">No execution history yet. Execute the workflow to see results here.</p>
                         }
                     </div>
                 </div>
@@ -386,7 +391,7 @@
         }
             else
             {
-                <div class="empty-detail">
+                <div class="bw-empty-detail">
                     <i class="bi bi-file-earmark-text"></i>
                     <h3>No workflow selected</h3>
                     <p>Select a workflow from the sidebar to view details and configuration</p>
@@ -395,11 +400,11 @@
         }
         else if (activeTab == "config")
         {
-            <div class="config-detail">
-                <div class="detail-header">
-                    <div class="environment-name-container">
+            <div class="bw-config-detail">
+                <div class="bw-detail-header">
+                    <div class="bw-environment-name-container">
                         <input type="text"
-                               class="environment-name-input"
+                               class="bw-environment-name-input"
                                value="@SelectedEnvironment"
                                @onchange="@(e => HandleEnvironmentNameChange(e.Value?.ToString() ?? string.Empty))"
                                placeholder="Environment name..." />
@@ -407,40 +412,40 @@
                     </div>
                     @if (Environments.Count > 1)
                     {
-                        <div class="detail-actions">
-                            <button class="btn-danger-custom" @onclick="HandleDeleteEnvironment">
+                        <div class="bw-detail-actions">
+                            <button class="bw-btn-danger-custom" @onclick="HandleDeleteEnvironment">
                                 <i class="bi bi-trash"></i> Delete Environment
                             </button>
                         </div>
                     }
                 </div>
 
-                <div class="detail-body">
-                    <div class="detail-section">
-                        <div class="section-header">
+                <div class="bw-detail-body">
+                    <div class="bw-detail-section">
+                        <div class="bw-section-header">
                             <h5>Environment Variables</h5>
-                            <button class="btn-secondary-custom" @onclick="HandleAddEnvVar">
+                            <button class="bw-btn-secondary-custom" @onclick="HandleAddEnvVar">
                                 <i class="bi bi-plus-lg"></i> Add Variable
                             </button>
                         </div>
-                        <div class="section-content">
+                        <div class="bw-section-content">
                             @if (EnvironmentVariables.Any())
                             {
-                                @foreach (var envVar in EnvironmentVariables.OrderBy(kv => kv.Key))
+                                @foreach (var envVar in EnvironmentVariables)
                                 {
-                                    <div class="param-row env-var-row">
-                                        <div class="env-var-key-container">
+                                    <div class="bw-param-row bw-env-var-row">
+                                        <div class="bw-env-var-key-container">
                                             <input type="text"
-                                                   class="env-var-key-input"
+                                                   class="bw-env-var-key-input"
                                                    value="@envVar.Key"
                                                    @onchange="@(e => HandleEnvVarKeyChange(envVar.Key, e.Value?.ToString() ?? string.Empty))"
                                                    placeholder="Variable name..." />
-                                            <button class="btn-icon-danger" @onclick="@(() => HandleRemoveEnvVar(envVar.Key))">
+                                            <button class="bw-btn-icon-danger" @onclick="@(() => HandleRemoveEnvVar(envVar.Key))">
                                                 <i class="bi bi-x-circle"></i>
                                             </button>
                                         </div>
                                         <input type="text"
-                                               class="env-var-value-input"
+                                               class="bw-env-var-value-input"
                                                value="@envVar.Value"
                                                @oninput="@(e => HandleEnvVarValueChange(envVar.Key, e.Value?.ToString() ?? string.Empty))"
                                                placeholder="Enter value..." />
@@ -449,10 +454,10 @@
                             }
                             else
                             {
-                                <div class="empty-state">
+                                <div class="bw-empty-state">
                                     <i class="bi bi-gear"></i>
                                     <p>No environment variables defined</p>
-                                    <button class="btn-primary-custom" @onclick="HandleAddEnvVar">
+                                    <button class="bw-btn-primary-custom" @onclick="HandleAddEnvVar">
                                         <i class="bi bi-plus-lg"></i> Add Variable
                                     </button>
                                 </div>
@@ -467,15 +472,15 @@
     @* Export Modal *@
     @if (!string.IsNullOrWhiteSpace(_exportJson))
     {
-        <div class="export-modal-backdrop" @onclick="() => _exportJson = null">
-            <div class="export-modal" @onclick:stopPropagation="true">
-                <div class="export-modal-header">
+        <div class="bw-export-modal-backdrop" @onclick="() => _exportJson = null">
+            <div class="bw-export-modal" @onclick:stopPropagation="true">
+                <div class="bw-export-modal-header">
                     <h3>Export Workflow</h3>
                     <button class="btn-close" @onclick="() => _exportJson = null">×</button>
                 </div>
-                <div class="export-modal-body">
+                <div class="bw-export-modal-body">
                     <button class="btn btn-sm btn-primary mb-2" @onclick="CopyExportToClipboard">Copy to Clipboard</button>
-                    <textarea class="export-textarea" readonly>@_exportJson</textarea>
+                    <textarea class="bw-export-textarea" readonly>@_exportJson</textarea>
                 </div>
             </div>
         </div>
@@ -484,14 +489,14 @@
     @* Import Modal *@
     @if (_showImportModal)
     {
-        <div class="export-modal-backdrop" @onclick="() => _showImportModal = false">
-            <div class="export-modal" @onclick:stopPropagation="true">
-                <div class="export-modal-header">
+        <div class="bw-export-modal-backdrop" @onclick="() => _showImportModal = false">
+            <div class="bw-export-modal" @onclick:stopPropagation="true">
+                <div class="bw-export-modal-header">
                     <h3>Import Workflow</h3>
                     <button class="btn-close" @onclick="() => _showImportModal = false">×</button>
                 </div>
-                <div class="export-modal-body">
-                    <textarea class="export-textarea" @bind="_importJson" placeholder="Paste exported workflow string here..."></textarea>
+                <div class="bw-export-modal-body">
+                    <textarea class="bw-export-textarea" @bind="_importJson" placeholder="Paste exported workflow string here..."></textarea>
                     <div class="mt-2">
                         <button class="btn btn-sm btn-primary" @onclick="HandleImportConfirm">Import</button>
                         <button class="btn btn-sm btn-secondary" @onclick="() => _showImportModal = false">Cancel</button>
@@ -508,18 +513,18 @@
     @* Delete Confirmation Modal *@
     @if (_showDeleteConfirmation)
     {
-        <div class="export-modal-backdrop" @onclick="CancelDeleteWorkflow">
-            <div class="export-modal" @onclick:stopPropagation="true" style="max-width: 400px;">
-                <div class="export-modal-header">
+        <div class="bw-export-modal-backdrop" @onclick="CancelDeleteWorkflow">
+            <div class="bw-export-modal" @onclick:stopPropagation="true" style="max-width: 400px;">
+                <div class="bw-export-modal-header">
                     <h3>Delete Workflow</h3>
                     <button class="btn-close" @onclick="CancelDeleteWorkflow">×</button>
                 </div>
-                <div class="export-modal-body">
+                <div class="bw-export-modal-body">
                     <p>Are you sure you want to delete "@SelectedWorkflow?.Name"?</p>
-                    <p class="text-muted" style="font-size: 14px;">This action cannot be undone.</p>
+                    <p class="bw-text-muted" style="font-size: 14px;">This action cannot be undone.</p>
                     <div class="mt-3" style="display: flex; gap: 8px; justify-content: flex-end;">
-                        <button class="btn-secondary-custom" @onclick="CancelDeleteWorkflow">Cancel</button>
-                        <button class="btn-danger-custom" @onclick="ConfirmDeleteWorkflow">Delete</button>
+                        <button class="bw-btn-secondary-custom" @onclick="CancelDeleteWorkflow">Cancel</button>
+                        <button class="bw-btn-danger-custom" @onclick="ConfirmDeleteWorkflow">Delete</button>
                     </div>
                 </div>
             </div>
@@ -539,6 +544,7 @@
     private string? selectedWorkflowId = null;
     private string activeTab = "workflows";
     private string selectedEnvironment = "Development";
+    private bool _sidebarCollapsed = false;
     private System.Threading.Timer? _refreshTimer;
     private int currentExecutionPage = 0;
     private const int executionsPerPage = 10;
@@ -678,6 +684,14 @@
         _openMenuId = _openMenuId == workflowId ? null : workflowId;
     }
 
+    private void CloseOpenMenu()
+    {
+        if (_openMenuId != null)
+        {
+            _openMenuId = null;
+        }
+    }
+
     private void HandleDeleteSpecificWorkflow(string workflowId)
     {
         selectedWorkflowId = workflowId;
@@ -797,7 +811,15 @@
     private void SwitchTab(string tab)
     {
         activeTab = tab;
+        // Expand sidebar when switching tabs if collapsed
+        if (_sidebarCollapsed)
+            _sidebarCollapsed = false;
         StateHasChanged();
+    }
+
+    private void ToggleSidebar()
+    {
+        _sidebarCollapsed = !_sidebarCollapsed;
     }
 
     private void HandleAddEnvVar()
@@ -824,9 +846,7 @@
         if (string.IsNullOrWhiteSpace(newKey) || oldKey == newKey)
             return;
 
-        var value = EnvVarService.GetVariable(selectedEnvironment, oldKey);
-        EnvVarService.RemoveVariable(selectedEnvironment, oldKey);
-        EnvVarService.SetVariable(selectedEnvironment, newKey, value ?? string.Empty);
+        EnvVarService.RenameVariable(selectedEnvironment, oldKey, newKey);
         StateHasChanged();
     }
 

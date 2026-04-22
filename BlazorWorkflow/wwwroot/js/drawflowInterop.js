@@ -243,7 +243,7 @@ window.DrawflowBlazor = (function () {
             host.querySelector(`.drawflow-node#node-${nodeId}`);
         if (!nodeEl) return;
 
-        const titleEl = nodeEl.querySelector(".title");
+        const titleEl = nodeEl.querySelector(".bw-title");
         if (!titleEl) return;
 
         const title = titleEl.innerText;
@@ -358,14 +358,14 @@ window.DrawflowBlazor = (function () {
             typeLabel.style.color = 'rgb(138, 180, 233)';
             typeLabel.style.fontSize = '10px';
             typeLabel.innerHTML = typeText;
-            typeLabel.classList.add('port_type');
+            typeLabel.classList.add('bw-port_type');
 
             outputLabel.style.margin = '0';
             outputLabel.style.padding = '0';
             outputLabel.style.fontSize = '12px';
             outputLabel.style.margin = '-7px 0px 0px 0px';
             outputLabel.innerHTML = valueText;
-            outputLabel.classList.add('port_label');
+            outputLabel.classList.add('bw-port_label');
 
             newDiv.appendChild(typeLabel);
             newDiv.appendChild(outputLabel);
@@ -390,20 +390,20 @@ window.DrawflowBlazor = (function () {
 
         if (status.isRunning != null) {
             if (status.isRunning) {
-                nodeEl.classList.add("processing-bar");
+                nodeEl.classList.add("bw-processing-bar");
             }
-            else if (nodeEl.classList.contains("processing-bar")) {
-                nodeEl.classList.remove("processing-bar")
+            else if (nodeEl.classList.contains("bw-processing-bar")) {
+                nodeEl.classList.remove("bw-processing-bar")
             }
         }
 
         // Handle error state
         if (status.hasError != null) {
             if (status.hasError) {
-                nodeEl.classList.add("node-error");
+                nodeEl.classList.add("bw-node-error");
                 nodeEl.setAttribute("title", status.errorMessage || "Error occurred");
             } else {
-                nodeEl.classList.remove("node-error");
+                nodeEl.classList.remove("bw-node-error");
             }
         }
 
@@ -411,7 +411,7 @@ window.DrawflowBlazor = (function () {
             const outputs = nodeEl.querySelectorAll(".outputs .output");
             for (let i = 0; i < outputs.length; i++) {
                 if (status.outputPortResults[i] != null) {
-                    outputs[i].classList.add('computed_node')
+                    outputs[i].classList.add('bw-computed_node')
                     outputs[i].setAttribute('title', status.outputPortResults[i]);
                 }
             }
@@ -434,18 +434,18 @@ window.DrawflowBlazor = (function () {
 
             if (update.isRunning != null) {
                 if (update.isRunning) {
-                    nodeEl.classList.add("processing-bar");
+                    nodeEl.classList.add("bw-processing-bar");
                 } else {
-                    nodeEl.classList.remove("processing-bar");
+                    nodeEl.classList.remove("bw-processing-bar");
                 }
             }
 
             if (update.hasError != null) {
                 if (update.hasError) {
-                    nodeEl.classList.add("node-error");
+                    nodeEl.classList.add("bw-node-error");
                     nodeEl.setAttribute("title", update.errorMessage || "Error occurred");
                 } else {
-                    nodeEl.classList.remove("node-error");
+                    nodeEl.classList.remove("bw-node-error");
                 }
             }
         }
@@ -613,7 +613,7 @@ window.setupUndoRedoKeyboard = function(dotNetRef, editorId) {
         );
 
         // Don't handle keyboard shortcuts if a modal is open
-        const isModalOpen = document.querySelector('.node-editor-modal.show') !== null;
+        const isModalOpen = document.querySelector('.bw-node-editor-modal.show') !== null;
 
         // Skip undo/redo if user is typing or modal is open
         if (isEditableElement || isModalOpen) {

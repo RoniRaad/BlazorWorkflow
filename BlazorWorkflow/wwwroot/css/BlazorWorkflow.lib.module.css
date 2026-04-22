@@ -239,7 +239,7 @@
    Node Editor Modal
    ========================================================================== */
 
-    .bw-lib .node-editor-dialog {
+    .bw-lib .bw-node-editor-dialog {
         width: 90% !important;
         max-width: 1660px !important;
         margin: 0 auto !important;
@@ -248,7 +248,7 @@
         align-items: center !important;
     }
 
-    .bw-lib .node-editor-content {
+    .bw-lib .bw-node-editor-content {
         background: radial-gradient(circle at top, var(--color-bg-gradient-start), var(--color-bg-gradient-end) 55%, var(--color-bg-gradient-end) 100%) !important;
         color: var(--color-text-primary) !important;
         border-radius: 20px !important;
@@ -260,7 +260,7 @@
         overflow: hidden !important;
     }
 
-    .bw-lib .node-editor-header {
+    .bw-lib .bw-node-editor-header {
         border-bottom: 1px solid rgba(100, 116, 139, 0.4) !important;
         padding: 13.6px 20px !important;
         align-items: center !important;
@@ -269,7 +269,7 @@
         gap: 16px !important;
     }
 
-    .bw-lib .btn-close-modal {
+    .bw-lib .bw-btn-close-modal {
         background: transparent !important;
         border: none !important;
         padding: 8px !important;
@@ -283,17 +283,17 @@
         flex-shrink: 0 !important;
     }
 
-        .bw-lib .btn-close-modal:hover {
+        .bw-lib .bw-btn-close-modal:hover {
             background: rgba(239, 68, 68, 0.1) !important;
             color: #ef4444 !important;
         }
 
-        .bw-lib .btn-close-modal svg {
+        .bw-lib .bw-btn-close-modal svg {
             width: 24px !important;
             height: 24px !important;
         }
 
-    .bw-lib .node-title-container {
+    .bw-lib .bw-node-title-container {
         flex: 1 !important;
         min-width: 0 !important;
         display: flex !important;
@@ -303,13 +303,13 @@
         margin-right: 40px !important;
     }
 
-    .bw-lib .node-name-display {
+    .bw-lib .bw-node-name-display {
         display: flex !important;
         align-items: center !important;
         position: relative !important;
     }
 
-    .bw-lib .node-title-container .modal-title {
+    .bw-lib .bw-node-title-container .modal-title {
         margin: 0 !important;
         font-weight: 600 !important;
         letter-spacing: 0.02em !important;
@@ -319,11 +319,11 @@
         transition: background-color var(--transition-fast) !important;
     }
 
-        .bw-lib .node-title-container .modal-title:hover {
+        .bw-lib .bw-node-title-container .modal-title:hover {
             background-color: rgba(100, 116, 139, 0.1) !important;
         }
 
-    .bw-lib .btn-edit-node-name {
+    .bw-lib .bw-btn-edit-node-name {
         background: transparent !important;
         border: none !important;
         padding: 4px !important;
@@ -339,16 +339,16 @@
         right: -12px !important;
     }
 
-        .bw-lib .btn-edit-node-name:hover {
+        .bw-lib .bw-btn-edit-node-name:hover {
             color: #e5e7eb !important;
         }
 
-        .bw-lib .btn-edit-node-name svg {
+        .bw-lib .bw-btn-edit-node-name svg {
             width: 16px !important;
             height: 16px !important;
         }
 
-    .bw-lib .node-name-input {
+    .bw-lib .bw-node-name-input {
         width: 100% !important;
         font-size: 20px !important;
         font-weight: 600 !important;
@@ -360,39 +360,39 @@
         transition: border-color var(--transition-fast) !important;
     }
 
-        .bw-lib .node-name-input:focus {
+        .bw-lib .bw-node-name-input:focus {
             outline: none !important;
             border-color: var(--bw-primary-color) !important;
             box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
         }
 
-    .bw-lib .node-type-subtitle {
+    .bw-lib .bw-node-type-subtitle {
         margin: -5px 0 0 !important;
         font-size: 12px !important;
         color: #9ca3af !important;
         font-weight: 400 !important;
     }
 
-    .bw-lib .node-editor-subtitle {
+    .bw-lib .bw-node-editor-subtitle {
         margin: 0 !important;
         font-size: 12.8px !important;
         color: #9ca3af !important;
     }
 
-    .bw-lib .node-editor-body {
+    .bw-lib .bw-node-editor-body {
         padding: 0 !important;
         flex: 1 !important;
         overflow: hidden !important;
     }
 
-    .bw-lib .node-editor-grid {
+    .bw-lib .bw-node-editor-grid {
         display: grid !important;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr) !important;
         gap: 2px !important;
         height: 100% !important;
     }
 
-    .bw-lib .node-editor-panel {
+    .bw-lib .bw-node-editor-panel {
         background: rgba(30, 41, 59, 0.6) !important;
         border-radius: 0 !important;
         border: none !important;
@@ -402,30 +402,30 @@
         overflow: hidden !important;
     }
 
-        .bw-lib .node-editor-panel:last-child {
+        .bw-lib .bw-node-editor-panel:last-child {
             border-right: none !important;
         }
 
-    .bw-lib .panel-header {
+    .bw-lib .bw-panel-header {
         padding: 16px 20px !important;
         border-bottom: 1px solid rgba(100, 116, 139, 0.3) !important;
         background: rgba(51, 65, 85, 0.3) !important;
     }
 
-        .bw-lib .panel-header h6 {
+        .bw-lib .bw-panel-header h6 {
             margin: 0 !important;
             font-size: 14px !important;
             font-weight: 600 !important;
             color: #f3f4f6 !important;
         }
 
-    .bw-lib .panel-caption {
+    .bw-lib .bw-panel-caption {
         margin: 4px 0 0 !important;
         font-size: 11.2px !important;
         color: #9ca3af !important;
     }
 
-    .bw-lib .panel-body {
+    .bw-lib .bw-panel-body {
         padding: 20px !important;
         flex: 1 !important;
         display: flex !important;
@@ -434,11 +434,11 @@
         overflow: hidden !important;
     }
 
-    .bw-lib .panel-body-scroll {
+    .bw-lib .bw-panel-body-scroll {
         overflow: auto !important;
     }
 
-    .bw-lib .panel-section {
+    .bw-lib .bw-panel-section {
         background: transparent !important;
         border-radius: 0 !important;
         padding: 0 !important;
@@ -448,7 +448,7 @@
         gap: 12px !important;
     }
 
-    .bw-lib .panel-section-header {
+    .bw-lib .bw-panel-section-header {
         display: flex !important;
         align-items: center !important;
         justify-content: space-between !important;
@@ -462,14 +462,14 @@
         border-bottom: 1px solid rgba(100, 116, 139, 0.2) !important;
     }
 
-    .bw-lib .panel-divider {
+    .bw-lib .bw-panel-divider {
         margin: 24px 0 !important;
         border: none !important;
         border-top: 1px solid rgba(100, 116, 139, 0.2) !important;
     }
 
     /* Pills */
-    .bw-lib .pill {
+    .bw-lib .bw-pill {
         display: inline-flex !important;
         align-items: center !important;
         padding: 2.4px 8px !important;
@@ -480,26 +480,26 @@
         letter-spacing: 0.08em !important;
     }
 
-    .bw-lib .pill-input {
+    .bw-lib .bw-pill-input {
         background: rgba(22, 163, 74, 0.15) !important;
         color: #bbf7d0 !important;
         border: 1px solid rgba(22, 163, 74, 0.7) !important;
     }
 
-    .bw-lib .pill-processing {
+    .bw-lib .bw-pill-processing {
         background: rgba(59, 130, 246, 0.18) !important;
         color: #bfdbfe !important;
         border: 1px solid rgba(59, 130, 246, 0.75) !important;
     }
 
-    .bw-lib .pill-output {
+    .bw-lib .bw-pill-output {
         background: rgba(245, 158, 11, 0.18) !important;
         color: #fed7aa !important;
         border: 1px solid rgba(245, 158, 11, 0.75) !important;
     }
 
     /* Payload preview */
-    .bw-lib .payload-preview {
+    .bw-lib .bw-payload-preview {
         flex: 1 !important;
         border-radius: 0 !important;
         border: none !important;
@@ -513,11 +513,11 @@
         white-space: pre !important;
     }
 
-    .bw-lib .payload-preview--output {
+    .bw-lib .bw-payload-preview--output {
         min-height: 120px !important;
     }
 
-    .bw-lib .payload-field-list {
+    .bw-lib .bw-payload-field-list {
         display: flex !important;
         flex-wrap: wrap !important;
         gap: 4.8px !important;
@@ -525,7 +525,7 @@
         overflow: auto !important;
     }
 
-    .bw-lib .payload-field-chip {
+    .bw-lib .bw-payload-field-chip {
         border-radius: 999px !important;
         border: 1px solid rgba(55, 65, 81, 0.9) !important;
         background: rgba(15, 23, 42, 0.9) !important;
@@ -535,12 +535,12 @@
         cursor: pointer !important;
     }
 
-        .bw-lib .payload-field-chip:hover {
+        .bw-lib .bw-payload-field-chip:hover {
             border-color: rgba(96, 165, 250, 0.9) !important;
         }
 
     /* Mapping lists */
-    .bw-lib .mapping-list {
+    .bw-lib .bw-mapping-list {
         display: flex !important;
         flex-direction: column !important;
         gap: 8px !important;
@@ -549,7 +549,7 @@
         position: relative !important;
     }
 
-    .bw-lib .mapping-row {
+    .bw-lib .bw-mapping-row {
         display: grid !important;
         grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto !important;
         gap: 8px !important;
@@ -559,12 +559,12 @@
         border-radius: 0 !important;
     }
 
-        .bw-lib .mapping-row:hover {
+        .bw-lib .bw-mapping-row:hover {
             background-color: transparent !important;
         }
 
     /* Simple mapping */
-    .bw-lib .simple-mapping-list {
+    .bw-lib .bw-simple-mapping-list {
         display: flex !important;
         flex-direction: column !important;
         gap: 10px !important;
@@ -573,7 +573,7 @@
         position: relative !important;
     }
 
-    .bw-lib .simple-mapping-item {
+    .bw-lib .bw-simple-mapping-item {
         display: flex !important;
         flex-direction: column !important;
         gap: 8px !important;
@@ -585,16 +585,16 @@
         padding-bottom: 12px !important;
     }
 
-        .bw-lib .simple-mapping-item:last-child {
+        .bw-lib .bw-simple-mapping-item:last-child {
             border-bottom: none !important;
             padding-bottom: 0 !important;
         }
 
-        .bw-lib .simple-mapping-item:hover {
+        .bw-lib .bw-simple-mapping-item:hover {
             background-color: transparent !important;
         }
 
-    .bw-lib .simple-mapping-label {
+    .bw-lib .bw-simple-mapping-label {
         font-size: 12px !important;
         font-weight: 600 !important;
         color: #e5e7eb !important;
@@ -604,14 +604,14 @@
         gap: 6px !important;
     }
 
-    .bw-lib .param-type-hint {
+    .bw-lib .bw-param-type-hint {
         font-size: 10.8px !important;
         color: #9ca3af !important;
         font-weight: 400 !important;
     }
 
     /* Mapping input styling */
-    .bw-lib .mapping-input {
+    .bw-lib .bw-mapping-input {
         background-color: rgba(51, 65, 85, 0.4) !important;
         border: 1px solid rgba(100, 116, 139, 0.5) !important;
         color: var(--color-text-primary) !important;
@@ -623,18 +623,18 @@
         font-size: 11.4px !important;
     }
 
-        .bw-lib .mapping-input:hover {
+        .bw-lib .bw-mapping-input:hover {
             border-color: rgba(96, 165, 250, 0.6) !important;
         }
 
-        .bw-lib .mapping-input:focus {
+        .bw-lib .bw-mapping-input:focus {
             background-color: rgba(51, 65, 85, 0.6) !important;
             border-color: var(--color-info) !important;
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
         }
 
     /* Textarea-specific */
-    .bw-lib textarea.mapping-input {
+    .bw-lib textarea.bw-mapping-input {
         resize: vertical !important;
         min-height: 28px !important;
         max-height: 160px !important;
@@ -643,8 +643,121 @@
         padding-right: 15px !important;
     }
 
+    /* Scriban syntax highlight — backdrop div sits behind textarea */
+    .bw-lib .bw-scriban-backdrop {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        pointer-events: none !important;
+        overflow: hidden !important;
+        white-space: pre-wrap !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        z-index: 0 !important;
+        border: 1px solid transparent !important;
+        border-radius: 4px !important;
+        background-color: rgba(51, 65, 85, 0.4) !important;
+    }
+
+    /* Textarea with highlight active — transparent text so backdrop shows through */
+    .bw-lib .bw-mapping-input.bw-hl-active {
+        background: transparent !important;
+        color: transparent !important;
+        caret-color: var(--color-text-primary, #e5e7eb) !important;
+        position: relative !important;
+        z-index: 1 !important;
+    }
+
+    /* Selection highlight for highlighted textarea */
+    .bw-lib .bw-mapping-input.bw-hl-active::selection {
+        background: rgba(59, 130, 246, 0.35) !important;
+        color: transparent !important;
+    }
+
+    /* Plain text in backdrop — mirrors the textarea color */
+    .bw-lib .bw-scriban-backdrop .bw-hl-plain {
+        color: var(--color-text-primary, #e5e7eb) !important;
+    }
+
+    /* Scriban token highlight {{ ... }} */
+    .bw-lib .bw-scriban-backdrop .bw-hl-token {
+        color: #fbbf24 !important;
+        background: rgba(251, 191, 36, 0.13) !important;
+        border-radius: 2px !important;
+        border-bottom: 1.5px solid rgba(251, 191, 36, 0.45) !important;
+    }
+
+    /* Hover tooltip for scriban preview */
+    .bw-scriban-tooltip {
+        position: fixed !important;
+        z-index: 100000 !important;
+        background: rgba(15, 23, 42, 0.96) !important;
+        border: 1px solid rgba(251, 191, 36, 0.4) !important;
+        border-radius: 6px !important;
+        padding: 5px 10px !important;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+        font-size: 11px !important;
+        color: #e5e7eb !important;
+        pointer-events: none !important;
+        max-width: 320px !important;
+        word-break: break-all !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+        backdrop-filter: blur(8px) !important;
+        line-height: 1.4 !important;
+        opacity: 0 !important;
+        transition: opacity 0.15s ease !important;
+    }
+
+    .bw-scriban-tooltip.bw-visible {
+        opacity: 1 !important;
+    }
+
+    .bw-scriban-tooltip-label {
+        font-size: 9px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        color: rgba(251, 191, 36, 0.7) !important;
+        margin-bottom: 2px !important;
+    }
+
+    .bw-scriban-tooltip-expr {
+        color: #fbbf24 !important;
+        font-size: 10px !important;
+        margin-bottom: 3px !important;
+        opacity: 0.7 !important;
+    }
+
+    .bw-scriban-tooltip-value {
+        color: #a5f3fc !important;
+    }
+
+    /* Light theme adjustments */
+    .bw-lib[data-theme="light"] .bw-scriban-backdrop .bw-hl-plain,
+    [data-theme="light"] .bw-lib .bw-scriban-backdrop .bw-hl-plain {
+        color: var(--color-text-primary, #1e293b) !important;
+    }
+
+    .bw-lib[data-theme="light"] .bw-mapping-input.bw-hl-active,
+    [data-theme="light"] .bw-lib .bw-mapping-input.bw-hl-active {
+        caret-color: var(--color-text-primary, #1e293b) !important;
+    }
+
+    .bw-lib[data-theme="light"] .bw-scriban-backdrop,
+    [data-theme="light"] .bw-lib .bw-scriban-backdrop {
+        background-color: rgba(226, 232, 240, 0.6) !important;
+    }
+
+    .bw-lib[data-theme="light"] .bw-scriban-backdrop .bw-hl-token,
+    [data-theme="light"] .bw-lib .bw-scriban-backdrop .bw-hl-token {
+        color: #b45309 !important;
+        background: rgba(251, 191, 36, 0.15) !important;
+        border-bottom-color: rgba(180, 83, 9, 0.5) !important;
+    }
+
     /* Label row */
-    .bw-lib .simple-mapping-label-row {
+    .bw-lib .bw-simple-mapping-label-row {
         display: flex !important;
         justify-content: space-between !important;
         align-items: center !important;
@@ -652,7 +765,7 @@
     }
 
     /* Workflow output checkbox */
-    .bw-lib .workflow-output-checkbox-label {
+    .bw-lib .bw-workflow-output-checkbox-label {
         display: flex !important;
         align-items: center !important;
         gap: 4.8px !important;
@@ -664,11 +777,11 @@
         white-space: nowrap !important;
     }
 
-        .bw-lib .workflow-output-checkbox-label:hover {
+        .bw-lib .bw-workflow-output-checkbox-label:hover {
             color: var(--color-text-primary) !important;
         }
 
-    .bw-lib .workflow-output-checkbox {
+    .bw-lib .bw-workflow-output-checkbox {
         width: 13px !important;
         height: 13px !important;
         cursor: pointer !important;
@@ -677,12 +790,12 @@
         flex-shrink: 0 !important;
     }
 
-    .bw-lib .workflow-output-checkbox-text {
+    .bw-lib .bw-workflow-output-checkbox-text {
         user-select: none !important;
     }
 
     /* JSON preview controls */
-    .bw-lib .json-controls {
+    .bw-lib .bw-json-controls {
         display: flex !important;
         gap: 8px !important;
         margin-bottom: 0 !important;
@@ -691,7 +804,7 @@
         align-items: center !important;
     }
 
-    .bw-lib .json-search {
+    .bw-lib .bw-json-search {
         flex: 1 !important;
         min-width: 0 !important;
         background-color: rgba(51, 65, 85, 0.3) !important;
@@ -702,7 +815,7 @@
         border-radius: var(--bw-radius-sm) !important;
     }
 
-        .bw-lib .json-search:focus {
+        .bw-lib .bw-json-search:focus {
             background-color: rgba(51, 65, 85, 0.6) !important;
             border-color: rgba(96, 165, 250, 0.6) !important;
             outline: none !important;
@@ -710,11 +823,11 @@
             color: #e5e7eb !important;
         }
 
-        .bw-lib .json-search::placeholder {
+        .bw-lib .bw-json-search::placeholder {
             color: #9ca3af !important;
         }
 
-    .bw-lib .json-filter {
+    .bw-lib .bw-json-filter {
         flex: 0 0 auto !important;
         width: 120px !important;
         background-color: rgba(51, 65, 85, 0.3) !important;
@@ -726,48 +839,48 @@
         border-radius: var(--bw-radius-sm) !important;
     }
 
-        .bw-lib .json-filter:focus {
+        .bw-lib .bw-json-filter:focus {
             background-color: rgba(51, 65, 85, 0.6) !important;
             border-color: rgba(96, 165, 250, 0.6) !important;
             outline: none !important;
             box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25) !important;
         }
 
-        .bw-lib .json-filter option {
+        .bw-lib .bw-json-filter option {
             background-color: #1f2937 !important;
             color: #e5e7eb !important;
         }
 
     /* JSON highlight */
-    .bw-lib .json-highlight {
+    .bw-lib .bw-json-highlight {
         background-color: rgba(251, 191, 36, 0.3) !important;
         border-radius: 2px !important;
         padding: 0 2px !important;
         box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.5) !important;
     }
 
-    .bw-lib .mapping-col label {
+    .bw-lib .bw-mapping-col label {
         font-size: 10.8px !important;
         color: #9ca3af !important;
         margin-bottom: 4px !important;
         font-weight: 500 !important;
     }
 
-    .bw-lib .mapping-arrow {
+    .bw-lib .bw-mapping-arrow {
         font-size: 14px !important;
         color: #9ca3af !important;
         text-align: center !important;
         padding-bottom: 4px !important;
     }
 
-    .bw-lib .btn-xs {
+    .bw-lib .bw-btn-xs {
         --bs-btn-padding-y: 2.4px;
         --bs-btn-padding-x: 7.2px;
         --bs-btn-font-size: 11.2px;
         border-radius: 999px !important;
     }
 
-    .bw-lib .btn-add-entry {
+    .bw-lib .bw-btn-add-entry {
         display: inline-flex !important;
         align-items: center !important;
         gap: 4px !important;
@@ -784,23 +897,23 @@
         transition: all var(--transition-fast) !important;
     }
 
-        .bw-lib .btn-add-entry:hover {
+        .bw-lib .bw-btn-add-entry:hover {
             background: rgba(99, 102, 241, 0.15) !important;
             border-color: rgba(99, 102, 241, 0.5) !important;
             color: var(--bw-primary-light) !important;
         }
 
-        .bw-lib .btn-add-entry:active {
+        .bw-lib .bw-btn-add-entry:active {
             background: rgba(99, 102, 241, 0.2) !important;
             transform: translateY(1px) !important;
         }
 
-        .bw-lib .btn-add-entry svg {
+        .bw-lib .bw-btn-add-entry svg {
             width: 12px !important;
             height: 12px !important;
         }
 
-    .bw-lib .btn-icon {
+    .bw-lib .bw-btn-icon {
         border-radius: 999px !important;
         border: 1px solid rgba(55, 65, 81, 0.9) !important;
         background: rgba(15, 23, 42, 1) !important;
@@ -814,22 +927,22 @@
         color: #9ca3af !important;
     }
 
-        .bw-lib .btn-icon:hover {
+        .bw-lib .bw-btn-icon:hover {
             border-color: rgba(248, 113, 113, 0.9) !important;
             color: #fecaca !important;
         }
 
-    .bw-lib .node-editor-footer {
+    .bw-lib .bw-node-editor-footer {
         border-top: 1px solid rgba(31, 41, 55, 0.9) !important;
         padding: 8px 20px !important;
     }
 
-        .bw-lib .node-editor-footer .btn {
+        .bw-lib .bw-node-editor-footer .btn {
             font-size: 13.6px !important;
         }
 
     /* Scriban Preview Styles */
-    .bw-lib .scriban-preview-list {
+    .bw-lib .bw-scriban-preview-list {
         display: flex !important;
         flex-direction: column !important;
         gap: 6.4px !important;
@@ -837,7 +950,7 @@
         overflow-y: auto !important;
     }
 
-    .bw-lib .scriban-preview-item {
+    .bw-lib .bw-scriban-preview-item {
         display: flex !important;
         align-items: center !important;
         gap: 8px !important;
@@ -849,19 +962,19 @@
         transition: all var(--transition-fast) !important;
     }
 
-        .bw-lib .scriban-preview-item:hover {
+        .bw-lib .bw-scriban-preview-item:hover {
             background: rgba(59, 130, 246, 0.12) !important;
             border-color: rgba(59, 130, 246, 0.4) !important;
         }
 
-    .bw-lib .scriban-preview-label {
+    .bw-lib .bw-scriban-preview-label {
         font-weight: 600 !important;
         color: #bfdbfe !important;
         min-width: 80px !important;
         flex-shrink: 0 !important;
     }
 
-    .bw-lib .scriban-preview-value {
+    .bw-lib .bw-scriban-preview-value {
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
         color: #e5e7eb !important;
         overflow: hidden !important;
@@ -871,7 +984,7 @@
     }
 
     /* Node Error Alert */
-    .bw-lib .node-error-alert {
+    .bw-lib .bw-node-error-alert {
         margin: 16px 20px 24px 20px !important;
         background: rgba(220, 38, 38, 0.15) !important;
         border: 1px solid rgba(220, 38, 38, 0.5) !important;
@@ -880,21 +993,21 @@
         animation: slideDown var(--transition-normal) !important;
     }
 
-        .bw-lib .node-error-alert .error-header {
+        .bw-lib .bw-node-error-alert .bw-error-header {
             display: flex !important;
             align-items: center !important;
             gap: 8px !important;
             margin-bottom: 8px !important;
         }
 
-        .bw-lib .node-error-alert .error-icon {
+        .bw-lib .bw-node-error-alert .bw-error-icon {
             width: 20px !important;
             height: 20px !important;
             color: #fca5a5 !important;
             flex-shrink: 0 !important;
         }
 
-    .bw-lib .error-dismiss-btn {
+    .bw-lib .bw-error-dismiss-btn {
         margin-left: auto !important;
         background: transparent !important;
         border: none !important;
@@ -907,37 +1020,37 @@
         transition: all var(--transition-fast) !important;
     }
 
-        .bw-lib .error-dismiss-btn:hover {
+        .bw-lib .bw-error-dismiss-btn:hover {
             background: rgba(220, 38, 38, 0.2) !important;
             color: #fecaca !important;
         }
 
-        .bw-lib .error-dismiss-btn:active {
+        .bw-lib .bw-error-dismiss-btn:active {
             transform: scale(0.95) !important;
         }
 
-    .bw-lib .node-error-alert .error-message {
+    .bw-lib .bw-node-error-alert .bw-error-message {
         margin: 0 !important;
         color: #fecaca !important;
         font-size: 14.4px !important;
     }
 
-    .bw-lib .node-error-alert .error-details {
+    .bw-lib .bw-node-error-alert .bw-error-details {
         margin-top: 12px !important;
         cursor: pointer !important;
     }
 
-        .bw-lib .node-error-alert .error-details summary {
+        .bw-lib .bw-node-error-alert .bw-error-details summary {
             color: #fca5a5 !important;
             font-size: 13.6px !important;
             user-select: none !important;
         }
 
-            .bw-lib .node-error-alert .error-details summary:hover {
+            .bw-lib .bw-node-error-alert .bw-error-details summary:hover {
                 color: #fecaca !important;
             }
 
-    .bw-lib .node-error-alert .error-stack {
+    .bw-lib .bw-node-error-alert .bw-error-stack {
         margin-top: 8px !important;
         padding: 12px !important;
         background: rgba(0, 0, 0, 0.3) !important;
@@ -952,31 +1065,76 @@
     }
 
     /* Drag and Drop */
-    .bw-lib .payload-field-chip[draggable="true"] {
+    .bw-lib .bw-payload-field-chip[draggable="true"] {
         cursor: grab !important;
         user-select: none !important;
         transition: all var(--transition-fast) !important;
     }
 
-        .bw-lib .payload-field-chip[draggable="true"]:active {
+        .bw-lib .bw-payload-field-chip[draggable="true"]:active {
             cursor: grabbing !important;
         }
 
-        .bw-lib .payload-field-chip[draggable="true"]:hover {
+        .bw-lib .bw-payload-field-chip[draggable="true"]:hover {
             transform: translateY(-1px) !important;
             box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
         }
 
-    .bw-lib .droppable-input:focus {
+    .bw-lib .bw-droppable-input:focus {
         outline: 2px solid rgba(59, 130, 246, 0.5) !important;
         outline-offset: 2px !important;
     }
 
-    .bw-lib .droppable-input.drag-over,
-    .bw-lib .droppable-input:has(+ *):where(:active) {
+    .bw-lib .bw-droppable-input.bw-drag-over,
+    .bw-lib .bw-droppable-input:has(+ *):where(:active) {
         background: rgba(59, 130, 246, 0.1) !important;
         border-color: rgba(59, 130, 246, 0.5) !important;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    }
+
+    /* Smart drop: Replace mode - highlight entire field */
+    .bw-lib .bw-droppable-input.bw-drop-replace {
+        background: rgba(251, 146, 60, 0.12) !important;
+        border-color: rgba(251, 146, 60, 0.7) !important;
+        box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.15) !important;
+    }
+
+    /* Smart drop: Inject mode - subtle border indicating insertion */
+    .bw-lib .bw-droppable-input.bw-drop-inject {
+        background: rgba(74, 222, 128, 0.08) !important;
+        border-color: rgba(74, 222, 128, 0.7) !important;
+        box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.12) !important;
+    }
+
+    /* Caret indicator for inject mode */
+    .bw-lib .bw-drop-caret-indicator {
+        position: absolute;
+        width: 2px;
+        background: rgba(74, 222, 128, 0.9);
+        border-radius: 1px;
+        pointer-events: none;
+        animation: drop-caret-blink 0.8s ease-in-out infinite;
+        z-index: 10;
+    }
+
+    @keyframes drop-caret-blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
+
+    /* Smart drop: Replace-scriban mode - highlight the scriban expression being replaced */
+    .bw-lib .bw-droppable-input.bw-drop-replace-scriban {
+        border-color: rgba(251, 191, 36, 0.7) !important;
+        box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.12) !important;
+    }
+
+    .bw-lib .bw-drop-scriban-highlight {
+        position: absolute;
+        background: rgba(251, 191, 36, 0.25);
+        border-radius: 2px;
+        pointer-events: none;
+        z-index: 10;
+        border-bottom: 2px solid rgba(251, 191, 36, 0.8);
     }
 
     /* Modal Backdrop (Bootstrap override) */
@@ -1031,7 +1189,7 @@
     }
 
     /* Export/Import Modal */
-    .bw-lib .export-modal-backdrop {
+    .bw-lib .bw-export-modal-backdrop {
         position: fixed !important;
         top: 0 !important;
         left: 0 !important;
@@ -1045,7 +1203,7 @@
         backdrop-filter: blur(4px) !important;
     }
 
-    .bw-lib .export-modal {
+    .bw-lib .bw-export-modal {
         background: var(--color-bg-panel) !important;
         border: 1px solid var(--color-border-light) !important;
         border-radius: var(--bw-radius-lg) !important;
@@ -1057,7 +1215,7 @@
         flex-direction: column !important;
     }
 
-    .bw-lib .export-modal-header {
+    .bw-lib .bw-export-modal-header {
         padding: var(--spacing-lg) !important;
         border-bottom: 1px solid var(--color-border-light) !important;
         display: flex !important;
@@ -1065,13 +1223,13 @@
         align-items: center !important;
     }
 
-        .bw-lib .export-modal-header h3 {
+        .bw-lib .bw-export-modal-header h3 {
             margin: 0 !important;
             color: var(--color-text-primary) !important;
             font-size: 20px !important;
         }
 
-        .bw-lib .export-modal-header .btn-close {
+        .bw-lib .bw-export-modal-header .btn-close {
             background: none !important;
             border: none !important;
             color: var(--color-text-secondary) !important;
@@ -1087,17 +1245,17 @@
             transition: all var(--transition-fast) !important;
         }
 
-            .bw-lib .export-modal-header .btn-close:hover {
+            .bw-lib .bw-export-modal-header .btn-close:hover {
                 background: rgba(255, 255, 255, 0.1) !important;
                 color: var(--color-text-primary) !important;
             }
 
-    .bw-lib .export-modal-body {
+    .bw-lib .bw-export-modal-body {
         padding: var(--spacing-lg) !important;
         overflow: auto !important;
     }
 
-    .bw-lib .export-textarea {
+    .bw-lib .bw-export-textarea {
         width: 100% !important;
         min-height: 400px !important;
         background: var(--color-bg-dark) !important;
@@ -1110,7 +1268,7 @@
         resize: vertical !important;
     }
 
-        .bw-lib .export-textarea:focus {
+        .bw-lib .bw-export-textarea:focus {
             outline: 2px solid var(--color-primary) !important;
             outline-offset: 2px !important;
             border-color: var(--color-primary) !important;
@@ -1137,10 +1295,15 @@
         color: #fca5a5 !important;
     }
 
-    /* Execute Flow Button */
-    .bw-lib .btn-execute-flow {
+    /* Execute Flow Split Button */
+    .bw-lib .bw-execute-split-btn {
         position: absolute !important;
         right: 17px !important;
+        margin-top: -4px !important;
+        top: 17px;
+    }
+
+    .bw-lib .bw-btn-execute-flow {
         background: transparent !important;
         border: none !important;
         color: #16a34a !important;
@@ -1151,97 +1314,171 @@
         justify-content: center !important;
         transition: all var(--transition-fast) !important;
         font-size: 40px !important;
-        margin-top: -4px !important;
     }
 
-        .bw-lib .btn-execute-flow:hover:not(:disabled) {
+        .bw-lib .bw-btn-execute-flow:hover:not(:disabled):not([disabled]) {
             color: #22c55e !important;
             transform: scale(1.1) !important;
         }
 
-        .bw-lib .btn-execute-flow:active:not(:disabled) {
+        .bw-lib .bw-btn-execute-flow:active:not(:disabled):not([disabled]) {
             transform: scale(1) !important;
         }
 
-        .bw-lib .btn-execute-flow:disabled {
+        .bw-lib .bw-btn-execute-flow:disabled,
+        .bw-lib .bw-btn-execute-flow[disabled] {
             opacity: 0.4 !important;
             cursor: not-allowed !important;
             color: #16a34a !important;
         }
 
-        .bw-lib .btn-execute-flow .spinner-border {
+        .bw-lib .bw-btn-execute-flow .spinner-border {
             width: 16px !important;
             height: 16px !important;
             border-width: 2px !important;
         }
 
+    /* Run menu dropdown */
+    .bw-lib .bw-run-menu {
+        position: absolute !important;
+        top: 100% !important;
+        right: 0 !important;
+        margin-top: 4px !important;
+        background: var(--bg-secondary, #1e1e2e) !important;
+        border: 1px solid var(--border-color, rgba(255,255,255,0.1)) !important;
+        border-radius: 10px !important;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4) !important;
+        z-index: 100 !important;
+        min-width: 260px !important;
+        overflow: hidden !important;
+    }
+
+    .bw-lib .bw-run-menu-option {
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+        padding: 10px 14px !important;
+        width: 100% !important;
+        background: transparent !important;
+        border: none !important;
+        color: var(--text-primary, #e2e8f0) !important;
+        cursor: pointer !important;
+        text-align: left !important;
+        transition: background 0.1s ease !important;
+        font-family: inherit !important;
+    }
+
+        .bw-lib .bw-run-menu-option:first-child {
+            border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08)) !important;
+        }
+
+        .bw-lib .bw-run-menu-option:hover:not(:disabled):not(.bw-run-menu-option--disabled) {
+            background: rgba(99, 102, 241, 0.1) !important;
+        }
+
+        .bw-lib .bw-run-menu-option--disabled,
+        .bw-lib .bw-run-menu-option:disabled {
+            opacity: 0.4 !important;
+            cursor: not-allowed !important;
+        }
+
+    .bw-lib .bw-run-menu-icon {
+        width: 18px !important;
+        height: 18px !important;
+        flex-shrink: 0 !important;
+        margin-top: 2px !important;
+        color: #16a34a !important;
+    }
+
+    .bw-lib .bw-run-menu-option--disabled .bw-run-menu-icon,
+    .bw-lib .bw-run-menu-option:disabled .bw-run-menu-icon {
+        color: var(--text-secondary, #94a3b8) !important;
+    }
+
+    .bw-lib .bw-run-menu-text {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 2px !important;
+    }
+
+    .bw-lib .bw-run-menu-label {
+        font-size: 13px !important;
+        font-weight: 500 !important;
+    }
+
+    .bw-lib .bw-run-menu-hint {
+        font-size: 11px !important;
+        color: var(--text-secondary, #94a3b8) !important;
+        line-height: 1.3 !important;
+    }
+
     /* Draggable/Selectable JSON */
-    .bw-lib .draggable-json {
+    .bw-lib .bw-draggable-json {
         user-select: none !important;
     }
 
-    .bw-lib .selectable-json {
+    .bw-lib .bw-selectable-json {
         user-select: text !important;
         cursor: text !important;
     }
 
-        .bw-lib .selectable-json .json-key,
-        .bw-lib .selectable-json .json-value {
+        .bw-lib .bw-selectable-json .bw-json-key,
+        .bw-lib .bw-selectable-json .bw-json-value {
             user-select: text !important;
             cursor: text !important;
         }
 
-    .bw-lib .json-key.draggable,
-    .bw-lib .json-value.draggable {
+    .bw-lib .bw-json-key.bw-draggable,
+    .bw-lib .bw-json-value.bw-draggable {
         cursor: grab !important;
         padding: 1px 3px !important;
         border-radius: 2px !important;
         transition: all 0.15s ease !important;
     }
 
-    .bw-lib .json-key.draggable {
+    .bw-lib .bw-json-key.bw-draggable {
         color: #93c5fd !important;
         font-weight: 600 !important;
     }
 
-        .bw-lib .json-key.draggable:hover {
+        .bw-lib .bw-json-key.bw-draggable:hover {
             background: rgba(147, 197, 253, 0.2) !important;
             box-shadow: 0 0 0 1px rgba(147, 197, 253, 0.5) !important;
         }
 
-        .bw-lib .json-key.draggable:active {
+        .bw-lib .bw-json-key.bw-draggable:active {
             cursor: grabbing !important;
             background: rgba(147, 197, 253, 0.3) !important;
         }
 
-    .bw-lib .json-value.draggable {
+    .bw-lib .bw-json-value.bw-draggable {
         color: #a78bfa !important;
     }
 
-        .bw-lib .json-value.draggable:hover {
+        .bw-lib .bw-json-value.bw-draggable:hover {
             background: rgba(167, 139, 250, 0.2) !important;
             box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.5) !important;
         }
 
-        .bw-lib .json-value.draggable:active {
+        .bw-lib .bw-json-value.bw-draggable:active {
             cursor: grabbing !important;
             background: rgba(167, 139, 250, 0.3) !important;
         }
 
     /* Input with Preview Button */
-    .bw-lib .input-with-preview {
+    .bw-lib .bw-input-with-preview {
         position: relative !important;
         display: flex !important;
         align-items: center !important;
     }
 
-        .bw-lib .input-with-preview input {
+        .bw-lib .bw-input-with-preview input {
             flex: 1 !important;
             padding-right: 40px !important;
         }
 
     /* IMPORTANT: btn-preview is inline-styled in markup (color/background/border). Override with !important. */
-    .bw-lib .btn-preview {
+    .bw-lib .bw-btn-preview {
         position: absolute !important;
         right: 4px !important;
         background: none !important;
@@ -1257,22 +1494,22 @@
         top: -15px;
     }
 
-        .bw-lib .btn-preview:hover {
+        .bw-lib .bw-btn-preview:hover {
             transform: scale(.90) !important;
         }
 
-        .bw-lib .btn-preview:active {
+        .bw-lib .bw-btn-preview:active {
             transform: scale(0.90) !important;
         }
 
-    .bw-lib .preview-button-container {
+    .bw-lib .bw-preview-button-container {
         position: absolute !important;
         top: 16px;
         right: -5px;
         display: inline-block !important;
     }
 
-    .eye-icon-button {
+    .bw-eye-icon-button {
         background: none;
         border: none;
         padding: 4px;
@@ -1285,13 +1522,13 @@
         justify-content: center;
     }
 
-    .eye-icon-button:hover {
+    .bw-eye-icon-button:hover {
         opacity: 1;
         color: var(--bw-primary-color);
     }
 
     /* Preview Popover */
-    .bw-lib .preview-popover {
+    .bw-lib .bw-preview-popover {
         position: fixed !important;
         z-index: 9999 !important;
         min-width: 200px !important;
@@ -1300,11 +1537,11 @@
         pointer-events: none !important;
     }
 
-        .bw-lib .preview-popover > * {
+        .bw-lib .bw-preview-popover > * {
             pointer-events: auto !important;
         }
 
-    .bw-lib .preview-popover-arrow {
+    .bw-lib .bw-preview-popover-arrow {
         position: absolute !important;
         bottom: -6px !important;
         right: 16px !important;
@@ -1316,7 +1553,7 @@
         transform: rotate(45deg) !important;
     }
 
-    .bw-lib .preview-popover-content {
+    .bw-lib .bw-preview-popover-content {
         background: rgba(15, 23, 42, 0.95) !important;
         border: 1px solid rgba(59, 130, 246, 0.4) !important;
         border-radius: var(--bw-radius-md) !important;
@@ -1325,7 +1562,7 @@
         backdrop-filter: blur(8px) !important;
     }
 
-    .bw-lib .preview-popover-label {
+    .bw-lib .bw-preview-popover-label {
         color: #bfdbfe !important;
         font-weight: 600 !important;
         font-size: 11.2px !important;
@@ -1334,7 +1571,7 @@
         margin-bottom: 8px !important;
     }
 
-    .bw-lib .preview-popover-value {
+    .bw-lib .bw-preview-popover-value {
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
         font-size: 12.8px !important;
         color: #e5e7eb !important;
@@ -1345,7 +1582,7 @@
     }
 
     /* Mapping Preview Display (deprecated - kept for compatibility) */
-    .bw-lib .mapping-preview {
+    .bw-lib .bw-mapping-preview {
         margin-top: 8px !important;
         padding: 8px 12px !important;
         background: rgba(59, 130, 246, 0.1) !important;
@@ -1356,13 +1593,13 @@
         animation: slideDown 0.2s ease !important;
     }
 
-    .bw-lib .mapping-preview-label {
+    .bw-lib .bw-mapping-preview-label {
         color: #bfdbfe !important;
         font-weight: 600 !important;
         margin-right: 8px !important;
     }
 
-    .bw-lib .mapping-preview-value {
+    .bw-lib .bw-mapping-preview-value {
         color: #e5e7eb !important;
         word-break: break-all !important;
     }
@@ -1393,106 +1630,106 @@
    Light theme component overrides (lifted “not-dark”)
    ========================================================================== */
 
-    .bw-lib[data-theme="light"] .node-editor-header,
-    [data-theme="light"] .bw-lib .node-editor-header {
+    .bw-lib[data-theme="light"] .bw-node-editor-header,
+    [data-theme="light"] .bw-lib .bw-node-editor-header {
         border-bottom-color: rgba(226, 232, 240, 0.14) !important;
         background: rgba(255, 255, 255, 0.04) !important;
     }
 
-    .bw-lib[data-theme="light"] .node-name-input,
-    [data-theme="light"] .bw-lib .node-name-input {
+    .bw-lib[data-theme="light"] .bw-node-name-input,
+    [data-theme="light"] .bw-lib .bw-node-name-input {
         background: rgba(255, 255, 255, 0.10) !important;
         border-color: rgba(226, 232, 240, 0.20) !important;
         color: var(--color-text-primary) !important;
     }
 
-    .bw-lib[data-theme="light"] .node-editor-panel,
-    [data-theme="light"] .bw-lib .node-editor-panel {
+    .bw-lib[data-theme="light"] .bw-node-editor-panel,
+    [data-theme="light"] .bw-lib .bw-node-editor-panel {
         background: rgba(255, 255, 255, 0.07) !important;
         border-right-color: rgba(226, 232, 240, 0.12) !important;
     }
 
-    .bw-lib[data-theme="light"] .panel-header,
-    [data-theme="light"] .bw-lib .panel-header {
+    .bw-lib[data-theme="light"] .bw-panel-header,
+    [data-theme="light"] .bw-lib .bw-panel-header {
         border-bottom-color: rgba(226, 232, 240, 0.12) !important;
         background: rgba(255, 255, 255, 0.10) !important;
     }
 
-    .bw-lib[data-theme="light"] .panel-caption,
-    [data-theme="light"] .bw-lib .panel-caption {
+    .bw-lib[data-theme="light"] .bw-panel-caption,
+    [data-theme="light"] .bw-lib .bw-panel-caption {
         color: var(--color-text-secondary) !important;
     }
 
-    .bw-lib[data-theme="light"] .panel-section-header,
-    [data-theme="light"] .bw-lib .panel-section-header {
+    .bw-lib[data-theme="light"] .bw-panel-section-header,
+    [data-theme="light"] .bw-lib .bw-panel-section-header {
         color: var(--color-text-primary) !important;
         border-bottom-color: rgba(226, 232, 240, 0.10) !important;
     }
 
-    .bw-lib[data-theme="light"] .payload-preview,
-    [data-theme="light"] .bw-lib .payload-preview {
+    .bw-lib[data-theme="light"] .bw-payload-preview,
+    [data-theme="light"] .bw-lib .bw-payload-preview {
         background: rgba(255, 255, 255, 0.06) !important;
         border-top-color: rgba(226, 232, 240, 0.10) !important;
         color: var(--color-text-primary) !important;
     }
 
-    .bw-lib[data-theme="light"] .payload-field-chip,
-    [data-theme="light"] .bw-lib .payload-field-chip {
+    .bw-lib[data-theme="light"] .bw-payload-field-chip,
+    [data-theme="light"] .bw-lib .bw-payload-field-chip {
         background: rgba(255, 255, 255, 0.07) !important;
         border-color: rgba(226, 232, 240, 0.14) !important;
         color: var(--color-text-primary) !important;
     }
 
-        .bw-lib[data-theme="light"] .payload-field-chip:hover,
-        [data-theme="light"] .bw-lib .payload-field-chip:hover {
+        .bw-lib[data-theme="light"] .bw-payload-field-chip:hover,
+        [data-theme="light"] .bw-lib .bw-payload-field-chip:hover {
             border-color: rgba(96, 165, 250, 0.65) !important;
         }
 
-    .bw-lib[data-theme="light"] .mapping-input,
-    [data-theme="light"] .bw-lib .mapping-input {
+    .bw-lib[data-theme="light"] .bw-mapping-input,
+    [data-theme="light"] .bw-lib .bw-mapping-input {
         background-color: rgba(255, 255, 255, 0.08) !important;
         border-color: rgba(226, 232, 240, 0.18) !important;
         color: var(--color-text-primary) !important;
     }
 
-        .bw-lib[data-theme="light"] .mapping-input:focus,
-        [data-theme="light"] .bw-lib .mapping-input:focus {
+        .bw-lib[data-theme="light"] .bw-mapping-input:focus,
+        [data-theme="light"] .bw-lib .bw-mapping-input:focus {
             background-color: rgba(255, 255, 255, 0.12) !important;
             border-color: var(--color-info) !important;
             box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.22) !important;
         }
 
-    .bw-lib[data-theme="light"] .json-controls,
-    [data-theme="light"] .bw-lib .json-controls {
+    .bw-lib[data-theme="light"] .bw-json-controls,
+    [data-theme="light"] .bw-lib .bw-json-controls {
         border-bottom-color: rgba(226, 232, 240, 0.12) !important;
     }
 
-    .bw-lib[data-theme="light"] .json-search,
-    .bw-lib[data-theme="light"] .json-filter,
-    [data-theme="light"] .bw-lib .json-search,
-    [data-theme="light"] .bw-lib .json-filter {
+    .bw-lib[data-theme="light"] .bw-json-search,
+    .bw-lib[data-theme="light"] .bw-json-filter,
+    [data-theme="light"] .bw-lib .bw-json-search,
+    [data-theme="light"] .bw-lib .bw-json-filter {
         background-color: rgba(255, 255, 255, 0.08) !important;
         border-color: rgba(226, 232, 240, 0.16) !important;
         color: var(--color-text-primary) !important;
     }
 
-        .bw-lib[data-theme="light"] .json-search:focus,
-        .bw-lib[data-theme="light"] .json-filter:focus,
-        [data-theme="light"] .bw-lib .json-search:focus,
-        [data-theme="light"] .bw-lib .json-filter:focus {
+        .bw-lib[data-theme="light"] .bw-json-search:focus,
+        .bw-lib[data-theme="light"] .bw-json-filter:focus,
+        [data-theme="light"] .bw-lib .bw-json-search:focus,
+        [data-theme="light"] .bw-lib .bw-json-filter:focus {
             background-color: rgba(255, 255, 255, 0.12) !important;
             border-color: rgba(96, 165, 250, 0.55) !important;
             box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.18) !important;
         }
 
-        .bw-lib[data-theme="light"] .json-search::placeholder,
-        [data-theme="light"] .bw-lib .json-search::placeholder {
+        .bw-lib[data-theme="light"] .bw-json-search::placeholder,
+        [data-theme="light"] .bw-lib .bw-json-search::placeholder {
             color: rgba(213, 222, 234, 0.75) !important;
         }
 
     /* Inline-styled eye button override in lifted theme */
-    .bw-lib[data-theme="light"] .btn-preview,
-    [data-theme="light"] .bw-lib .btn-preview {
+    .bw-lib[data-theme="light"] .bw-btn-preview,
+    [data-theme="light"] .bw-lib .bw-btn-preview {
         color: rgba(234, 240, 248, 0.95) !important;
         border-color: rgba(226, 232, 240, 0.10) !important;
     }
@@ -1553,6 +1790,15 @@
         color: var(--df-text) !important;
     }
 
+    .bw-lib .parent-drawflow {
+        display: block !important;
+    }
+
+    .bw-lib .drawflow-host > .drawflow {
+        width: 5000px !important;
+        height: 5000px !important;
+    }
+
     /* Node Base */
     .bw-lib .drawflow .drawflow-node,
     .bw-lib .drawflow-node {
@@ -1594,7 +1840,7 @@
             padding-top: 16px !important;
         }
 
-            .bw-lib .drawflow-node .outputs .computed_node .port_label {
+            .bw-lib .drawflow-node .outputs .bw-computed_node .bw-port_label {
                 color: #6ec95e !important;
                 font-weight: 500 !important;
             }
@@ -1620,8 +1866,8 @@
             }
 
         /* Title bar */
-        .bw-lib .drawflow .title-container,
-        .bw-lib .drawflow-node .title-container {
+        .bw-lib .drawflow .bw-title-container,
+        .bw-lib .drawflow-node .bw-title-container {
             position: absolute !important;
             top: 0 !important;
             left: 0 !important;
@@ -1636,14 +1882,14 @@
             align-items: center !important;
         }
 
-        .bw-lib .drawflow .selected .title-container,
-        .bw-lib .drawflow-node.selected .title-container {
+        .bw-lib .drawflow .selected .bw-title-container,
+        .bw-lib .drawflow-node.selected .bw-title-container {
             background: linear-gradient(135deg, var(--df-accent) 0%, var(--df-accent-2) 100%) !important;
             border-bottom-color: rgba(255,255,255,0.15) !important;
         }
 
-        .bw-lib .drawflow .title,
-        .bw-lib .drawflow-node .title {
+        .bw-lib .drawflow .bw-title,
+        .bw-lib .drawflow-node .bw-title {
             color: var(--df-heading) !important;
             padding-left: 32px !important;
             padding-right: 32px !important;
@@ -1656,8 +1902,8 @@
             text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
         }
 
-        .bw-lib .drawflow .drawflow-node.selected .title,
-        .bw-lib .drawflow-node.selected .title {
+        .bw-lib .drawflow .drawflow-node.selected .bw-title,
+        .bw-lib .drawflow-node.selected .bw-title {
             color: #020617 !important;
             text-shadow: 0 1px 0 rgba(255,255,255,0.15) !important;
         }
@@ -1676,7 +1922,7 @@
         }
 
     /* Type box */
-    .bw-lib .node-type-id-container {
+    .bw-lib .bw-node-type-id-container {
         position: absolute !important;
         top: 0 !important;
         left: 0 !important;
@@ -1691,12 +1937,12 @@
         box-shadow: 1px 0 0 rgba(0,0,0,0.15) !important;
     }
 
-    .bw-lib .drawflow .drawflow-node.selected .node-type-id-container,
-    .bw-lib .drawflow-node.selected .node-type-id-container {
+    .bw-lib .drawflow .drawflow-node.selected .bw-node-type-id-container,
+    .bw-lib .drawflow-node.selected .bw-node-type-id-container {
         background: rgba(0,0,0,0.15) !important;
     }
 
-    .bw-lib .node-type-id {
+    .bw-lib .bw-node-type-id {
         text-align: center !important;
         font-size: 15px !important;
         color: var(--df-heading) !important;
@@ -1706,19 +1952,19 @@
     }
 
     /* Text helpers */
-    .bw-lib .drawflow .text-muted,
-    .bw-lib .drawflow-node .text-muted {
+    .bw-lib .drawflow .bw-text-muted,
+    .bw-lib .drawflow-node .bw-text-muted {
         color: var(--df-text-muted) !important;
     }
 
-    .bw-lib .drawflow .text-weak,
-    .bw-lib .drawflow-node .text-weak {
+    .bw-lib .drawflow .bw-text-weak,
+    .bw-lib .drawflow-node .bw-text-weak {
         color: var(--df-text-weak) !important;
     }
 
     /* Port labels */
-    .bw-lib .drawflow .drawflow-node .port_type,
-    .bw-lib .drawflow-node .port_type {
+    .bw-lib .drawflow .drawflow-node .bw-port_type,
+    .bw-lib .drawflow-node .bw-port_type {
         color: var(--df-text-muted) !important;
         font-size: 9.5px !important;
         font-weight: 500 !important;
@@ -1727,8 +1973,8 @@
         opacity: 0.8 !important;
     }
 
-    .bw-lib .drawflow .drawflow-node .port_label,
-    .bw-lib .drawflow-node .port_label {
+    .bw-lib .drawflow .drawflow-node .bw-port_label,
+    .bw-lib .drawflow-node .bw-port_label {
         color: var(--df-text-weak) !important;
         font-size: 11.5px !important;
         font-weight: 400 !important;
@@ -1766,8 +2012,8 @@
         }
 
     /* Drawflow error state */
-    .bw-lib .drawflow .drawflow-node.node-error,
-    .bw-lib .drawflow-node.node-error {
+    .bw-lib .drawflow .drawflow-node.bw-node-error,
+    .bw-lib .drawflow-node.bw-node-error {
         border-color: rgba(220, 38, 38, 0.7) !important;
         box-shadow:
             0 0 0 1.5px rgba(220, 38, 38, 0.5),
@@ -1776,8 +2022,8 @@
         animation: errorPulse 2s ease-in-out infinite !important;
     }
 
-        .bw-lib .drawflow .drawflow-node.node-error .title-container,
-        .bw-lib .drawflow-node.node-error .title-container {
+        .bw-lib .drawflow .drawflow-node.bw-node-error .bw-title-container,
+        .bw-lib .drawflow-node.bw-node-error .bw-title-container {
             background: linear-gradient(135deg, rgba(220, 38, 38, 0.3) 0%, rgba(220, 38, 38, 0.15) 100%) !important;
         }
 
@@ -1785,11 +2031,11 @@
    Responsive
    ========================================================================== */
 @media (max-width: 992px) {
-    .bw-lib .node-editor-grid {
+    .bw-lib .bw-node-editor-grid {
         grid-template-columns: 1fr !important;
     }
 
-    .bw-lib .node-editor-content {
+    .bw-lib .bw-node-editor-content {
         height: 93vh !important;
     }
 }
@@ -1866,11 +2112,11 @@
 }
 
 /* Node status animations - must be global because Drawflow nodes are created dynamically */
-.processing-bar .title-container {
+.bw-processing-bar .bw-title-container {
     animation: pulseBar 1s ease-in-out infinite;
 }
 
-.node-error {
+.bw-node-error {
     animation: errorPulse 2s ease-in-out infinite;
 }
 

@@ -136,6 +136,28 @@ namespace BlazorWorkflow.Services
             }
         }
 
+        public void RenameVariable(string environmentName, string oldKey, string newKey)
+        {
+            lock (_lock)
+            {
+                if (_environments.TryGetValue(environmentName, out var variables) && variables.ContainsKey(oldKey))
+                {
+                    // Rebuild dictionary preserving insertion order with new key in same position
+                    var rebuilt = new Dictionary<string, string>();
+                    foreach (var kvp in variables)
+                    {
+                        if (kvp.Key == oldKey)
+                            rebuilt[newKey] = kvp.Value;
+                        else
+                            rebuilt[kvp.Key] = kvp.Value;
+                    }
+                    _environments[environmentName] = rebuilt;
+                    SaveToFile();
+                    _logger?.LogDebug("Renamed variable: {Environment}.{OldKey} -> {NewKey}", environmentName, oldKey, newKey);
+                }
+            }
+        }
+
         public bool VariableExists(string environmentName, string key)
         {
             lock (_lock)

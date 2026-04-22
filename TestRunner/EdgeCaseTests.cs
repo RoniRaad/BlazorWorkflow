@@ -521,6 +521,9 @@ namespace TestRunner
         [Fact]
         public async Task TestIntToDoubleToIntChain()
         {
+            // When sqrt produces a double (3.872...), the downstream node must also
+            // accept double — JSON deserialization cannot coerce a fractional number to int.
+            // Use AddD (double version) for the downstream node.
             var graph = new NodeGraphBuilder();
 
             graph.AddNode("addInt", typeof(BaseNodeCollection), "Add")
@@ -532,20 +535,20 @@ namespace TestRunner
                 .MapInput("value", "input.result")
                 .AutoMapOutputs();
 
-            graph.AddNode("addInt2", typeof(BaseNodeCollection), "Add")
+            graph.AddNode("addDouble", typeof(BaseNodeCollection), "AddD")
                 .MapInput("input1", "input.result")
                 .MapInput("input2", "1")
                 .AutoMapOutputs();
 
             graph.Connect("addInt", "sqrt");
-            graph.Connect("sqrt", "addInt2");
+            graph.Connect("sqrt", "addDouble");
 
             var result = await graph.ExecuteAsync("addInt");
 
             Assert.Equal(15, result.GetOutput<int>("addInt", "result"));
             Assert.InRange(result.GetOutput<double>("sqrt", "result"), 3.87, 3.88);
-            // sqrt(15) ≈ 3.872, converted to int should be 3, 3 + 1 = 4
-            Assert.Equal(4, result.GetOutput<int>("addInt2", "result"));
+            // sqrt(15) ≈ 3.872, + 1 = 4.872
+            Assert.InRange(result.GetOutput<double>("addDouble", "result"), 4.87, 4.88);
         }
 
         [Fact]

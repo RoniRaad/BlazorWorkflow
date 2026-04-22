@@ -2,7 +2,7 @@
 /* CSS Variables are defined globally in app.css */
 
 /* Page Layout */
-.page-container {
+.bw-page-container {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -13,28 +13,28 @@
     background-color: var(--bw-background);
 }
 
-.page-header {
+.bw-page-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
 }
 
-.page-title {
+.bw-page-title {
     font-size: 22px;
     font-weight: 700;
     color: var(--bw-text-primary, #f1f5f9);
     letter-spacing: -0.02em;
 }
 
-.page-description {
+.bw-page-description {
     color: var(--bw-text-secondary);
     font-size: 13px;
     margin-top: 4px;
     opacity: 0.8;
 }
 
-.canvas-container {
+.bw-canvas-container {
     flex: 1;
     background: var(--bw-surface-elevated);
     border-radius: 14px;
@@ -44,7 +44,7 @@
     position: relative;
 }
 
-.canvas-wrapper {
+.bw-canvas-wrapper {
     height: 100%;
     width: 100%;
 }
@@ -97,18 +97,18 @@
 }
 
 /* Workflow Name Editing */
-.workflow-name-display-editor {
+.bw-workflow-name-display-editor {
     display: flex;
     align-items: center;
     gap: 12px;
     transition: all 0.15s ease;
 }
 
-.workflow-name-display-editor .page-title {
+.bw-workflow-name-display-editor .bw-page-title {
     margin: 0;
 }
 
-.btn-icon-edit-small {
+.bw-btn-icon-edit-small {
     background: transparent;
     border: 1px solid transparent;
     color: var(--bw-text-secondary);
@@ -123,13 +123,13 @@
     opacity: 0.4;
 }
 
-.btn-icon-edit-small:hover {
+.bw-btn-icon-edit-small:hover {
     background: rgba(99, 102, 241, 0.08);
     color: #a5b4fc;
     opacity: 1;
 }
 
-.workflow-name-input-editor {
+.bw-workflow-name-input-editor {
     font-size: 22px;
     font-weight: 700;
     padding: 6px 10px;
@@ -142,11 +142,11 @@
     max-width: 500px;
 }
 
-.workflow-name-input-editor:hover {
+.bw-workflow-name-input-editor:hover {
     border-color: rgba(99, 102, 241, 0.4);
 }
 
-.workflow-name-input-editor:focus {
+.bw-workflow-name-input-editor:focus {
     outline: none;
     border-color: rgba(99, 102, 241, 0.5);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
@@ -154,12 +154,12 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .page-container {
+    .bw-page-container {
         padding: 16px;
         gap: 16px;
     }
 
-    .page-header {
+    .bw-page-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 16px;

@@ -50,9 +50,10 @@ public partial class WorkflowGraph : ComponentBase, IAsyncDisposable
     public double PosY { get; set; }
 
     // Undo/Redo system - snapshot-based
-    private readonly Stack<GraphSnapshot> _undoStack = new();
-    private readonly Stack<GraphSnapshot> _redoStack = new();
-    private bool _isPerformingUndoRedo = false;
+    private readonly List<GraphSnapshot> _undoStack = new();
+    private readonly List<GraphSnapshot> _redoStack = new();
+    private volatile bool _isPerformingUndoRedo = false;
+    private volatile bool _suppressEvents = false;
     private System.Threading.Timer? _snapshotTimer;
 
     // Callback to close modal (set from .razor file)
@@ -62,7 +63,7 @@ public partial class WorkflowGraph : ComponentBase, IAsyncDisposable
     protected Action? OnAttachNodeEventHandlers { get; set; }
     private bool _pendingSnapshot = false;
     private readonly object _snapshotLock = new();
-    private string? _lastSnapshotJson = null; // Track last snapshot to avoid duplicates
+    private GraphSnapshot? _preMovementSnapshot = null; // Captures state before a drag starts
 
     private static JsonSerializerOptions jsonSerializerOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -117,7 +118,7 @@ public partial class WorkflowGraph : ComponentBase, IAsyncDisposable
 
             // Take initial snapshot after graph is fully loaded
             // This gives us a baseline state to return to
-            await Task.Delay(100).ConfigureAwait(false); // Small delay to ensure everything is settled
+            await JS.InvokeVoidAsync("nextFrame").ConfigureAwait(false);
             TakeSnapshot();
 
             // Setup double-click callback
@@ -150,6 +151,9 @@ public partial class WorkflowGraph : ComponentBase, IAsyncDisposable
     {
         _ = Task.Run(async () =>
         {
+            // Skip events fired during undo/redo restore to prevent corruption
+            if (_suppressEvents) return;
+
             // Handle events that update the Graph
             try
             {
@@ -222,11 +226,18 @@ public partial class WorkflowGraph : ComponentBase, IAsyncDisposable
 
         var nodeId = payload[0].ToString();
 
-        // We need to query the editor for the actual position since Drawflow doesn't pass it in the event
         if (Graph.Nodes.TryGetValue(nodeId, out var node) && Editor != null)
         {
             try
             {
+                // Capture pre-move state before updating positions (only on first move event of a drag)
+                // Use C# Graph model which still has the old position for this node
+                if (_preMovementSnapshot == null && !_isPerformingUndoRedo)
+                {
+                    _preMovementSnapshot = GraphSnapshot.Create(Graph, PosX, PosY);
+                }
+
+                // Now update the C# node with the actual position from the editor
                 var nodeData = await Editor.RawAsync<JsonElement>("getNodeFromId", nodeId).ConfigureAwait(false);
                 if (nodeData.ValueKind == JsonValueKind.Object)
                 {
@@ -236,11 +247,12 @@ public partial class WorkflowGraph : ComponentBase, IAsyncDisposable
                         node.PosY = posYProp.GetDouble();
                 }
 
-                // Schedule a snapshot after a short delay (debounced)
+                // Schedule committing the pre-move snapshot after drag ends (debounced)
                 ScheduleSnapshot();
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"[UndoRedo] HandleNodeMoved error: {ex.Message}");
             }
         }
     }
@@ -605,8 +617,9 @@ public partial class WorkflowGraph : ComponentBase, IAsyncDisposable
     // ==========================================
 
     /// <summary>
-    /// Schedule a snapshot after a short delay (debounced).
-    /// Used for operations like node moves that fire multiple events.
+    /// Schedule committing a snapshot after a short delay (debounced).
+    /// Used for operations like node moves that fire multiple events during a drag.
+    /// Commits the pre-movement snapshot captured at the start of the drag.
     /// </summary>
     private void ScheduleSnapshot()
     {
@@ -622,17 +635,25 @@ public partial class WorkflowGraph : ComponentBase, IAsyncDisposable
             // Dispose old timer if exists
             _snapshotTimer?.Dispose();
 
-            // Create new timer that fires after 500ms (increased for better debouncing)
+            // Create new timer that fires after 500ms (debounce for drag end)
             _snapshotTimer = new System.Threading.Timer(_ =>
             {
                 lock (_snapshotLock)
                 {
                     if (_pendingSnapshot)
                     {
-                        // Use InvokeAsync to ensure we're on the UI thread
                         _ = InvokeAsync(() =>
                         {
-                            TakeSnapshot();
+                            // Commit the pre-movement snapshot (state before drag started)
+                            if (_preMovementSnapshot != null)
+                            {
+                                lock (_snapshotLock)
+                                {
+                                    _undoStack.Add(_preMovementSnapshot);
+                                    _redoStack.Clear();
+                                    _preMovementSnapshot = null;
+                                }
+                            }
                         });
                         _pendingSnapshot = false;
                     }
@@ -643,36 +664,83 @@ public partial class WorkflowGraph : ComponentBase, IAsyncDisposable
 
     /// <summary>
     /// Take an immediate snapshot of the current graph state.
+    /// Uses the JS editor export when available for authoritative positions/connections.
     /// </summary>
     private void TakeSnapshot()
     {
-        if (_isPerformingUndoRedo)
+        if (_isPerformingUndoRedo || _suppressEvents)
         {
             return;
         }
 
         try
         {
-            // Ensure we have nodes to snapshot
             if (Graph.Nodes.Count == 0)
             {
                 return;
             }
 
+            // Fall back to C# model export (positions may be slightly stale for recent moves)
             var snapshot = GraphSnapshot.Create(Graph, PosX, PosY);
 
-            // Avoid taking duplicate snapshots (same state captured twice)
-            if (_lastSnapshotJson != null && _lastSnapshotJson == snapshot.DrawflowJson)
+            lock (_snapshotLock)
+            {
+                _undoStack.Add(snapshot);
+                _redoStack.Clear();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[UndoRedo] TakeSnapshot error: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Take a snapshot using the JS editor's export (authoritative for positions/connections).
+    /// </summary>
+    private async Task TakeSnapshotFromEditorAsync()
+    {
+        if (_isPerformingUndoRedo || _suppressEvents || Editor == null)
+        {
+            return;
+        }
+
+        try
+        {
+            if (Graph.Nodes.Count == 0)
             {
                 return;
             }
 
-            _lastSnapshotJson = snapshot.DrawflowJson;
-            _undoStack.Push(snapshot);
-            _redoStack.Clear(); // Clear redo stack when a new snapshot is taken
+            var editorJson = await Editor.ExportAsync().ConfigureAwait(false);
+            if (string.IsNullOrEmpty(editorJson))
+            {
+                return;
+            }
+
+            // Sync C# node positions from editor before creating snapshot data
+            var parsed = DrawflowGraph.Parse(this, editorJson);
+            foreach (var (id, dfNode) in parsed.Page.Data)
+            {
+                if (Graph.Nodes.TryGetValue(id, out var node))
+                {
+                    node.PosX = dfNode.PosX;
+                    node.PosY = dfNode.PosY;
+                }
+            }
+
+            // Re-export with updated C# model (includes node data that the raw editor JSON may not have)
+            var snapshot = GraphSnapshot.Create(Graph, PosX, PosY);
+
+            lock (_snapshotLock)
+            {
+                _undoStack.Add(snapshot);
+                _redoStack.Clear();
+            }
         }
         catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine($"[UndoRedo] TakeSnapshotFromEditor error: {ex.Message}");
         }
     }
 
@@ -681,30 +749,41 @@ public partial class WorkflowGraph : ComponentBase, IAsyncDisposable
     /// </summary>
     public async Task UndoAsync()
     {
-        if (_undoStack.Count == 0)
+        GraphSnapshot previousSnapshot;
+        lock (_snapshotLock)
         {
-            return;
+            if (_undoStack.Count == 0) return;
+            previousSnapshot = _undoStack[_undoStack.Count - 1];
+            _undoStack.RemoveAt(_undoStack.Count - 1);
         }
 
         _isPerformingUndoRedo = true;
+        _suppressEvents = true;
         try
         {
-            // Save current state to redo stack
-            var currentSnapshot = GraphSnapshot.Create(Graph, PosX, PosY);
+            // Capture current state from the JS editor (authoritative positions)
+            var currentSnapshot = await CreateSnapshotFromEditorAsync().ConfigureAwait(false)
+                                  ?? GraphSnapshot.Create(Graph, PosX, PosY);
 
-            // Pop and restore previous state
-            var previousSnapshot = _undoStack.Pop();
             await RestoreSnapshotAsync(previousSnapshot).ConfigureAwait(false);
 
-            // Push current state to redo stack
-            _redoStack.Push(currentSnapshot);
+            lock (_snapshotLock)
+            {
+                _redoStack.Add(currentSnapshot);
+            }
+
+            // Save the restored state
+            await TriggerSaveAsync().ConfigureAwait(false);
         }
         catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine($"[UndoRedo] Undo error: {ex.Message}");
         }
         finally
         {
+            _suppressEvents = false;
             _isPerformingUndoRedo = false;
+            _preMovementSnapshot = null;
         }
     }
 
@@ -713,36 +792,102 @@ public partial class WorkflowGraph : ComponentBase, IAsyncDisposable
     /// </summary>
     public async Task RedoAsync()
     {
-        if (_redoStack.Count == 0)
+        GraphSnapshot nextSnapshot;
+        lock (_snapshotLock)
         {
-            return;
+            if (_redoStack.Count == 0) return;
+            nextSnapshot = _redoStack[_redoStack.Count - 1];
+            _redoStack.RemoveAt(_redoStack.Count - 1);
         }
 
         _isPerformingUndoRedo = true;
+        _suppressEvents = true;
         try
         {
-            // Save current state to undo stack
-            var currentSnapshot = GraphSnapshot.Create(Graph, PosX, PosY);
+            // Capture current state from the JS editor (authoritative positions)
+            var currentSnapshot = await CreateSnapshotFromEditorAsync().ConfigureAwait(false)
+                                  ?? GraphSnapshot.Create(Graph, PosX, PosY);
 
-            // Pop and restore next state
-            var nextSnapshot = _redoStack.Pop();
             await RestoreSnapshotAsync(nextSnapshot).ConfigureAwait(false);
 
-            // Push current state to undo stack
-            _undoStack.Push(currentSnapshot);
+            lock (_snapshotLock)
+            {
+                _undoStack.Add(currentSnapshot);
+            }
 
+            // Save the restored state
+            await TriggerSaveAsync().ConfigureAwait(false);
         }
         catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine($"[UndoRedo] Redo error: {ex.Message}");
         }
         finally
         {
+            _suppressEvents = false;
             _isPerformingUndoRedo = false;
+            _preMovementSnapshot = null;
+        }
+    }
+
+    /// <summary>
+    /// Create a snapshot from the JS editor export (authoritative positions/connections).
+    /// Returns null if editor is unavailable.
+    /// </summary>
+    private async Task<GraphSnapshot?> CreateSnapshotFromEditorAsync()
+    {
+        if (Editor == null) return null;
+
+        try
+        {
+            var editorJson = await Editor.ExportAsync().ConfigureAwait(false);
+            if (string.IsNullOrEmpty(editorJson)) return null;
+
+            // Sync C# positions from editor
+            var parsed = DrawflowGraph.Parse(this, editorJson);
+            foreach (var (id, dfNode) in parsed.Page.Data)
+            {
+                if (Graph.Nodes.TryGetValue(id, out var node))
+                {
+                    node.PosX = dfNode.PosX;
+                    node.PosY = dfNode.PosY;
+                }
+            }
+
+            return GraphSnapshot.Create(Graph, PosX, PosY);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Trigger a save via the OnEvent callback so the parent persists the current state.
+    /// </summary>
+    private async Task TriggerSaveAsync()
+    {
+        try
+        {
+            if (OnEvent.HasDelegate)
+            {
+                await InvokeAsync(() => OnEvent.InvokeAsync(new DrawflowEventArgs
+                {
+                    Name = "undoRedo",
+                    PayloadJson = "[]"
+                }));
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[UndoRedo] TriggerSave error: {ex.Message}");
         }
     }
 
     /// <summary>
     /// Restore graph state from a snapshot.
+    /// Events are suppressed by the caller (_suppressEvents = true).
+    /// Repopulates the existing Graph object so the parent's reference stays valid.
     /// </summary>
     private async Task RestoreSnapshotAsync(GraphSnapshot snapshot)
     {
@@ -751,59 +896,54 @@ public partial class WorkflowGraph : ComponentBase, IAsyncDisposable
             throw new InvalidOperationException("Editor is not initialized");
         }
 
-        try
+        // Close any open modal BEFORE restoring to prevent ghost node issues
+        OnCloseModalAfterUndoRedo?.Invoke();
+
+        // Clear the Drawflow editor
+        await Editor.ClearAsync().ConfigureAwait(false);
+
+        // Wait a frame so clear-related events drain while still suppressed
+        await JS.InvokeVoidAsync("nextFrame").ConfigureAwait(false);
+
+        // Import the Drawflow JSON from the snapshot
+        await Editor.ImportAsync(snapshot.DrawflowJson).ConfigureAwait(false);
+
+        // Wait for DOM to settle after import
+        await JS.InvokeVoidAsync("nextFrame").ConfigureAwait(false);
+
+        // Parse the Drawflow JSON to regenerate the Graph object
+        var drawflowGraph = DrawflowGraph.Parse(this, snapshot.DrawflowJson);
+        var newGraph = GenerateGraphV2(drawflowGraph);
+
+        // Repopulate the existing Graph.Nodes so the parent's reference stays valid
+        Graph.Nodes.Clear();
+        foreach (var kvp in newGraph.Nodes)
         {
-            // Clear the Drawflow editor
-            await Editor.ClearAsync().ConfigureAwait(false);
+            Graph.Nodes[kvp.Key] = kvp.Value;
+        }
 
-            // Import the Drawflow JSON from the snapshot
-            await Editor.ImportAsync(snapshot.DrawflowJson).ConfigureAwait(false);
+        // Restore canvas position
+        PosX = snapshot.CanvasPosX;
+        PosY = snapshot.CanvasPosY;
 
-            // Wait for next frame to ensure DOM is ready
-            await JS.InvokeVoidAsync("nextFrame").ConfigureAwait(false);
-
-            // Parse the Drawflow JSON to regenerate the Graph object
-            var drawflowGraph = DrawflowGraph.Parse(this, snapshot.DrawflowJson);
-            var newGraph = GenerateGraphV2(drawflowGraph);
-
-            Graph = newGraph;
-
-            // Restore canvas position
-            PosX = snapshot.CanvasPosX;
-            PosY = snapshot.CanvasPosY;
-
-            // Update the last snapshot to match what we just restored
-            // This prevents the restore from triggering a new snapshot
-            _lastSnapshotJson = snapshot.DrawflowJson;
-
-            // Re-apply port labels for nodes with multiple outputs
-            foreach (var node in Graph.Nodes.Select(x => x.Value))
+        // Re-apply port labels for nodes with multiple outputs
+        foreach (var node in Graph.Nodes.Select(x => x.Value))
+        {
+            if (node.DeclaredOutputPorts.Count > 0)
             {
-                if (node.DeclaredOutputPorts.Count > 0)
-                {
-                    await JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", Id, node.DrawflowNodeId,
-                        new List<List<string>>(),
-                        node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" })).ConfigureAwait(false);
-                }
-
-                await JS.InvokeVoidAsync("DrawflowBlazor.setNodeWidthFromTitle", Id, node.DrawflowNodeId).ConfigureAwait(false);
+                await JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", Id, node.DrawflowNodeId,
+                    new List<List<string>>(),
+                    node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" })).ConfigureAwait(false);
             }
 
-            // Update connection positions
-            await JS.InvokeVoidAsync("DrawflowBlazor.updateConnectionNodes", Id).ConfigureAwait(false);
-
-            // Reattach event handlers to all nodes
-            // This is CRITICAL - without it, nodes won't respond to interactions
-            OnAttachNodeEventHandlers?.Invoke();
-
-            //Close any open modal to prevent "ghost node" issues
-            OnCloseModalAfterUndoRedo?.Invoke();
-
+            await JS.InvokeVoidAsync("DrawflowBlazor.setNodeWidthFromTitle", Id, node.DrawflowNodeId).ConfigureAwait(false);
         }
-        catch (Exception ex)
-        {
-            throw;
-        }
+
+        // Update connection positions
+        await JS.InvokeVoidAsync("DrawflowBlazor.updateConnectionNodes", Id).ConfigureAwait(false);
+
+        // Reattach event handlers to all nodes
+        OnAttachNodeEventHandlers?.Invoke();
     }
 
     /// <summary>
@@ -811,12 +951,15 @@ public partial class WorkflowGraph : ComponentBase, IAsyncDisposable
     /// </summary>
     public void ClearHistory()
     {
-        _undoStack.Clear();
-        _redoStack.Clear();
+        lock (_snapshotLock)
+        {
+            _undoStack.Clear();
+            _redoStack.Clear();
+        }
         _snapshotTimer?.Dispose();
         _snapshotTimer = null;
         _pendingSnapshot = false;
-        _lastSnapshotJson = null;
+        _preMovementSnapshot = null;
     }
 
     /// <summary>Destroy the editor instance.</summary>
