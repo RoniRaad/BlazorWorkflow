@@ -47,7 +47,7 @@
             {
                 @if (!_showNewOptions)
                 {
-                    <div class="bw-workflow-item bw-workflow-item-new" @onclick="() => _showNewOptions = true">
+                    <div class="bw-workflow-item bw-workflow-item-new" @onclick="() => { _showNewOptions = true; _focusNewOptionsOnNextRender = true; }">
                         <div class="bw-workflow-item-new-inner">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="bw-workflow-item-new-icon"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                             <span>New workflow</span>
@@ -56,7 +56,7 @@
                 }
                 else
                 {
-                    <div class="bw-workflow-item bw-workflow-item-new bw-workflow-item-new--expanded">
+                    <div class="bw-workflow-item bw-workflow-item-new bw-workflow-item-new--expanded" tabindex="-1" @ref="_newOptionsRef" style="outline:none;">
                         <button class="bw-new-option" @onclick="() => { _showNewOptions = false; HandleCreateWorkflow(); }">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="bw-new-option-icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/></svg>
                             <span>Blank workflow</span>
@@ -86,7 +86,7 @@
                                     </button>
                                     @if (_openMenuId == workflow.Id)
                                     {
-                                        <div class="bw-workflow-item-menu">
+                                        <div class="bw-workflow-item-menu" tabindex="-1" @ref="_contextMenuRef" style="outline:none;">
                                             <button class="bw-workflow-item-menu-option" @onclick="@(() => { _openMenuId = null; HandleExportSpecificWorkflow(workflow.Id); })">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="bw-menu-option-icon"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                                                 Export
@@ -549,8 +549,16 @@
     private int currentExecutionPage = 0;
     private const int executionsPerPage = 10;
 
+    private DotNetObjectReference<WorkflowManager>? _dotNetRef;
+
     // Context menu state
     private string? _openMenuId;
+    private ElementReference _contextMenuRef;
+    private bool _focusContextMenuOnNextRender = false;
+
+    // New options state
+    private ElementReference _newOptionsRef;
+    private bool _focusNewOptionsOnNextRender = false;
 
     // Export/Import state
     private string? _exportJson;
@@ -619,6 +627,62 @@
         }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            // Utility: attach focusout to an element that only fires when focus leaves the subtree
+            await JS.InvokeVoidAsync("eval", @"
+                window.__bwFocusOut = function(el, dotNetRef, methodName) {
+                    if (!el || el.__bwFocusOut) return;
+                    el.__bwFocusOut = function(e) {
+                        if (!el.contains(e.relatedTarget)) {
+                            dotNetRef.invokeMethodAsync(methodName);
+                        }
+                    };
+                    el.addEventListener('focusout', el.__bwFocusOut);
+                };
+            ");
+        }
+
+        if (_focusContextMenuOnNextRender && _openMenuId != null)
+        {
+            _focusContextMenuOnNextRender = false;
+            try
+            {
+                await _contextMenuRef.FocusAsync();
+                await JS.InvokeVoidAsync("__bwFocusOut", _contextMenuRef, _dotNetRef, "CloseOpenMenuFromJs");
+            }
+            catch { }
+        }
+
+        if (_focusNewOptionsOnNextRender && _showNewOptions)
+        {
+            _focusNewOptionsOnNextRender = false;
+            try
+            {
+                await _newOptionsRef.FocusAsync();
+                await JS.InvokeVoidAsync("__bwFocusOut", _newOptionsRef, _dotNetRef, "CloseNewOptionsFromJs");
+            }
+            catch { }
+        }
+    }
+
+    [JSInvokable]
+    public void CloseOpenMenuFromJs()
+    {
+        _openMenuId = null;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void CloseNewOptionsFromJs()
+    {
+        _showNewOptions = false;
+        StateHasChanged();
+    }
+
     private bool HasRunningWorkflows()
     {
         return Workflows.Any(w => w.PreviousExecutions.Any(e => e.IsRunning));
@@ -627,6 +691,7 @@
     public void Dispose()
     {
         _refreshTimer?.Dispose();
+        _dotNetRef?.Dispose();
     }
 
     private void RefreshWorkflowsCache()
@@ -682,6 +747,7 @@
     private void ToggleItemMenu(string workflowId)
     {
         _openMenuId = _openMenuId == workflowId ? null : workflowId;
+        if (_openMenuId != null) _focusContextMenuOnNextRender = true;
     }
 
     private void CloseOpenMenu()
@@ -690,6 +756,11 @@
         {
             _openMenuId = null;
         }
+    }
+
+    private void CloseNewOptions()
+    {
+        if (_showNewOptions) _showNewOptions = false;
     }
 
     private void HandleDeleteSpecificWorkflow(string workflowId)

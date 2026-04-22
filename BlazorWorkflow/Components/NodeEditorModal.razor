@@ -81,14 +81,14 @@ role="dialog"
                     }
                     else
                     {
-                        <button type="button" class="bw-btn-execute-flow" @onclick="() => _showRunMenu = !_showRunMenu" title="Run options">
+                        <button type="button" class="bw-btn-execute-flow" @onclick="ToggleRunMenu" title="Run options">
                             <svg viewBox="0 0 24 24" fill="currentColor" style="width: 40px; height: 40px;">
                                 <path d="M8 5v14l11-7z"/>
                             </svg>
                         </button>
                         @if (_showRunMenu)
                         {
-                            <div class="bw-run-menu">
+                            <div class="bw-run-menu" tabindex="-1" @ref="_runMenuRef" style="outline:none;">
                                 <button class="bw-run-menu-option" @onclick="ExecuteWorkflow">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="bw-run-menu-icon"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                                     <div class="bw-run-menu-text">
@@ -234,7 +234,9 @@ role="dialog"
                                                     </button>
                                                     @if (_previewMapping == inputMapping)
                                                     {
-                                                        <div class="bw-preview-popover">
+                                                        <div class="bw-preview-popover"
+                                                             tabindex="-1"
+                                                             @ref="_previewPopoverRef">
                                                             <div class="bw-preview-popover-arrow"></div>
                                                             <div class="bw-preview-popover-content">
                                                                 <div class="bw-preview-popover-label">Preview</div>
@@ -456,10 +458,13 @@ role="dialog"
     private bool saveSuccess = false;
     private bool isExecuting = false;
     private bool _showRunMenu = false;
+    private ElementReference _runMenuRef;
+    private bool _focusRunMenuOnNextRender = false;
     private string? _draggedFieldPath = null;
     private PathMapEntry? _previewMapping = null;
     private ElementReference _previewButtonRef;
     private ElementReference _previewPopoverRef;
+    private bool _focusPreviewOnNextRender = false;
     private bool _errorDismissed = false;
     private string? _lastErrorMessage = null;
 
@@ -819,6 +824,21 @@ role="dialog"
                 }
             ");
 
+            // Utility: focusout that only fires when focus leaves the subtree
+            await JSRuntime.InvokeVoidAsync("eval", @"
+                if (!window.__bwFocusOut) {
+                    window.__bwFocusOut = function(el, dotNetRef, methodName) {
+                        if (!el || el.__bwFocusOut) return;
+                        el.__bwFocusOut = function(e) {
+                            if (!el.contains(e.relatedTarget)) {
+                                dotNetRef.invokeMethodAsync(methodName);
+                            }
+                        };
+                        el.addEventListener('focusout', el.__bwFocusOut);
+                    };
+                }
+            ");
+
             // ── Scriban syntax highlighting system ──
             _modalDotNetRef = DotNetObjectReference.Create(this);
             await JSRuntime.InvokeVoidAsync("eval", @"
@@ -1102,6 +1122,30 @@ role="dialog"
                 };
             ");
             await JSRuntime.InvokeVoidAsync("__modalUndoRedo.setup", _modalDotNetRef);
+
+        }
+
+        // Focus popups and attach focusout (with relatedTarget check) to dismiss them
+        if (_focusPreviewOnNextRender && _previewMapping != null)
+        {
+            _focusPreviewOnNextRender = false;
+            try
+            {
+                await _previewPopoverRef.FocusAsync();
+                await JSRuntime.InvokeVoidAsync("__bwFocusOut", _previewPopoverRef, _modalDotNetRef, "ClosePopover");
+            }
+            catch { }
+        }
+
+        if (_focusRunMenuOnNextRender && _showRunMenu)
+        {
+            _focusRunMenuOnNextRender = false;
+            try
+            {
+                await _runMenuRef.FocusAsync();
+                await JSRuntime.InvokeVoidAsync("__bwFocusOut", _runMenuRef, _modalDotNetRef, "CloseRunMenuFromJs");
+            }
+            catch { }
         }
 
         // Sync scriban highlight backdrops after every render (Blazor may have updated values)
@@ -1389,9 +1433,22 @@ role="dialog"
         }
     }
 
+    private void ToggleRunMenu()
+    {
+        _showRunMenu = !_showRunMenu;
+        if (_showRunMenu) _focusRunMenuOnNextRender = true;
+    }
+
     private void CloseRunMenu()
     {
         if (_showRunMenu) _showRunMenu = false;
+    }
+
+    [JSInvokable]
+    public void CloseRunMenuFromJs()
+    {
+        _showRunMenu = false;
+        StateHasChanged();
     }
 
     private void RefreshAfterExecution()
@@ -1769,6 +1826,7 @@ role="dialog"
 
         // Set the new preview mapping - this will show the popover
         _previewMapping = mapping;
+        _focusPreviewOnNextRender = true;
     }
 
     private async Task PositionPopoverByElement()

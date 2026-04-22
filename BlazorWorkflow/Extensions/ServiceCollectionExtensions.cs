@@ -73,7 +73,7 @@ namespace BlazorWorkflow.Extensions
                 services.AddSingleton<IEnvironmentVariablesService>(sp =>
                 {
                     var logger = sp.GetService<Microsoft.Extensions.Logging.ILogger<FileBasedEnvironmentVariablesService>>();
-                    return new FileBasedEnvironmentVariablesService(options.EnvironmentVariablesFilePath, logger);
+                    return new FileBasedEnvironmentVariablesService(options.EnvironmentVariablesFilePath, logger, options.DefaultEnvironments);
                 });
             }
 
@@ -152,5 +152,12 @@ namespace BlazorWorkflow.Extensions
         /// If empty, no seed workflows will be created.
         /// </summary>
         public List<string> SeedWorkflowTemplates { get; set; } = [];
+
+        /// <summary>
+        /// Default environment variables to seed when no saved environments exist.
+        /// Keys are environment names (e.g. "Development"), values are dictionaries of variable key-value pairs.
+        /// If null, no default environments will be created.
+        /// </summary>
+        public Dictionary<string, Dictionary<string, string>>? DefaultEnvironments { get; set; }
     }
 }
