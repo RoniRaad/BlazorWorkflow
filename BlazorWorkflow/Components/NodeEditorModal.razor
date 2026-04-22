@@ -553,17 +553,22 @@ role="dialog"
                         lineIndex = Math.max(0, Math.min(lineIndex, layout.lines.length - 1));
 
                         var lineText = layout.lines[lineIndex];
-                        var lineWidth = ctx.measureText(lineText).width;
 
-                        // Check if mouse X is over text on this line
-                        if (lineText.length === 0 || relX < 0 || relX > lineWidth + 2) {
-                            return null; // not over text
+                        // Find char position using binary search on measureText for accuracy
+                        var charInLine;
+                        if (lineText.length === 0 || relX <= 0) {
+                            charInLine = 0;
+                        } else {
+                            var lo = 0, hi = lineText.length;
+                            while (lo < hi) {
+                                var mid = (lo + hi) >> 1;
+                                var w = ctx.measureText(lineText.substring(0, mid + 1)).width;
+                                var wPrev = mid > 0 ? ctx.measureText(lineText.substring(0, mid)).width : 0;
+                                var charMid = (wPrev + w) / 2;
+                                if (relX < charMid) { hi = mid; } else { lo = mid + 1; }
+                            }
+                            charInLine = lo;
                         }
-
-                        // Find char position within this line
-                        var charRatio = relX / lineWidth;
-                        var charInLine = Math.round(charRatio * lineText.length);
-                        charInLine = Math.max(0, Math.min(charInLine, lineText.length));
 
                         // Convert to absolute char offset in the full value
                         var charOffset = 0;
@@ -584,7 +589,10 @@ role="dialog"
                         };
                     },
 
-                    // Find the scriban expression {{...}} that contains the given position
+                    // Find the scriban expression {{...}} that contains the given position.
+                    // Uses strict interior check (start < pos < end) so that landing
+                    // exactly on a boundary between two adjacent expressions like
+                    // {{a}}{{b}} gives an inject caret instead of replacing one of them.
                     _findScribanAt: function(value, pos) {
                         var opens = [];
                         for (var i = 0; i < value.length - 1; i++) {
@@ -594,11 +602,10 @@ role="dialog"
                         }
                         for (var o = opens.length - 1; o >= 0; o--) {
                             var start = opens[o];
-                            // Find the matching }}
                             var end = value.indexOf('}}', start + 2);
                             if (end === -1) continue;
                             end += 2; // include the }}
-                            if (pos >= start && pos <= end) {
+                            if (pos > start && pos < end) {
                                 return { start: start, end: end };
                             }
                         }
