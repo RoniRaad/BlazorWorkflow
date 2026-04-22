@@ -56,7 +56,7 @@ namespace BlazorWorkflow.Extensions
                     var repository = sp.GetRequiredService<IWorkflowRepository>();
                     var logger = sp.GetService<Microsoft.Extensions.Logging.ILogger<WorkflowService>>();
                     var service = new WorkflowService(repository, logger);
-                    service.SeedSampleWorkflowsIfEmpty();
+                    service.SeedFromTemplatesIfEmpty(options.SeedWorkflowTemplates);
                     return service;
                 });
             }
@@ -145,5 +145,12 @@ namespace BlazorWorkflow.Extensions
         /// If null, FileBasedEnvironmentVariablesService will be used.
         /// </summary>
         public Func<IServiceProvider, IEnvironmentVariablesService>? EnvironmentVariablesServiceFactory { get; set; }
+
+        /// <summary>
+        /// Base64-encoded workflow export strings used to seed initial workflows when none exist.
+        /// Uses the same format as the workflow export/import feature.
+        /// If empty, no seed workflows will be created.
+        /// </summary>
+        public List<string> SeedWorkflowTemplates { get; set; } = [];
     }
 }

@@ -1,3 +1,4 @@
+using System.Text;
 using BlazorWorkflow.Helpers;
 using BlazorWorkflow.Models;
 using BlazorWorkflow.Models.NodeV2;
@@ -56,11 +57,56 @@ namespace BlazorWorkflow.Services
             _repository.Delete(id);
         }
 
-        public void SeedSampleWorkflowsIfEmpty()
+        public void SeedFromTemplatesIfEmpty(List<string> base64Templates)
         {
-            if (!_repository.GetAll().Any())
+            if (_repository.GetAll().Any())
+                return;
+
+            if (base64Templates.Count == 0)
             {
-                SeedSampleWorkflows();
+                _logger?.LogInformation("No seed workflow templates provided, skipping seed");
+                return;
+            }
+
+            foreach (var template in base64Templates)
+            {
+                if (string.IsNullOrWhiteSpace(template))
+                    continue;
+
+                try
+                {
+                    var json = Encoding.UTF8.GetString(Convert.FromBase64String(template.Trim()));
+                    var nodes = FlowSerializer.DeserializeFlow(json, out var metadata);
+
+                    if (nodes.Count == 0)
+                    {
+                        _logger?.LogWarning("Seed workflow template contained no valid nodes, skipping");
+                        continue;
+                    }
+
+                    var workflow = new WorkflowInfo
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        Name = metadata.FlowName ?? "Sample Workflow",
+                        Description = string.Empty,
+                        CreatedAt = DateTime.Now,
+                        ModifiedAt = DateTime.Now,
+                        FlowGraph = new Graph()
+                    };
+
+                    workflow.FlowGraph.Nodes.Clear();
+                    foreach (var node in nodes)
+                    {
+                        workflow.FlowGraph.Nodes[node.DrawflowNodeId] = node;
+                    }
+
+                    AddWorkflow(workflow);
+                    _logger?.LogInformation("Seeded workflow '{Name}' from template", workflow.Name);
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogError(ex, "Failed to seed workflow from template");
+                }
             }
         }
 
@@ -96,99 +142,5 @@ namespace BlazorWorkflow.Services
             }
         }
 
-        private void SeedSampleWorkflows()
-        {
-            _logger?.LogInformation("Seeding sample workflows");
-
-            var workflow1 = new WorkflowInfo
-            {
-                Id = "sample-1",
-                Name = "Example: Data Processing Pipeline",
-                Description = "Example workflow that fetches data from an API, processes it, and stores results",
-                CreatedAt = DateTime.Now.AddDays(-10),
-                ModifiedAt = DateTime.Now.AddDays(-2),
-                Inputs = new Dictionary<string, string>
-                {
-                    ["apiUrl"] = "https://api.example.com/data",
-                    ["maxRetries"] = "3",
-                    ["timeout"] = "30000"
-                },
-                PreviousExecutions = new List<WorkflowExecution>
-                {
-                    new WorkflowExecution
-                    {
-                        Id = "exec-1",
-                        ExecutedAt = DateTime.Now.AddHours(-2),
-                        Success = true,
-                        Duration = TimeSpan.FromSeconds(12.3),
-                        Output = new Dictionary<string, object>
-                        {
-                            ["recordsProcessed"] = 1523,
-                            ["status"] = "success"
-                        }
-                    },
-                    new WorkflowExecution
-                    {
-                        Id = "exec-2",
-                        ExecutedAt = DateTime.Now.AddHours(-5),
-                        Success = false,
-                        Duration = TimeSpan.FromSeconds(3.1),
-                        ErrorMessage = "Connection timeout: Unable to reach API endpoint",
-                        Output = new Dictionary<string, object>()
-                    }
-                },
-                FlowGraph = new()
-            };
-
-            var workflow2 = new WorkflowInfo
-            {
-                Id = "sample-2",
-                Name = "Example: Email Campaign Automation",
-                Description = "Example workflow that sends personalized emails to subscribers based on their preferences",
-                CreatedAt = DateTime.Now.AddDays(-5),
-                ModifiedAt = DateTime.Now.AddDays(-1),
-                Inputs = new Dictionary<string, string>
-                {
-                    ["campaignId"] = "camp-2024-01",
-                    ["batchSize"] = "100"
-                },
-                PreviousExecutions = new List<WorkflowExecution>
-                {
-                    new WorkflowExecution
-                    {
-                        Id = "exec-3",
-                        ExecutedAt = DateTime.Now.AddMinutes(-30),
-                        Success = true,
-                        Duration = TimeSpan.FromMinutes(2.5),
-                        Output = new Dictionary<string, object>
-                        {
-                            ["emailsSent"] = 450,
-                            ["bounces"] = 3,
-                            ["opens"] = 127
-                        }
-                    }
-                },
-                FlowGraph = new()
-            };
-
-            var workflow3 = new WorkflowInfo
-            {
-                Id = "sample-3",
-                Name = "Example: Report Generator",
-                Description = "Example workflow that generates weekly analytics reports and uploads to cloud storage",
-                CreatedAt = DateTime.Now.AddDays(-15),
-                ModifiedAt = DateTime.Now.AddDays(-15),
-                Inputs = new Dictionary<string, string>
-                {
-                    ["reportType"] = "weekly",
-                    ["includeCharts"] = "true"
-                },
-                FlowGraph = new()
-            };
-
-            AddWorkflow(workflow1);
-            AddWorkflow(workflow2);
-            AddWorkflow(workflow3);
-        }
     }
 }

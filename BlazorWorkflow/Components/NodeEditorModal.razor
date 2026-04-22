@@ -739,8 +739,9 @@ role="dialog"
             await JSRuntime.InvokeVoidAsync("eval", @"
                 // Auto-resize function
                 function autoResizeTextarea(textarea) {
-                    textarea.style.height = 'auto';
-                    textarea.style.height = textarea.scrollHeight + 'px';
+                    textarea.style.height = '0';
+                    var border = textarea.offsetHeight - textarea.clientHeight;
+                    textarea.style.height = (textarea.scrollHeight + border) + 'px';
                 }
 
                 // Tab key handler

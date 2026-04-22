@@ -34,8 +34,8 @@ namespace BlazorWorkflow.Services
         void DeleteWorkflow(string id);
 
         /// <summary>
-        /// Seeds sample workflows if none exist.
+        /// Seeds workflows from base64-encoded export templates if no workflows exist.
         /// </summary>
-        void SeedSampleWorkflowsIfEmpty();
+        void SeedFromTemplatesIfEmpty(List<string> base64Templates);
     }
 }
